@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.5 - Juli 2026 (Card 1.3.1)
+
+- Layout 'untereinander': Kindernamen deutlich groesser (1.35rem, fett) und nach rechts eingerueckt, buendig mit den Wochentag-Spalten
+
 ## 1.2.4 - Juli 2026 (Card 1.3.0)
 
 ### Neu

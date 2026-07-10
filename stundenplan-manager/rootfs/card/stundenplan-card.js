@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.3.0 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.3.1 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -144,10 +144,10 @@ class StundenplanCard extends HTMLElement {
             border-top-color: var(--primary-color); }
           .sp-zeit-aktiv { background: var(--primary-color); border-radius: 8px; }
           .sp-zeit-aktiv, .sp-zeit-aktiv b { color: var(--text-primary-color, #fff) !important; }
-          .sp-abschnitt { margin-bottom: 18px; }
+          .sp-abschnitt { margin-bottom: 22px; }
           .sp-abschnitt:last-child { margin-bottom: 0; }
-          .sp-kindname { margin: 0 0 6px; font-size: .95rem; font-weight: 600;
-            color: var(--primary-text-color); }
+          .sp-kindname { margin: 0 0 10px; padding-left: 58px; font-size: 1.35rem;
+            font-weight: 700; color: var(--primary-text-color); }
           .sp-banner { margin: 0 0 10px; padding: 8px 12px; border-radius: 8px;
             background: color-mix(in srgb, var(--primary-color) 12%, transparent);
             color: var(--primary-text-color); font-size: .85rem; }
@@ -321,4 +321,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.3.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.3.1", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
