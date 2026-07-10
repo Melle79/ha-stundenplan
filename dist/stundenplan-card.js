@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.7.0 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.8.0 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -13,11 +13,12 @@ class StundenplanCard extends HTMLElement {
 
   setConfig(config) {
     this._config = Object.assign({ modus: "woche", zeige_pausen: true, titel: "",
-                                   layout: "tabs" }, config);
+                                   layout: "tabs", schrift: "normal" }, config);
     if (this._config.entity && !this._config.entities)
       this._config.entities = [this._config.entity];
     this._letzterHash = null;
     this._aktivIdx = 0;
+    this._wocheOffset = 0;
   }
 
   _entityIds(hass) {
@@ -38,8 +39,8 @@ class StundenplanCard extends HTMLElement {
     const gestapelt = this._config.layout === "untereinander" && ids.length > 1;
     const relevant = gestapelt ? ids : [ids[this._aktivIdx]];
     const attrListe = relevant.map(id => (hass.states[id] || {}).attributes || {});
-    const hash = JSON.stringify([ids, this._aktivIdx, this._config.layout, attrListe,
-                                 new Date().getMinutes()]);
+    const hash = JSON.stringify([ids, this._aktivIdx, this._wocheOffset,
+                                 this._config.layout, attrListe, new Date().getMinutes()]);
     if (hash === this._letzterHash) return;
     this._letzterHash = hash;
     this._render(ids, gestapelt);
@@ -59,6 +60,45 @@ class StundenplanCard extends HTMLElement {
     if (a.modus !== "block") return true;
     const d = datum.toISOString().slice(0, 10);
     return (a.bloecke || []).some(b => b.von <= d && d <= b.bis);
+  }
+
+  _wochenMontag() {
+    const n = new Date(); n.setHours(0,0,0,0);
+    const mo = new Date(n);
+    mo.setDate(n.getDate() - ((n.getDay() + 6) % 7) + (n.getDay() === 0 || n.getDay() === 6 ? 7 : 0));
+    mo.setDate(mo.getDate() + this._wocheOffset * 7);
+    return mo;
+  }
+
+  _isoKW(d) {
+    const t = new Date(d); t.setHours(0,0,0,0);
+    t.setDate(t.getDate() + 3 - ((t.getDay() + 6) % 7));
+    const w1 = new Date(t.getFullYear(), 0, 4);
+    return 1 + Math.round(((t - w1) / 864e5 - 3 + ((w1.getDay() + 6) % 7)) / 7);
+  }
+
+  _tagDatum(montag, i) {
+    const d = new Date(montag); d.setDate(montag.getDate() + i); return d;
+  }
+
+  _iso(d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  }
+
+  _planFuerDatum(a, isoDatum) {
+    const passend = (a.plaene || []).filter(p => p.gueltig_ab <= isoDatum)
+      .sort((x, y) => x.gueltig_ab.localeCompare(y.gueltig_ab));
+    return passend.length ? passend[passend.length - 1].plan : (a.plan || {});
+  }
+
+  _freiGrund(a, isoDatum) {
+    if (a.modus === "block")
+      return (a.bloecke || []).some(b => b.von <= isoDatum && isoDatum <= b.bis)
+        ? null : "🏭 Betrieb";
+    const z = (a.schulfrei_zeitraeume || []).filter(x => x.von <= isoDatum && isoDatum <= x.bis);
+    if (!z.length) return null;
+    const mehr = z.filter(x => x.von !== x.bis);
+    return "🏖 " + (mehr.length ? mehr[0] : z[0]).grund;
   }
 
   _jetztZeit() {
@@ -139,6 +179,17 @@ class StundenplanCard extends HTMLElement {
           .sp-gedimmt { opacity: .35; filter: saturate(.5); }
           .sp-tag-frei small { display: block; font-weight: 500; font-size: .64rem;
             color: var(--secondary-text-color); margin-top: 1px; }
+          .sp-datum { display: block; font-weight: 400; font-size: .62rem;
+            color: var(--secondary-text-color); }
+          .sp-wochenkopf { display: flex; align-items: center; gap: 10px;
+            justify-content: center; margin-bottom: 8px; }
+          .sp-kw { font-size: .85rem; font-weight: 600; color: var(--primary-text-color); }
+          .sp-nav { border: 1px solid var(--divider-color); background: none;
+            color: var(--secondary-text-color); border-radius: 8px; padding: 4px 10px;
+            cursor: pointer; font-family: inherit; font-size: .8rem; }
+          .sp-nav:hover { color: var(--primary-text-color); }
+          .sp-heute-btn { color: var(--primary-color); border-color: var(--primary-color); }
+          .sp-gross .sp-kw { font-size: 1rem; }
           @container (min-width: 620px) {
             .sp-fach { padding: 8px 6px; }
             .sp-fach .sp-name { display: block; }
@@ -187,68 +238,88 @@ class StundenplanCard extends HTMLElement {
         this.hass = this._hass;
       };
     });
+    this.querySelectorAll(".sp-nav").forEach(btn => {
+      btn.onclick = () => {
+        const n = +btn.dataset.nav;
+        this._wocheOffset = n === 0 ? 0 : this._wocheOffset + n;
+        this._letzterHash = null;
+        this.hass = this._hass;
+      };
+    });
   }
 
   _renderWoche(a) {
     const heute = this._heuteIdx();
     const zeit = this._jetztZeit();
-    const heuteImBlock = this._imBlock(a, new Date());
-    let html = "";
-    const freiTage = {};
-    if (a.schulfrei_tage) {
-      StundenplanCard.TAGE.forEach(([tag], i) => {
-        if (a.schulfrei_tage[tag]) freiTage[i] = a.schulfrei_tage[tag];
-      });
-    }
-    if (a.modus === "block" && !heuteImBlock)
-      html += `<div class="sp-banner">🏭 Betriebsphase – aktuell kein Blockunterricht</div>`;
-    html += `<table class="sp-tabelle"><colgroup><col style="width:54px"><col span="5"></colgroup><thead><tr><th></th>`;
-    StundenplanCard.TAGE.forEach(([,l], i) => {
-      const frei = i in freiTage ? `<small>🏖 ${freiTage[i]}</small>` : "";
-      const punkt = i === heute ? `<span class="sp-punkt-heute"> ●</span>` : "";
-      html += `<th class="${i === heute ? "sp-heute" : ""} ${i in freiTage ? "sp-tag-frei" : ""}">${l}${punkt}${frei}</th>`;
+    const montag = this._wochenMontag();
+    const aktuelleWoche = this._wocheOffset === 0;
+    const freitag = this._tagDatum(montag, 4);
+    const fmt = d => d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+    const kw = this._isoKW(montag);
+
+    let html = `<div class="sp-wochenkopf">
+      <button class="sp-nav" data-nav="-1">◀</button>
+      <span class="sp-kw">KW ${kw} · ${fmt(montag)}–${fmt(freitag)}.${freitag.getFullYear()}</span>
+      ${aktuelleWoche ? "" : `<button class="sp-nav sp-heute-btn" data-nav="0">Heute</button>`}
+      <button class="sp-nav" data-nav="1">▶</button>
+    </div>`;
+
+    const tage = StundenplanCard.TAGE.map(([tag, l], i) => {
+      const datum = this._tagDatum(montag, i);
+      const iso = this._iso(datum);
+      return { tag, l, i, iso, datum, frei: this._freiGrund(a, iso),
+               plan: this._planFuerDatum(a, iso) };
     });
+
+    html += `<table class="sp-tabelle"><colgroup><col style="width:54px"><col span="5"></colgroup><thead><tr><th></th>`;
+    for (const t of tage) {
+      const istHeute = aktuelleWoche && t.i === heute;
+      const punkt = istHeute ? `<span class="sp-punkt-heute"> ●</span>` : "";
+      const frei = t.frei ? `<small>${t.frei}</small>` : "";
+      html += `<th class="${istHeute ? "sp-heute" : ""} ${t.frei ? "sp-tag-frei" : ""}">${t.l}${punkt}<small class="sp-datum">${fmt(t.datum)}</small>${frei}</th>`;
+    }
     html += `</tr></thead><tbody>`;
+
     const r = a.raster;
-    const istHeuteAktiv = heute >= 0 && heuteImBlock;
     r.forEach((st, si) => {
       if (this._config.zeige_pausen && si > 0 && r[si-1].bis < st.von) {
-        const pauseJetzt = istHeuteAktiv && r[si-1].bis <= zeit && zeit < st.von;
+        const pauseJetzt = aktuelleWoche && heute >= 0 && !tage[heute].frei &&
+          r[si-1].bis <= zeit && zeit < st.von;
         html += `<tr class="sp-pause ${pauseJetzt ? "sp-pause-aktiv" : ""}"><td colspan="6"><div class="sp-plabel">Pause ${r[si-1].bis}–${st.von}${pauseJetzt ? " · läuft" : ""}</div></td></tr>`;
       }
-      const stundeJetzt = istHeuteAktiv && st.von <= zeit && zeit < st.bis;
+      const stundeJetzt = aktuelleWoche && heute >= 0 && !tage[heute].frei &&
+        st.von <= zeit && zeit < st.bis;
       html += `<tr><td class="sp-zeit ${stundeJetzt ? "sp-zeit-aktiv" : ""}"><b>${st.nr}.</b>${st.von}</td>`;
-      StundenplanCard.TAGE.forEach(([tag], ti) => {
-        const kz = (a.plan[tag] || [])[si] || null;
+      for (const t of tage) {
+        const kz = (t.plan[t.tag] || [])[si] || null;
         const f = kz ? (a.faecher || {})[kz] : null;
-        const tagFrei = ti in freiTage;
-        const istJetzt = ti === heute && heuteImBlock && !tagFrei &&
+        const istJetzt = aktuelleWoche && t.i === heute && !t.frei &&
           st.von <= zeit && zeit < st.bis && f;
-        const spalte = ti === heute ? "sp-heute-spalte" : "";
+        const spalte = aktuelleWoche && t.i === heute ? "sp-heute-spalte" : "";
         if (f) {
-          html += `<td class="${spalte}"><div class="sp-fach ${istJetzt ? "sp-aktuell" : ""} ${tagFrei ? "sp-gedimmt" : ""}"
+          html += `<td class="${spalte}"><div class="sp-fach ${istJetzt ? "sp-aktuell" : ""} ${t.frei ? "sp-gedimmt" : ""}"
             style="background:${f.farbe}" title="${f.name}">${kz}<small class="sp-name">${f.name}</small>${f.raum ? `<small>${f.raum}</small>` : ""}</div></td>`;
         } else {
           html += `<td class="${spalte}"><span class="sp-frei"></span></td>`;
         }
-      });
+      }
       html += `</tr>`;
     });
     return html + `</tbody></table>`;
   }
 
   _renderHeute(a) {
-    const heute0 = this._heuteIdx();
-    if (heute0 >= 0 && a.schulfrei_tage) {
-      const g = a.schulfrei_tage[StundenplanCard.TAGE[heute0][0]];
-      if (g) return `<div class="sp-leer">🏖 Heute schulfrei – ${g}</div>`;
+    const isoHeute = this._iso(new Date());
+    if (a.modus !== "block") {
+      const g = this._freiGrund(a, isoHeute);
+      if (g) return `<div class="sp-leer">${g.replace("🏖 ", "🏖 Heute schulfrei – ")}</div>`;
     }
     const heute = this._heuteIdx();
     if (heute < 0) return `<div class="sp-leer">🎉 Wochenende – schulfrei!</div>`;
     if (!this._imBlock(a, new Date()))
       return `<div class="sp-leer">🏭 Betriebsphase – kein Blockunterricht heute</div>`;
     const tag = StundenplanCard.TAGE[heute][0];
-    const plan = a.plan[tag] || [];
+    const plan = this._planFuerDatum(a, isoHeute)[tag] || [];
     const zeit = this._jetztZeit();
     const r = a.raster;
     let html = `<ul class="sp-liste">`, stunden = 0;
@@ -356,4 +427,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.7.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.8.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");

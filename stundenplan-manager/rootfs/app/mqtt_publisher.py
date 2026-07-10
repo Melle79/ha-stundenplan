@@ -37,18 +37,14 @@ SENSOREN = [
 ]
 
 
-def _schulfrei_woche(kind: dict, zeitraeume: list, jetzt: datetime) -> dict:
-    """Grund je Wochentag (mo-fr) der aktuellen Woche, None = Unterricht.
-    Am Wochenende wird die kommende Woche betrachtet. Blockmodus: alles None."""
-    ergebnis = {t: None for t in TAGE}
-    if kind.get("modus", "wochenplan") != "wochenplan" or not zeitraeume:
-        return ergebnis
-    start = jetzt - timedelta(days=jetzt.weekday())
-    if jetzt.weekday() > 4:
-        start = start + timedelta(days=7)
-    for i, tag in enumerate(TAGE):
-        ergebnis[tag] = schulfrei_grund((start + timedelta(days=i)).date(), zeitraeume)
-    return ergebnis
+def plan_fuer_datum(kind: dict, datum) -> dict:
+    """Plan-Version, die am gegebenen Datum gilt (Schuljahreswechsel).
+    plaene: [{"gueltig_ab": iso, "plan": {...}}, ...]; Basis ist kind["plan"]."""
+    d = datum.isoformat() if hasattr(datum, "isoformat") else str(datum)
+    passend = sorted((p for p in kind.get("plaene", [])
+                      if p.get("gueltig_ab", "9999") <= d),
+                     key=lambda p: p["gueltig_ab"])
+    return passend[-1]["plan"] if passend else kind.get("plan", {})
 
 
 def slugify(name: str) -> str:
@@ -91,7 +87,7 @@ def berechne_sensoren(kind: dict, faecher: dict, raster: list, jetzt: datetime,
             return None, "Schulfrei"
         if not ist_im_block(kind, d):
             return None, "Betrieb"
-        plan = kind.get("plan", {}).get(TAGE[d.weekday()], [])
+        plan = plan_fuer_datum(kind, d.date()).get(TAGE[d.weekday()], [])
         if not any(plan):
             return None, "Schulfrei"
         return plan, None
@@ -102,9 +98,9 @@ def berechne_sensoren(kind: dict, faecher: dict, raster: list, jetzt: datetime,
     res = {s[0]: "–" for s in SENSOREN}
     attrs = {"kind": kind["name"], "modus": kind.get("modus", "wochenplan")}
 
-    # --- wochenplan: Anzahl Unterrichtsstunden Mo-Fr ---
-    res["wochenplan"] = sum(
-        1 for tag in TAGE for kz in kind.get("plan", {}).get(tag, []) if kz)
+    # --- wochenplan: Anzahl Unterrichtsstunden Mo-Fr (aktuell gueltiger Plan) ---
+    _p = plan_fuer_datum(kind, jetzt.date())
+    res["wochenplan"] = sum(1 for tag in TAGE for kz in _p.get(tag, []) if kz)
 
     # --- erste_stunde_morgen ---
     if morgen is None:
@@ -235,13 +231,15 @@ class SensorPublisher:
                 self._letzter_state[kid] = payload
                 log.debug("Publiziert %s: %s", kind["name"], payload)
 
-            genutzt = {kz for tag in TAGE for kz in kind.get("plan", {}).get(tag, []) if kz}
+            genutzt = {kz for p in [kind.get("plan", {})] + [v.get("plan", {}) for v in kind.get("plaene", [])]
+                       for tag in TAGE for kz in p.get(tag, []) if kz}
             plan_payload = json.dumps({
                 "kind": kind["name"],
                 "modus": kind.get("modus", "wochenplan"),
-                "schulfrei_tage": _schulfrei_woche(kind, zeitraeume, jetzt),
+                "schulfrei_zeitraeume": zeitraeume if kind.get("modus", "wochenplan") == "wochenplan" else [],
                 "raster": raster,
                 "plan": kind.get("plan", {}),
+                "plaene": kind.get("plaene", []),
                 "faecher": {kz: f for kz, f in faecher.items() if kz in genutzt},
                 "bloecke": kind.get("bloecke", []),
             }, ensure_ascii=False)

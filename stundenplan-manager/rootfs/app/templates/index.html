@@ -199,6 +199,7 @@
 const TAGE = [["mo","Montag"],["di","Dienstag"],["mi","Mittwoch"],["do","Donnerstag"],["fr","Freitag"]];
 let DATA = null;
 let aktivKid = null;
+let aktivPlanIdx = -1;
 let dirty = false;
 let pickCtx = null;
 let saveTimer = null;
@@ -296,7 +297,7 @@ function renderChips() {
     const b = document.createElement("button");
     b.className = "chip" + (k.id === aktivKid ? " active" : "");
     b.textContent = k.name;
-    b.onclick = () => { aktivKid = k.id; renderChips(); renderKid(); };
+    b.onclick = () => { aktivKid = k.id; aktivPlanIdx = -1; renderChips(); renderKid(); };
     c.appendChild(b);
   }
   const add = document.createElement("button");
@@ -333,6 +334,46 @@ function kindLoeschen() {
 }
 
 function raster(k) { return k.stundenraster || DATA.einstellungen.stundenraster_standard; }
+
+function aktiverPlan(k) {
+  const v = (k.plaene || [])[aktivPlanIdx];
+  return aktivPlanIdx >= 0 && v ? v.plan : k.plan;
+}
+
+function planVersionWaehlen(idx) { aktivPlanIdx = +idx; renderKid(); }
+
+function fmtDatum(iso) {
+  return new Date(iso + "T00:00").toLocaleDateString("de-DE",
+    { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
+function neuerPlanAb() {
+  const k = kind();
+  const vorschlag = new Date(new Date().getFullYear(), 8, 15).toISOString().slice(0,10);
+  const datum = prompt("Neuer Plan gültig ab (JJJJ-MM-TT):", vorschlag);
+  if (!datum || !/^\d{4}-\d{2}-\d{2}$/.test(datum)) {
+    if (datum !== null) alert("Bitte Datum als JJJJ-MM-TT angeben.");
+    return;
+  }
+  if (!k.plaene) k.plaene = [];
+  if (k.plaene.some(p => p.gueltig_ab === datum)) { alert("Für dieses Datum existiert bereits ein Plan."); return; }
+  const basis = [...k.plaene].sort((a,b) => a.gueltig_ab.localeCompare(b.gueltig_ab))
+    .filter(p => p.gueltig_ab <= datum).pop();
+  k.plaene.push({ gueltig_ab: datum,
+    plan: JSON.parse(JSON.stringify(basis ? basis.plan : k.plan)) });
+  k.plaene.sort((a,b) => a.gueltig_ab.localeCompare(b.gueltig_ab));
+  aktivPlanIdx = k.plaene.findIndex(p => p.gueltig_ab === datum);
+  setDirty(true); renderKid();
+}
+
+function planVersionLoeschen() {
+  const k = kind();
+  const v = k.plaene[aktivPlanIdx];
+  if (!v || !confirm(`Plan „ab ${fmtDatum(v.gueltig_ab)}" wirklich löschen?`)) return;
+  k.plaene.splice(aktivPlanIdx, 1);
+  aktivPlanIdx = -1;
+  setDirty(true); renderKid();
+}
 
 function renderKid() {
   const box = document.getElementById("kidEditor");
@@ -383,8 +424,19 @@ function renderKid() {
     </details>`;
   }
 
-  html += `<h2 style="margin-top:16px">📅 Wochenplan</h2>
-    <div id="planWrap">${planTabelleHTML(k, r)}</div>
+  let versionen = `<div class="row" style="margin-top:16px">
+    <h2 style="margin:0">📅 Wochenplan</h2>
+    <select onchange="planVersionWaehlen(this.value)">
+      <option value="-1" ${aktivPlanIdx < 0 ? "selected" : ""}>Aktueller Plan</option>`;
+  (k.plaene || []).forEach((p, i) => {
+    versionen += `<option value="${i}" ${aktivPlanIdx === i ? "selected" : ""}>ab ${fmtDatum(p.gueltig_ab)}</option>`;
+  });
+  versionen += `</select>
+    <button class="btn ghost" onclick="neuerPlanAb()">+ Neuer Plan ab…</button>
+    ${aktivPlanIdx >= 0 ? `<button class="btn danger" onclick="planVersionLoeschen()">Version löschen</button>` : ""}
+  </div>
+  <p class="hint" style="margin:4px 0 8px">Sensoren und Karte wechseln am Stichtag automatisch auf die neue Version - praktisch für den Schuljahreswechsel.</p>`;
+  html += versionen + `<div id="planWrap">${planTabelleHTML(k, r)}</div>
     <p class="hint">Auf eine Zelle klicken, um ein Fach zuzuweisen.</p></div>`;
   box.innerHTML = html;
   if (k.stundenraster) renderRasterEditor(document.getElementById("rasterKid"), k.stundenraster);
@@ -403,7 +455,7 @@ function planTabelleHTML(k, r) {
     }
     html += `<tr><td class="zeitcell"><b>${st.nr}.</b>${st.von}–${st.bis}</td>`;
     for (const [tag] of TAGE) {
-      const kz = (k.plan[tag]||[])[si] || null;
+      const kz = (aktiverPlan(k)[tag]||[])[si] || null;
       const f = kz ? DATA.faecher[kz] : null;
       const style = f ? `background:${f.farbe}` : "";
       const cls = f ? "slot" : "slot frei";
@@ -461,7 +513,7 @@ function drucken() {
     }
     html += `<tr><td class="pz"><b>${st.nr}.</b>${st.von}–${st.bis}</td>`;
     for (const [tag] of TAGE) {
-      const kz = (k.plan[tag]||[])[si] || null;
+      const kz = (aktiverPlan(k)[tag]||[])[si] || null;
       const f = kz ? DATA.faecher[kz] : null;
       if (f) {
         html += `<td class="fach" style="background:color-mix(in srgb, ${f.farbe} 22%, white)">
@@ -505,10 +557,14 @@ function openPicker(tag, si) {
 }
 
 function setzeFach(kz) {
-  const k = kind();
-  if (!k.plan[pickCtx.tag]) k.plan[pickCtx.tag] = [];
-  k.plan[pickCtx.tag][pickCtx.si] = kz;
+  const p = aktiverPlan(kind());
+  if (!p[pickCtx.tag]) p[pickCtx.tag] = [];
+  p[pickCtx.tag][pickCtx.si] = kz;
   setDirty(true); closePicker(); renderKid();
+}
+
+function allePlaene(k) {
+  return [k.plan, ...(k.plaene || []).map(v => v.plan)];
 }
 
 function closePicker() { document.getElementById("pickerOverlay").classList.remove("open"); }
@@ -548,8 +604,9 @@ function fachLoeschen(kz) {
   if (!confirm(`Fach „${kz}" löschen? Es wird aus allen Plänen entfernt.`)) return;
   delete DATA.faecher[kz];
   for (const k of DATA.kinder)
-    for (const tag of Object.keys(k.plan))
-      k.plan[tag] = k.plan[tag].map(x => x === kz ? null : x);
+    for (const p of allePlaene(k))
+      for (const tag of Object.keys(p))
+        p[tag] = p[tag].map(x => x === kz ? null : x);
   setDirty(true); renderFaecher(); renderKid();
 }
 
@@ -566,8 +623,9 @@ function fachUmbenennen(alt, inputEl) {
     umgebaut[kz === alt ? neu : kz] = f;
   DATA.faecher = umgebaut;
   for (const k of DATA.kinder)
-    for (const tag of Object.keys(k.plan))
-      k.plan[tag] = k.plan[tag].map(x => x === alt ? neu : x);
+    for (const p of allePlaene(k))
+      for (const tag of Object.keys(p))
+        p[tag] = p[tag].map(x => x === alt ? neu : x);
   setDirty(true); renderFaecher(); renderKid();
 }
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.7.0 - Juli 2026 (Card 1.8.0)
+
+### Neu
+- Karte: Wochenkopf mit Kalenderwoche und Datumsbereich (KW 29 - 13.07.-17.07.2026), Tagesdatum unter jedem Wochentag, Blaettern mit Pfeiltasten und Heute-Button zurueck
+- Planversionen fuer den Schuljahreswechsel: Pro Kind 'Neuer Plan ab...' mit Gueltig-ab-Datum anlegen (startet als Kopie), Sensoren und Karte wechseln am Stichtag automatisch, beim Vorblaettern zeigt die Karte bereits den kuenftigen Plan
+- Schulfrei-Markierung gilt jetzt fuer jede geblaetterte Woche (Karte erhaelt die Zeitraeume statt nur der aktuellen Woche)
+- Blockmodus: Betriebstage werden beim Blaettern pro Tag markiert (Betrieb-Vermerk im Spaltenkopf, gedimmte Spalte) - das Betriebsphasen-Banner entfaellt
+- Fach loeschen/umbenennen wirkt jetzt auf alle Planversionen
+
 ## 1.6.0 - Juli 2026 (Card 1.7.0)
 
 ### Verbessert
