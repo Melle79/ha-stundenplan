@@ -1,9 +1,9 @@
-/* Stundenplan Card v1.1.0 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.2.0 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
  *   type: custom:stundenplan-card
- *   entity: sensor.stundenplan_max_wochenplan
+ *   entities:\n *   - sensor.stundenplan_max_wochenplan   # weglassen = alle Kinder automatisch
  *   modus: woche          # woche | heute (Standard: woche)
  *   zeige_pausen: true    # Pausenzeilen anzeigen (Standard: true)
  *   titel: ""             # optionaler Titel, Standard: "Stundenplan {Name}"
@@ -12,25 +12,40 @@ class StundenplanCard extends HTMLElement {
   static TAGE = [["mo","Mo"],["di","Di"],["mi","Mi"],["do","Do"],["fr","Fr"]];
 
   setConfig(config) {
-    if (!config.entity) throw new Error("Bitte 'entity' angeben (Wochenplan-Sensor)");
     this._config = Object.assign({ modus: "woche", zeige_pausen: true, titel: "" }, config);
+    if (this._config.entity && !this._config.entities)
+      this._config.entities = [this._config.entity];
     this._letzterHash = null;
+    this._aktivIdx = 0;
+  }
+
+  _entityIds(hass) {
+    const c = this._config;
+    if (c.entities && c.entities.length) return c.entities;
+    return Object.keys(hass.states)
+      .filter(id => /^sensor\.stundenplan_.+_wochenplan$/.test(id)).sort();
   }
 
   set hass(hass) {
     this._hass = hass;
-    const st = hass.states[this._config.entity];
-    if (!st) { this._zeigeFehler(`Entität ${this._config.entity} nicht gefunden`); return; }
+    const ids = this._entityIds(hass);
+    if (!ids.length) {
+      this._zeigeFehler("Keine Stundenplan-Sensoren gefunden – läuft das Add-on?");
+      return;
+    }
+    if (this._aktivIdx >= ids.length) this._aktivIdx = 0;
+    const st = hass.states[ids[this._aktivIdx]];
+    if (!st) { this._zeigeFehler(`Entität ${ids[this._aktivIdx]} nicht gefunden`); return; }
     const a = st.attributes;
     if (!a.raster || !a.plan) {
       this._zeigeFehler("Warte auf Plandaten… (Add-on gestartet?)");
       return;
     }
-    const hash = JSON.stringify([a.raster, a.plan, a.faecher, a.bloecke, a.modus,
-                                 new Date().getMinutes(), st.state]);
+    const hash = JSON.stringify([ids, this._aktivIdx, a.raster, a.plan, a.faecher,
+                                 a.bloecke, a.modus, new Date().getMinutes(), st.state]);
     if (hash === this._letzterHash) return;
     this._letzterHash = hash;
-    this._render(a);
+    this._render(a, ids);
   }
 
   getCardSize() { return this._config.modus === "heute" ? 3 : 6; }
@@ -54,14 +69,27 @@ class StundenplanCard extends HTMLElement {
     return `${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}`;
   }
 
-  _render(a) {
+  _render(a, ids) {
     const titel = this._config.titel || `Stundenplan ${a.kind || ""}`;
     const inhalt = this._config.modus === "heute"
       ? this._renderHeute(a) : this._renderWoche(a);
+    let chips = "";
+    if (ids.length > 1) {
+      chips = `<div class="sp-chips">` + ids.map((id, i) => {
+        const name = (this._hass.states[id]?.attributes?.kind) || id.replace(/^sensor\.stundenplan_|_wochenplan$/g, "");
+        return `<button class="sp-chip ${i === this._aktivIdx ? "sp-chip-aktiv" : ""}" data-idx="${i}">${name}</button>`;
+      }).join("") + `</div>`;
+    }
     this.innerHTML = `
       <ha-card header="${titel}">
         <style>
           .sp-wrap { padding: 0 16px 16px; }
+          .sp-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+          .sp-chip { border: 1px solid var(--divider-color); background: none;
+            color: var(--secondary-text-color); border-radius: 14px; padding: 4px 12px;
+            font-size: .78rem; cursor: pointer; font-family: inherit; }
+          .sp-chip-aktiv { background: var(--primary-color); border-color: var(--primary-color);
+            color: var(--text-primary-color, #fff); font-weight: 600; }
           .sp-tabelle { border-collapse: collapse; width: 100%; }
           .sp-tabelle th { color: var(--secondary-text-color); font-size: .75rem;
             font-weight: 600; padding: 4px 2px; border-bottom: 1px solid var(--divider-color); }
@@ -94,8 +122,15 @@ class StundenplanCard extends HTMLElement {
           .sp-liste li.sp-aktuell { outline-offset: 0; }
           .sp-leer { color: var(--secondary-text-color); font-size: .88rem; padding: 4px 0; }
         </style>
-        <div class="sp-wrap">${inhalt}</div>
+        <div class="sp-wrap">${chips}${inhalt}</div>
       </ha-card>`;
+    this.querySelectorAll(".sp-chip").forEach(btn => {
+      btn.onclick = () => {
+        this._aktivIdx = +btn.dataset.idx;
+        this._letzterHash = null;
+        this.hass = this._hass;
+      };
+    });
   }
 
   _renderWoche(a) {
@@ -167,18 +202,8 @@ class StundenplanCard extends HTMLElement {
 }
 
 class StundenplanCardEditor extends HTMLElement {
-  static SCHEMA = [
-    { name: "entity", selector: { entity: { domain: "sensor" } } },
-    { name: "modus", selector: { select: { mode: "dropdown", options: [
-      { value: "woche", label: "Wochenansicht (Mo–Fr)" },
-      { value: "heute", label: "Heute (kompakte Liste)" },
-    ] } } },
-    { name: "zeige_pausen", selector: { boolean: {} } },
-    { name: "titel", selector: { text: {} } },
-  ];
-
   static LABELS = {
-    entity: "Wochenplan-Sensor (sensor.stundenplan_…_wochenplan)",
+    entities: "Kinder",
     modus: "Ansicht",
     zeige_pausen: "Pausen anzeigen",
     titel: "Titel (optional)",
@@ -186,18 +211,45 @@ class StundenplanCardEditor extends HTMLElement {
 
   setConfig(config) {
     this._config = Object.assign({ modus: "woche", zeige_pausen: true, titel: "" }, config);
+    if (this._config.entity && !this._config.entities) {
+      this._config.entities = [this._config.entity];
+      delete this._config.entity;
+    }
     this._render();
   }
 
   set hass(hass) {
     this._hass = hass;
-    if (this._form) this._form.hass = hass;
+    this._render();
+  }
+
+  _schema() {
+    const options = Object.entries((this._hass && this._hass.states) || {})
+      .filter(([id]) => /^sensor\.stundenplan_.+_wochenplan$/.test(id))
+      .map(([id, st]) => ({
+        value: id,
+        label: (st.attributes && st.attributes.kind) ||
+               id.replace(/^sensor\.stundenplan_|_wochenplan$/g, ""),
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+    return [
+      { name: "entities", selector: { select: { multiple: true, mode: "list", options } } },
+      { name: "modus", selector: { select: { mode: "dropdown", options: [
+        { value: "woche", label: "Wochenansicht (Mo–Fr)" },
+        { value: "heute", label: "Heute (kompakte Liste)" },
+      ] } } },
+      { name: "zeige_pausen", selector: { boolean: {} } },
+      { name: "titel", selector: { text: {} } },
+    ];
   }
 
   _render() {
+    if (!this._config) return;
     if (!this._form) {
       this._form = document.createElement("ha-form");
       this._form.computeLabel = s => StundenplanCardEditor.LABELS[s.name] || s.name;
+      this._form.computeHelper = s => s.name === "entities"
+        ? "Kein Haken = alle Kinder automatisch anzeigen" : undefined;
       this._form.addEventListener("value-changed", e => {
         this._config = e.detail.value;
         this.dispatchEvent(new CustomEvent("config-changed",
@@ -207,7 +259,7 @@ class StundenplanCardEditor extends HTMLElement {
     }
     this._form.hass = this._hass;
     this._form.data = this._config;
-    this._form.schema = StundenplanCardEditor.SCHEMA;
+    this._form.schema = this._schema();
   }
 }
 
@@ -220,4 +272,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.1.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.2.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");

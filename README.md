@@ -44,12 +44,15 @@ Tipp: Nach einem Add-on-Update mit Karten-Änderungen die Ressourcen-URL auf `/l
 
 Über den visuellen Editor („Karte hinzufügen" → „Stundenplan Card") oder per YAML:
 
+Der Editor listet alle gefundenen Kinder als Checkboxen - einfach anhaken. Kein Haken = alle Kinder automatisch. Bei mehreren Kindern erscheinen Umschalt-Chips in der Karte. Per YAML:
+
 ```yaml
 type: custom:stundenplan-card
-entity: sensor.stundenplan_max_wochenplan
-modus: woche          # woche | heute
+entities:                # weglassen = alle Kinder automatisch
+  - sensor.stundenplan_max_wochenplan
+modus: woche             # woche | heute
 zeige_pausen: true
-titel: ""             # optional, Standard: "Stundenplan {Name}"
+titel: ""                # optional, Standard: "Stundenplan {Name}"
 ```
 
 ## Geplant (v1.3+)

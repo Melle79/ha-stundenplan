@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.2 - Juli 2026 (Card 1.2.0)
+
+- Editor findet Wochenplan-Sensoren automatisch und zeigt die Kinder als Checkbox-Liste zum Anhaken (statt Entity-Suchfeld)
+- Mehrere Kinder in einer Karte: Umschalt-Chips mit den Namen oben in der Karte
+- Ohne Konfiguration zeigt die Karte automatisch alle gefundenen Kinder
+- entity (alt) wird automatisch zu entities migriert, bestehende Konfigurationen laufen weiter
+
 ## 1.2.1 - Juli 2026
 
 - Add-on liefert die Stundenplan Card jetzt selbst aus: beim Start wird sie nach /config/www kopiert, einmalig als Ressource /local/stundenplan-card.js registrieren - Karten-Updates kommen dann automatisch mit jedem Add-on-Update (HACS weiterhin als Alternative moeglich)
