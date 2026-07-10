@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.0 - Juli 2026
+
+### Neu
+- MQTT Discovery Sensoren pro Kind: Aktuelle Stunde, Naechste Stunde, Erste Stunde morgen, Schulschluss heute
+- Zustaende: Fach mit Kuerzel und Raum-Attributen, Pause, Kein Unterricht, Schulfrei (Wochenende/leerer Tag), Betrieb (Blockmodus ausserhalb der Bloecke)
+- Sensoren aktualisieren sich alle 30s und sofort nach jeder Aenderung in der Web-UI
+- Availability-Topic mit Last Will (Sensoren werden bei Add-on-Stopp als nicht verfuegbar markiert)
+- Aufgeraeumte Entfernung: geloeschte Kinder verschwinden auch aus HA
+
 ## 1.0.3 - Juli 2026
 
 - Auto-Save: Aenderungen werden automatisch gespeichert (0,8s nach letzter Eingabe, sofort bei Tab-/Seitenwechsel via sendBeacon)

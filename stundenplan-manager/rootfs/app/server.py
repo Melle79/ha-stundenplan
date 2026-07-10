@@ -7,6 +7,8 @@ from pathlib import Path
 
 from flask import Flask, jsonify, render_template, request
 
+from mqtt_publisher import SensorPublisher, ist_im_block  # noqa: F401
+
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "info").upper()
 logging.basicConfig(level=getattr(logging, LOG_LEVEL, logging.INFO),
                     format="%(asctime)s [%(levelname)s] %(message)s")
@@ -100,6 +102,9 @@ def load_data() -> dict:
     return json.loads(json.dumps(DEFAULT_DATA))
 
 
+PUBLISHER = SensorPublisher(lambda: load_data())
+
+
 def save_data(data: dict) -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     tmp = DATA_FILE.with_suffix(".tmp")
@@ -107,14 +112,7 @@ def save_data(data: dict) -> None:
         json.dump(data, f, ensure_ascii=False, indent=2)
     tmp.replace(DATA_FILE)
     log.debug("Daten gespeichert (%d Kinder)", len(data.get("kinder", [])))
-
-
-def ist_im_block(kind: dict, datum: datetime) -> bool:
-    """True, wenn das Datum in einem Blockzeitraum liegt (nur Modus 'block')."""
-    if kind.get("modus") != "block":
-        return True
-    d = datum.date().isoformat()
-    return any(b["von"] <= d <= b["bis"] for b in kind.get("bloecke", []))
+    PUBLISHER.trigger()
 
 
 # ---------------------------------------------------------------------------
@@ -158,4 +156,5 @@ def post_data():
 
 if __name__ == "__main__":
     log.info("Stundenplan Manager startet auf Port 8098")
+    PUBLISHER.start()
     app.run(host="0.0.0.0", port=8098)
