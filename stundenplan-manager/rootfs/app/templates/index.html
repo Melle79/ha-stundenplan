@@ -1,21 +1,427 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Stundenplan Manager</title>
-  <style>
-    body { font-family: -apple-system, sans-serif; background: #1c1c1e; color: #fff;
-           display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-    .card { text-align: center; }
-    .card h1 { font-size: 1.4rem; }
-    .card p { color: #999; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stundenplan Manager</title>
+<style>
+  :root {
+    --bg: #111318; --card: #1c1f26; --card2: #252a33; --border: #343a46;
+    --text: #e8eaed; --muted: #9aa0a6; --accent: #4a90d9; --danger: #e05d5d;
+    --ok: #4caf7d;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+         background: var(--bg); color: var(--text); padding-bottom: 90px; }
+  header { padding: 16px 20px; display: flex; align-items: center; gap: 10px;
+           border-bottom: 1px solid var(--border); }
+  header h1 { font-size: 1.15rem; margin: 0; font-weight: 600; }
+  header .ver { color: var(--muted); font-size: .8rem; }
+  nav { display: flex; gap: 6px; padding: 12px 20px 0; }
+  nav button { background: var(--card); color: var(--muted); border: 1px solid var(--border);
+    border-bottom: none; padding: 9px 16px; border-radius: 10px 10px 0 0; cursor: pointer;
+    font-size: .9rem; }
+  nav button.active { background: var(--card2); color: var(--text); font-weight: 600; }
+  main { padding: 16px 20px; }
+  .panel { display: none; } .panel.active { display: block; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+          padding: 16px; margin-bottom: 16px; }
+  .card h2 { margin: 0 0 12px; font-size: 1rem; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .chip { padding: 8px 16px; border-radius: 20px; border: 1px solid var(--border);
+    background: var(--card); cursor: pointer; color: var(--text); font-size: .9rem; }
+  .chip.active { background: var(--accent); border-color: var(--accent); font-weight: 600; }
+  .chip.add { border-style: dashed; color: var(--muted); }
+  table { border-collapse: collapse; width: 100%; }
+  .plan td, .plan th { border: 1px solid var(--border); text-align: center; padding: 0; }
+  .plan th { background: var(--card2); padding: 8px 4px; font-size: .8rem; color: var(--muted);
+             font-weight: 600; }
+  .plan th.zeit { min-width: 86px; }
+  .plan td.slot { height: 46px; cursor: pointer; font-weight: 600; font-size: .85rem;
+                  transition: filter .1s; min-width: 70px; }
+  .plan td.slot:hover { filter: brightness(1.25); }
+  .plan td.frei { color: #555; background: var(--bg); font-weight: 400; }
+  .zeitcell { font-size: .72rem; color: var(--muted); line-height: 1.3; padding: 4px; }
+  .zeitcell b { color: var(--text); font-size: .85rem; display: block; }
+  input, select { background: var(--bg); color: var(--text); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px; font-size: .9rem; }
+  input[type=color] { padding: 2px; width: 44px; height: 36px; cursor: pointer; }
+  input[type=time] { width: 100px; }
+  input[type=date] { width: 150px; }
+  input.kurz { width: 70px; }
+  button.btn { background: var(--accent); color: #fff; border: none; border-radius: 8px;
+    padding: 9px 16px; cursor: pointer; font-size: .9rem; }
+  button.btn.ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  button.btn.danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); }
+  button.icon { background: none; border: none; color: var(--muted); cursor: pointer;
+    font-size: 1rem; padding: 4px 8px; }
+  button.icon:hover { color: var(--danger); }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+  .row label { font-size: .85rem; color: var(--muted); }
+  .ftable td, .ftable th { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border);
+    font-size: .9rem; }
+  .ftable th { color: var(--muted); font-weight: 600; font-size: .8rem; }
+  .savebar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card);
+    border-top: 1px solid var(--border); padding: 12px 20px; display: flex; gap: 12px;
+    align-items: center; justify-content: flex-end; }
+  .savebar .status { margin-right: auto; font-size: .85rem; color: var(--muted); }
+  .savebar .status.dirty { color: #e0b34c; }
+  .savebar .status.ok { color: var(--ok); }
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: none;
+    align-items: center; justify-content: center; z-index: 50; }
+  .overlay.open { display: flex; }
+  .picker { background: var(--card2); border: 1px solid var(--border); border-radius: 14px;
+    padding: 18px; max-width: 420px; width: 92%; }
+  .picker h3 { margin: 0 0 12px; font-size: .95rem; }
+  .picker .grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  .picker .fbtn { border: none; border-radius: 8px; padding: 10px 14px; cursor: pointer;
+    font-weight: 600; color: #fff; font-size: .9rem; }
+  .hint { color: var(--muted); font-size: .82rem; margin-top: 8px; }
+  .blockrow { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+  .badge { font-size: .72rem; padding: 3px 8px; border-radius: 10px; background: var(--card2);
+    border: 1px solid var(--border); color: var(--muted); }
+</style>
 </head>
 <body>
-  <div class="card">
-    <h1>🎒 Stundenplan Manager v1.0.0</h1>
-    <p>Grundgerüst läuft – Web-UI kommt in Schritt 2.</p>
+<header>
+  <span style="font-size:1.3rem">🎒</span>
+  <h1>Stundenplan Manager</h1>
+  <span class="ver">v1.0.0</span>
+</header>
+
+<nav>
+  <button data-tab="plan" class="active">📅 Stundenpläne</button>
+  <button data-tab="faecher">📚 Fächer</button>
+  <button data-tab="settings">⚙️ Einstellungen</button>
+</nav>
+
+<main>
+  <!-- ============ TAB: STUNDENPLÄNE ============ -->
+  <section id="tab-plan" class="panel active">
+    <div class="chips" id="kidChips"></div>
+    <div id="kidEditor"></div>
+  </section>
+
+  <!-- ============ TAB: FÄCHER ============ -->
+  <section id="tab-faecher" class="panel">
+    <div class="card">
+      <h2>📚 Fächer</h2>
+      <table class="ftable" id="fachTable">
+        <thead><tr><th>Kürzel</th><th>Name</th><th>Farbe</th><th>Raum</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="row" style="margin-top:12px">
+        <input class="kurz" id="nfKurz" placeholder="MA" maxlength="4">
+        <input id="nfName" placeholder="Mathematik">
+        <input type="color" id="nfFarbe" value="#4a90d9">
+        <input id="nfRaum" placeholder="Raum (optional)" style="width:120px">
+        <button class="btn" onclick="fachHinzufuegen()">+ Fach</button>
+      </div>
+      <p class="hint">Das Kürzel erscheint im Plan-Raster. Fächer werden von allen Kindern gemeinsam genutzt.</p>
+    </div>
+  </section>
+
+  <!-- ============ TAB: EINSTELLUNGEN ============ -->
+  <section id="tab-settings" class="panel">
+    <div class="card">
+      <h2>⏰ Standard-Stundenraster</h2>
+      <p class="hint" style="margin:0 0 10px">Gilt für alle Kinder ohne eigenes Raster. Pausen ergeben sich aus Lücken zwischen den Stunden.</p>
+      <div id="rasterStd"></div>
+      <button class="btn ghost" style="margin-top:8px" onclick="rasterZeile('std')">+ Stunde</button>
+    </div>
+  </section>
+</main>
+
+<div class="savebar">
+  <span class="status" id="saveStatus">Geladen</span>
+  <button class="btn" onclick="speichern()">💾 Speichern</button>
+</div>
+
+<div class="overlay" id="pickerOverlay" onclick="if(event.target===this)closePicker()">
+  <div class="picker">
+    <h3 id="pickerTitle">Fach wählen</h3>
+    <div class="grid" id="pickerGrid"></div>
+    <p class="hint">Tipp: Fächer legst du im Tab „Fächer" an.</p>
   </div>
+</div>
+
+<script>
+"use strict";
+const TAGE = [["mo","Montag"],["di","Dienstag"],["mi","Mittwoch"],["do","Donnerstag"],["fr","Freitag"]];
+let DATA = null;
+let aktivKid = null;
+let dirty = false;
+let pickCtx = null;
+
+function setDirty(d) {
+  dirty = d;
+  const el = document.getElementById("saveStatus");
+  el.textContent = d ? "● Ungespeicherte Änderungen" : "Gespeichert";
+  el.className = "status " + (d ? "dirty" : "ok");
+}
+
+async function laden() {
+  const res = await fetch("api/data");
+  DATA = await res.json();
+  if (DATA.kinder.length && !aktivKid) aktivKid = DATA.kinder[0].id;
+  renderAll();
+}
+
+async function speichern() {
+  const res = await fetch("api/data", { method: "POST",
+    headers: {"Content-Type":"application/json"}, body: JSON.stringify(DATA) });
+  if (res.ok) setDirty(false);
+  else alert("Speichern fehlgeschlagen");
+}
+
+function renderAll() { renderChips(); renderKid(); renderFaecher(); renderRasterStd(); }
+
+/* ---------- Kinder ---------- */
+function renderChips() {
+  const c = document.getElementById("kidChips");
+  c.innerHTML = "";
+  for (const k of DATA.kinder) {
+    const b = document.createElement("button");
+    b.className = "chip" + (k.id === aktivKid ? " active" : "");
+    b.textContent = k.name;
+    b.onclick = () => { aktivKid = k.id; renderChips(); renderKid(); };
+    c.appendChild(b);
+  }
+  const add = document.createElement("button");
+  add.className = "chip add";
+  add.textContent = "+ Kind";
+  add.onclick = kindHinzufuegen;
+  c.appendChild(add);
+}
+
+function kindHinzufuegen() {
+  const name = prompt("Name des Kindes:");
+  if (!name) return;
+  const kid = {
+    id: "kind-" + Date.now(),
+    name: name.trim(),
+    modus: "wochenplan",
+    stundenraster: null,
+    plan: { mo: [], di: [], mi: [], do: [], fr: [] },
+    bloecke: []
+  };
+  DATA.kinder.push(kid);
+  aktivKid = kid.id;
+  setDirty(true); renderChips(); renderKid();
+}
+
+function kind() { return DATA.kinder.find(k => k.id === aktivKid); }
+
+function kindLoeschen() {
+  const k = kind();
+  if (!confirm(`„${k.name}" wirklich löschen?`)) return;
+  DATA.kinder = DATA.kinder.filter(x => x.id !== k.id);
+  aktivKid = DATA.kinder.length ? DATA.kinder[0].id : null;
+  setDirty(true); renderChips(); renderKid();
+}
+
+function raster(k) { return k.stundenraster || DATA.einstellungen.stundenraster_standard; }
+
+function renderKid() {
+  const box = document.getElementById("kidEditor");
+  const k = kind();
+  if (!k) {
+    box.innerHTML = `<div class="card"><p class="hint">Noch kein Kind angelegt – klicke auf „+ Kind".</p></div>`;
+    return;
+  }
+  const r = raster(k);
+  let html = `<div class="card">
+    <div class="row">
+      <input value="${esc(k.name)}" onchange="kind().name=this.value;setDirty(true);renderChips()" style="font-weight:600">
+      <label>Modus:</label>
+      <select onchange="kind().modus=this.value;setDirty(true);renderKid()">
+        <option value="wochenplan" ${k.modus==="wochenplan"?"selected":""}>Wochenplan (Schule)</option>
+        <option value="block" ${k.modus==="block"?"selected":""}>Blockunterricht (Berufsschule)</option>
+      </select>
+      <label><input type="checkbox" ${k.stundenraster?"checked":""} onchange="toggleEigenesRaster(this.checked)"> Eigenes Stundenraster</label>
+      <span style="flex:1"></span>
+      <button class="btn danger" onclick="kindLoeschen()">Löschen</button>
+    </div>`;
+
+  if (k.modus === "block") {
+    html += `<h2 style="margin-top:14px">🏭 Blockzeiträume</h2>
+      <p class="hint" style="margin:0 0 10px">Innerhalb eines Blocks gilt der Stundenplan, außerhalb ist Betriebsphase.</p>
+      <div id="blockList">`;
+    k.bloecke.forEach((b, i) => {
+      html += `<div class="blockrow">
+        <input value="${esc(b.label||"")}" placeholder="Block ${i+1}" style="width:110px"
+          onchange="kind().bloecke[${i}].label=this.value;setDirty(true)">
+        <input type="date" value="${b.von}" onchange="kind().bloecke[${i}].von=this.value;setDirty(true)">
+        <span class="hint">bis</span>
+        <input type="date" value="${b.bis}" onchange="kind().bloecke[${i}].bis=this.value;setDirty(true)">
+        <button class="icon" onclick="kind().bloecke.splice(${i},1);setDirty(true);renderKid()">✕</button>
+      </div>`;
+    });
+    html += `</div><button class="btn ghost" onclick="blockHinzufuegen()">+ Block</button>`;
+  }
+
+  if (k.stundenraster) {
+    html += `<h2 style="margin-top:14px">⏰ Stundenraster (nur ${esc(k.name)})</h2><div id="rasterKid"></div>
+      <button class="btn ghost" style="margin-top:8px" onclick="rasterZeile('kid')">+ Stunde</button>`;
+  }
+
+  html += `<h2 style="margin-top:16px">📅 Wochenplan</h2>
+    <div style="overflow-x:auto"><table class="plan"><thead><tr><th class="zeit">Stunde</th>`;
+  for (const [,label] of TAGE) html += `<th>${label.slice(0,2)}</th>`;
+  html += `</tr></thead><tbody>`;
+  r.forEach((st, si) => {
+    html += `<tr><td class="zeitcell"><b>${st.nr}.</b>${st.von}–${st.bis}</td>`;
+    for (const [tag] of TAGE) {
+      const kz = (k.plan[tag]||[])[si] || null;
+      const f = kz ? DATA.faecher[kz] : null;
+      const style = f ? `background:${f.farbe}` : "";
+      const cls = f ? "slot" : "slot frei";
+      const txt = f ? kz : "–";
+      const title = f ? `${f.name}${f.raum ? " ("+f.raum+")" : ""}` : "frei";
+      html += `<td class="${cls}" style="${style}" title="${esc(title)}" onclick="openPicker('${tag}',${si})">${txt}</td>`;
+    }
+    html += `</tr>`;
+  });
+  html += `</tbody></table></div>
+    <p class="hint">Auf eine Zelle klicken, um ein Fach zuzuweisen.</p></div>`;
+  box.innerHTML = html;
+  if (k.stundenraster) renderRasterEditor(document.getElementById("rasterKid"), k.stundenraster);
+}
+
+function blockHinzufuegen() {
+  const k = kind();
+  const heute = new Date().toISOString().slice(0,10);
+  k.bloecke.push({ von: heute, bis: heute, label: "Block " + (k.bloecke.length+1) });
+  setDirty(true); renderKid();
+}
+
+function toggleEigenesRaster(on) {
+  const k = kind();
+  k.stundenraster = on ? JSON.parse(JSON.stringify(DATA.einstellungen.stundenraster_standard)) : null;
+  setDirty(true); renderKid();
+}
+
+/* ---------- Fach-Picker ---------- */
+function openPicker(tag, si) {
+  pickCtx = { tag, si };
+  const grid = document.getElementById("pickerGrid");
+  grid.innerHTML = "";
+  for (const [kz, f] of Object.entries(DATA.faecher)) {
+    const b = document.createElement("button");
+    b.className = "fbtn"; b.style.background = f.farbe;
+    b.textContent = `${kz} · ${f.name}`;
+    b.onclick = () => setzeFach(kz);
+    grid.appendChild(b);
+  }
+  const frei = document.createElement("button");
+  frei.className = "fbtn"; frei.style.background = "#444";
+  frei.textContent = "✕ frei";
+  frei.onclick = () => setzeFach(null);
+  grid.appendChild(frei);
+  document.getElementById("pickerTitle").textContent =
+    `${TAGE.find(t=>t[0]===pickCtx.tag)[1]}, ${raster(kind())[si].nr}. Stunde`;
+  document.getElementById("pickerOverlay").classList.add("open");
+}
+
+function setzeFach(kz) {
+  const k = kind();
+  if (!k.plan[pickCtx.tag]) k.plan[pickCtx.tag] = [];
+  k.plan[pickCtx.tag][pickCtx.si] = kz;
+  setDirty(true); closePicker(); renderKid();
+}
+
+function closePicker() { document.getElementById("pickerOverlay").classList.remove("open"); }
+
+/* ---------- Fächer ---------- */
+function renderFaecher() {
+  const tb = document.querySelector("#fachTable tbody");
+  tb.innerHTML = "";
+  for (const [kz, f] of Object.entries(DATA.faecher)) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td><b>${esc(kz)}</b></td>
+      <td><input value="${esc(f.name)}" onchange="DATA.faecher['${esc(kz)}'].name=this.value;setDirty(true)"></td>
+      <td><input type="color" value="${f.farbe}" onchange="DATA.faecher['${esc(kz)}'].farbe=this.value;setDirty(true);renderKid()"></td>
+      <td><input value="${esc(f.raum||"")}" style="width:100px" onchange="DATA.faecher['${esc(kz)}'].raum=this.value;setDirty(true)"></td>
+      <td><button class="icon" onclick="fachLoeschen('${esc(kz)}')">✕</button></td>`;
+    tb.appendChild(tr);
+  }
+}
+
+function fachHinzufuegen() {
+  const kz = document.getElementById("nfKurz").value.trim().toUpperCase();
+  const name = document.getElementById("nfName").value.trim();
+  if (!kz || !name) { alert("Kürzel und Name angeben"); return; }
+  if (DATA.faecher[kz]) { alert("Kürzel existiert bereits"); return; }
+  DATA.faecher[kz] = {
+    name, farbe: document.getElementById("nfFarbe").value,
+    raum: document.getElementById("nfRaum").value.trim()
+  };
+  document.getElementById("nfKurz").value = "";
+  document.getElementById("nfName").value = "";
+  document.getElementById("nfRaum").value = "";
+  setDirty(true); renderFaecher(); renderKid();
+}
+
+function fachLoeschen(kz) {
+  if (!confirm(`Fach „${kz}" löschen? Es wird aus allen Plänen entfernt.`)) return;
+  delete DATA.faecher[kz];
+  for (const k of DATA.kinder)
+    for (const tag of Object.keys(k.plan))
+      k.plan[tag] = k.plan[tag].map(x => x === kz ? null : x);
+  setDirty(true); renderFaecher(); renderKid();
+}
+
+/* ---------- Stundenraster ---------- */
+function renderRasterStd() {
+  renderRasterEditor(document.getElementById("rasterStd"), DATA.einstellungen.stundenraster_standard);
+}
+
+function renderRasterEditor(el, arr) {
+  let html = "";
+  arr.forEach((st, i) => {
+    html += `<div class="row">
+      <span class="badge">${st.nr}. Stunde</span>
+      <input type="time" value="${st.von}" data-i="${i}" data-f="von">
+      <span class="hint">bis</span>
+      <input type="time" value="${st.bis}" data-i="${i}" data-f="bis">
+      <button class="icon" data-del="${i}">✕</button>
+    </div>`;
+  });
+  el.innerHTML = html;
+  el.querySelectorAll("input[type=time]").forEach(inp => {
+    inp.onchange = () => { arr[+inp.dataset.i][inp.dataset.f] = inp.value; setDirty(true); renderKid(); };
+  });
+  el.querySelectorAll("button[data-del]").forEach(btn => {
+    btn.onclick = () => {
+      arr.splice(+btn.dataset.del, 1);
+      arr.forEach((s, i) => s.nr = i + 1);
+      setDirty(true); renderRasterStd(); renderKid();
+    };
+  });
+}
+
+function rasterZeile(ziel) {
+  const arr = ziel === "std" ? DATA.einstellungen.stundenraster_standard : kind().stundenraster;
+  const last = arr[arr.length - 1];
+  arr.push({ nr: arr.length + 1, von: last ? last.bis : "08:00", bis: last ? last.bis : "08:45" });
+  setDirty(true); renderRasterStd(); renderKid();
+}
+
+/* ---------- Utils / Tabs ---------- */
+function esc(s) { return String(s ?? "").replace(/[&<>"']/g,
+  c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+document.querySelectorAll("nav button").forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll("nav button").forEach(x => x.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    document.getElementById("tab-" + b.dataset.tab).classList.add("active");
+  };
+});
+
+window.addEventListener("beforeunload", e => { if (dirty) e.preventDefault(); });
+laden();
+</script>
 </body>
 </html>
