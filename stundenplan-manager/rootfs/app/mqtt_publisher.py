@@ -31,6 +31,7 @@ SENSOREN = [
     ("naechste_stunde", "Nächste Stunde", "mdi:arrow-right-circle"),
     ("erste_stunde_morgen", "Erste Stunde morgen", "mdi:weather-sunset-up"),
     ("schulschluss_heute", "Schulschluss heute", "mdi:home-clock"),
+    ("wochenplan", "Wochenplan", "mdi:calendar-week"),
 ]
 
 
@@ -73,6 +74,10 @@ def berechne_sensoren(kind: dict, faecher: dict, raster: list, jetzt: datetime) 
 
     res = {s[0]: "–" for s in SENSOREN}
     attrs = {"kind": kind["name"], "modus": kind.get("modus", "wochenplan")}
+
+    # --- wochenplan: Anzahl Unterrichtsstunden Mo-Fr ---
+    res["wochenplan"] = sum(
+        1 for tag in TAGE for kz in kind.get("plan", {}).get(tag, []) if kz)
 
     # --- erste_stunde_morgen ---
     if morgen is None:
@@ -127,6 +132,7 @@ class SensorPublisher:
         self._client = None
         self._bekannte_kids: set = set()
         self._letzter_state: dict = {}
+        self._letzter_plan: dict = {}
         self._wakeup = threading.Event()
         self._connected = threading.Event()
 
@@ -154,6 +160,7 @@ class SensorPublisher:
         log.info("MQTT verbunden: %s", reason_code)
         client.publish(AVAILABILITY_TOPIC, "online", retain=True)
         self._letzter_state.clear()
+        self._letzter_plan.clear()
         self._bekannte_kids.clear()
         self._connected.set()
         self._wakeup.set()
@@ -198,6 +205,19 @@ class SensorPublisher:
                 self._letzter_state[kid] = payload
                 log.debug("Publiziert %s: %s", kind["name"], payload)
 
+            genutzt = {kz for tag in TAGE for kz in kind.get("plan", {}).get(tag, []) if kz}
+            plan_payload = json.dumps({
+                "kind": kind["name"],
+                "modus": kind.get("modus", "wochenplan"),
+                "raster": raster,
+                "plan": kind.get("plan", {}),
+                "faecher": {kz: f for kz, f in faecher.items() if kz in genutzt},
+                "bloecke": kind.get("bloecke", []),
+            }, ensure_ascii=False)
+            if self._letzter_plan.get(kid) != plan_payload:
+                self._client.publish(f"{BASE_TOPIC}/{kid}/plan", plan_payload, retain=True)
+                self._letzter_plan[kid] = plan_payload
+
         # Geloeschte Kinder aufraeumen
         for kid in self._bekannte_kids - aktuelle_ids:
             for key, _, _ in SENSOREN:
@@ -206,7 +226,9 @@ class SensorPublisher:
                     "", retain=True)
             self._client.publish(f"{BASE_TOPIC}/{kid}/state", "", retain=True)
             self._client.publish(f"{BASE_TOPIC}/{kid}/attributes", "", retain=True)
+            self._client.publish(f"{BASE_TOPIC}/{kid}/plan", "", retain=True)
             self._letzter_state.pop(kid, None)
+            self._letzter_plan.pop(kid, None)
         self._bekannte_kids = aktuelle_ids
 
     def _discovery(self, kind: dict):
@@ -219,13 +241,15 @@ class SensorPublisher:
             "model": "Stundenplan Manager",
         }
         for key, name, icon in SENSOREN:
+            attr_topic = f"{BASE_TOPIC}/{kid}/plan" if key == "wochenplan" \
+                else f"{BASE_TOPIC}/{kid}/attributes"
             payload = {
                 "name": name,
                 "unique_id": f"stundenplan_{kid}_{key}",
                 "object_id": f"stundenplan_{slug}_{key}",
                 "state_topic": f"{BASE_TOPIC}/{kid}/state",
                 "value_template": "{{ value_json." + key + " }}",
-                "json_attributes_topic": f"{BASE_TOPIC}/{kid}/attributes",
+                "json_attributes_topic": attr_topic,
                 "availability_topic": AVAILABILITY_TOPIC,
                 "icon": icon,
                 "device": device,
