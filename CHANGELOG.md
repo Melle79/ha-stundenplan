@@ -1,5 +1,9 @@
 # Changelog
 
+## Card 1.1.0 - Juli 2026
+
+- Visueller Konfigurations-Editor fuer die Stundenplan Card: Entity-Auswahl, Ansicht-Dropdown (Woche/Heute), Pausen-Toggle und Titelfeld direkt im Dashboard-Editor, kein YAML noetig
+
 ## 1.2.0 - Juli 2026
 
 ### Neu

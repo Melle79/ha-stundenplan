@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.0.0 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.1.0 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -34,7 +34,8 @@ class StundenplanCard extends HTMLElement {
   }
 
   getCardSize() { return this._config.modus === "heute" ? 3 : 6; }
-  static getStubConfig() { return { entity: "", modus: "woche" }; }
+  static getConfigElement() { return document.createElement("stundenplan-card-editor"); }
+  static getStubConfig() { return { entity: "", modus: "woche", zeige_pausen: true, titel: "" }; }
 
   /* ------------------------------------------------------------------ */
   _heuteIdx() {
@@ -165,6 +166,52 @@ class StundenplanCard extends HTMLElement {
   }
 }
 
+class StundenplanCardEditor extends HTMLElement {
+  static SCHEMA = [
+    { name: "entity", selector: { entity: { domain: "sensor" } } },
+    { name: "modus", selector: { select: { mode: "dropdown", options: [
+      { value: "woche", label: "Wochenansicht (Mo–Fr)" },
+      { value: "heute", label: "Heute (kompakte Liste)" },
+    ] } } },
+    { name: "zeige_pausen", selector: { boolean: {} } },
+    { name: "titel", selector: { text: {} } },
+  ];
+
+  static LABELS = {
+    entity: "Wochenplan-Sensor (sensor.stundenplan_…_wochenplan)",
+    modus: "Ansicht",
+    zeige_pausen: "Pausen anzeigen",
+    titel: "Titel (optional)",
+  };
+
+  setConfig(config) {
+    this._config = Object.assign({ modus: "woche", zeige_pausen: true, titel: "" }, config);
+    this._render();
+  }
+
+  set hass(hass) {
+    this._hass = hass;
+    if (this._form) this._form.hass = hass;
+  }
+
+  _render() {
+    if (!this._form) {
+      this._form = document.createElement("ha-form");
+      this._form.computeLabel = s => StundenplanCardEditor.LABELS[s.name] || s.name;
+      this._form.addEventListener("value-changed", e => {
+        this._config = e.detail.value;
+        this.dispatchEvent(new CustomEvent("config-changed",
+          { detail: { config: this._config }, bubbles: true, composed: true }));
+      });
+      this.appendChild(this._form);
+    }
+    this._form.hass = this._hass;
+    this._form.data = this._config;
+    this._form.schema = StundenplanCardEditor.SCHEMA;
+  }
+}
+
+customElements.define("stundenplan-card-editor", StundenplanCardEditor);
 customElements.define("stundenplan-card", StundenplanCard);
 window.customCards = window.customCards || [];
 window.customCards.push({
@@ -173,4 +220,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.0.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.1.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
