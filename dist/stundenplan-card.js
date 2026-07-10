@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.6.0 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.6.1 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -125,7 +125,7 @@ class StundenplanCard extends HTMLElement {
           .sp-tabelle th { color: var(--secondary-text-color); font-size: .78rem;
             font-weight: 600; padding: 2px 0 6px; }
           .sp-tabelle th.sp-heute { color: var(--primary-color); }
-          .sp-tabelle th.sp-heute::after { content: " ●"; font-size: .5rem; vertical-align: middle; }
+          .sp-punkt-heute { font-size: .5rem; vertical-align: middle; }
           .sp-tabelle td { text-align: center; padding: 0; }
           .sp-zeit { font-size: .68rem; color: var(--secondary-text-color);
             white-space: nowrap; padding-right: 6px !important; text-align: right !important;
@@ -208,7 +208,8 @@ class StundenplanCard extends HTMLElement {
     html += `<table class="sp-tabelle"><colgroup><col style="width:54px"><col span="5"></colgroup><thead><tr><th></th>`;
     StundenplanCard.TAGE.forEach(([,l], i) => {
       const frei = i in freiTage ? `<small>🏖 ${freiTage[i]}</small>` : "";
-      html += `<th class="${i === heute ? "sp-heute" : ""} ${i in freiTage ? "sp-tag-frei" : ""}">${l}${frei}</th>`;
+      const punkt = i === heute ? `<span class="sp-punkt-heute"> ●</span>` : "";
+      html += `<th class="${i === heute ? "sp-heute" : ""} ${i in freiTage ? "sp-tag-frei" : ""}">${l}${punkt}${frei}</th>`;
     });
     html += `</tr></thead><tbody>`;
     const r = a.raster;
@@ -357,4 +358,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.6.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.6.1", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");

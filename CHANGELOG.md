@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.2 - Juli 2026 (Card 1.6.1)
+
+- Fix: Heute-Punkt im Spaltenkopf steht jetzt direkt hinter dem Tageskuerzel statt verloren unter dem Schulfrei-Vermerk
+
 ## 1.5.1 - Juli 2026 (Card 1.6.0)
 
 - Schulfrei-Anzeige direkt am Tag statt Banner: Spaltenkopf zeigt klein den Grund (z.B. Sommerferien), die Stunden des freien Tags werden gedimmt; gilt fuer heute und morgen. Die Markierung der laufenden Stunde pausiert an freien Tagen. Heute-Modus zeigt weiterhin den Ferien-Hinweis
