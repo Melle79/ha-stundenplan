@@ -1,0 +1,26 @@
+name: Stundenplan Manager
+version: 1.0.0
+slug: stundenplan_manager
+description: Stundenpläne für Kinder verwalten – mit MQTT-Sensoren und Blockunterricht-Unterstützung
+url: https://github.com/Melle79/ha-stundenplan
+arch:
+  - aarch64
+  - amd64
+  - armv7
+init: false
+ingress: true
+ingress_port: 8098
+panel_icon: mdi:school-outline
+panel_title: Stundenplan
+services:
+  - mqtt:need
+map:
+  - addon_config:rw
+options:
+  log_level: info
+  backup_zeit: "03:30"
+  backup_anzahl: 7
+schema:
+  log_level: list(debug|info|warning|error)
+  backup_zeit: str
+  backup_anzahl: int(1,30)
