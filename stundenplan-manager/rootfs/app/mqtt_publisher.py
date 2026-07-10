@@ -200,7 +200,8 @@ class SensorPublisher:
         faecher = data.get("faecher", {})
         std_raster = data.get("einstellungen", {}).get("stundenraster_standard", [])
         jetzt = datetime.now()
-        ferien = hole_ferien()
+        einst = data.get("einstellungen", {})
+        ferien = hole_ferien(einst.get("ferien_heute", ""), einst.get("ferien_morgen", ""))
         aktuelle_ids = set()
 
         for kind in data.get("kinder", []):

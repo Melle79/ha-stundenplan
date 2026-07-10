@@ -164,6 +164,18 @@
         <button class="btn ghost" style="margin-top:8px" onclick="rasterZeile('std')">+ Stunde</button>
       </details>
     </div>
+    <div class="card">
+      <h2>🏖 Schulferien-Integration</h2>
+      <p class="hint" style="margin:0 0 12px">Verknüpfe die schulfrei-Sensoren deines Schulferien-Add-ons. An schulfreien Tagen zeigen Sensoren und Karte dann „Schulfrei (Grund)". Kinder im Blockmodus sind ausgenommen (Betrieb statt Ferien).</p>
+      <div class="row">
+        <label style="width:130px">Heute schulfrei:</label>
+        <select id="ferienHeute" onchange="ferienSetzen('ferien_heute', this.value)"></select>
+      </div>
+      <div class="row">
+        <label style="width:130px">Morgen schulfrei:</label>
+        <select id="ferienMorgen" onchange="ferienSetzen('ferien_morgen', this.value)"></select>
+      </div>
+    </div>
   </section>
 </main>
 
@@ -211,6 +223,41 @@ async function laden() {
   DATA = await res.json();
   if (DATA.kinder.length && !aktivKid) aktivKid = DATA.kinder[0].id;
   renderAll();
+  ladeFerienEntities();
+}
+
+let FERIEN_ENTITIES = null;
+
+async function ladeFerienEntities() {
+  try {
+    const res = await fetch("api/ha-entities");
+    FERIEN_ENTITIES = await res.json();
+  } catch (e) { FERIEN_ENTITIES = []; }
+  renderFerien();
+}
+
+function renderFerien() {
+  if (FERIEN_ENTITIES === null) return;
+  for (const [selId, key] of [["ferienHeute","ferien_heute"],["ferienMorgen","ferien_morgen"]]) {
+    const sel = document.getElementById(selId);
+    if (!sel) continue;
+    const aktuell = (DATA.einstellungen || {})[key] || "";
+    let opts = `<option value="">– nicht verwenden –</option>`;
+    let gefunden = false;
+    for (const e of FERIEN_ENTITIES) {
+      if (e.entity_id === aktuell) gefunden = true;
+      opts += `<option value="${esc(e.entity_id)}" ${e.entity_id === aktuell ? "selected" : ""}>${esc(e.name)}</option>`;
+    }
+    if (aktuell && !gefunden)
+      opts += `<option value="${esc(aktuell)}" selected>${esc(aktuell)} (nicht gefunden)</option>`;
+    sel.innerHTML = opts;
+  }
+}
+
+function ferienSetzen(key, wert) {
+  if (!DATA.einstellungen) DATA.einstellungen = {};
+  DATA.einstellungen[key] = wert;
+  setDirty(true);
 }
 
 async function speichern() {

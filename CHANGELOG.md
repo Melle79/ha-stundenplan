@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.0 - Juli 2026
+
+### Verbessert
+- Schulferien-Integration jetzt direkt in der Web-UI unter Einstellungen konfigurierbar: Dropdowns mit automatisch gefundenen schulfrei-Sensoren (binary_sensor mit schulfrei/ferien/feiertag/holiday im Namen) statt Entity-IDs in den Add-on-Optionen
+- Bereits gesetzte Add-on-Optionen ferien_heute/ferien_morgen werden beim ersten Start automatisch in die App-Einstellungen uebernommen
+
 ## 1.4.0 - Juli 2026 (Card 1.5.0)
 
 ### Neu

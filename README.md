@@ -55,12 +55,7 @@ titel: ""                # optional, Standard: "Stundenplan {Name}"
 
 ## Schulferien-Integration
 
-In den Add-on-Optionen die schulfrei-Sensoren des Schulferien & Feiertage Managers eintragen:
-
-```yaml
-ferien_heute: binary_sensor.schulferien_bayern_heute_schulfrei
-ferien_morgen: binary_sensor.schulferien_bayern_morgen_schulfrei
-```
+In der Web-UI unter **Einstellungen -> Schulferien-Integration** die schulfrei-Sensoren des Schulferien & Feiertage Managers auswaehlen - passende Sensoren werden automatisch gefunden und als Dropdown angeboten.
 
 An schulfreien Tagen zeigen die Sensoren dann „Schulfrei (Grund)" und die Karte ein Ferien-Banner. Kinder im Blockmodus sind bewusst ausgenommen (Azubis haben in Schulferien Betrieb).
 

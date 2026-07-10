@@ -9,6 +9,7 @@ from flask import Flask, jsonify, render_template, request
 
 from mqtt_publisher import SensorPublisher, ist_im_block  # noqa: F401
 from resource_registrar import registriere_ressource_async
+from ferien import liste_ferien_entities
 
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "info").upper()
 logging.basicConfig(level=getattr(logging, LOG_LEVEL, logging.INFO),
@@ -136,6 +137,30 @@ def health():
     })
 
 
+@app.route("/api/ha-entities")
+def ha_entities():
+    try:
+        return jsonify(liste_ferien_entities())
+    except Exception as exc:
+        log.warning("HA-Entities nicht abrufbar: %s", exc)
+        return jsonify([])
+
+
+def migriere_ferien_optionen():
+    """Einmalig: Add-on-Optionen (env) in die App-Einstellungen uebernehmen."""
+    data = load_data()
+    einst = data.setdefault("einstellungen", {})
+    geaendert = False
+    for key, env in (("ferien_heute", "FERIEN_HEUTE"), ("ferien_morgen", "FERIEN_MORGEN")):
+        wert = os.environ.get(env, "").strip()
+        if wert and not einst.get(key):
+            einst[key] = wert
+            geaendert = True
+            log.info("Ferien-Option aus Add-on-Konfiguration uebernommen: %s = %s", key, wert)
+    if geaendert:
+        save_data(data)
+
+
 @app.route("/api/standard-faecher")
 def standard_faecher():
     return jsonify(STANDARD_FAECHER)
@@ -157,6 +182,7 @@ def post_data():
 
 if __name__ == "__main__":
     log.info("Stundenplan Manager startet auf Port 8098")
+    migriere_ferien_optionen()
     PUBLISHER.start()
     registriere_ressource_async()
     app.run(host="0.0.0.0", port=8098)
