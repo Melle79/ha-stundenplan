@@ -50,6 +50,7 @@ Der Editor listet alle gefundenen Kinder als Checkboxen - einfach anhaken. Kein 
 type: custom:stundenplan-card
 entities:                # weglassen = alle Kinder automatisch
   - sensor.stundenplan_max_wochenplan
+layout: tabs             # tabs | untereinander (bei mehreren Kindern)
 modus: woche             # woche | heute
 zeige_pausen: true
 titel: ""                # optional, Standard: "Stundenplan {Name}"

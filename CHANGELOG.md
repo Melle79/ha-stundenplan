@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.4 - Juli 2026 (Card 1.3.0)
+
+### Neu
+- Layout-Option fuer mehrere Kinder: Tabs (Chips) oder alle untereinander mit Namens-Ueberschriften - waehlbar im Editor
+- Deutlichere Markierung der laufenden Stunde: farbige Pill in der Zeitspalte zusaetzlich zum Glow um die Fachzelle; laufende Pausen werden ebenfalls hervorgehoben (mit Hinweis 'laeuft')
+
 ## 1.2.3 - Juli 2026 (Card 1.2.1)
 
 ### Design-Ueberarbeitung der Karte

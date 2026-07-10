@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.2.1 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.3.0 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -12,7 +12,8 @@ class StundenplanCard extends HTMLElement {
   static TAGE = [["mo","Mo"],["di","Di"],["mi","Mi"],["do","Do"],["fr","Fr"]];
 
   setConfig(config) {
-    this._config = Object.assign({ modus: "woche", zeige_pausen: true, titel: "" }, config);
+    this._config = Object.assign({ modus: "woche", zeige_pausen: true, titel: "",
+                                   layout: "tabs" }, config);
     if (this._config.entity && !this._config.entities)
       this._config.entities = [this._config.entity];
     this._letzterHash = null;
@@ -34,18 +35,14 @@ class StundenplanCard extends HTMLElement {
       return;
     }
     if (this._aktivIdx >= ids.length) this._aktivIdx = 0;
-    const st = hass.states[ids[this._aktivIdx]];
-    if (!st) { this._zeigeFehler(`Entität ${ids[this._aktivIdx]} nicht gefunden`); return; }
-    const a = st.attributes;
-    if (!a.raster || !a.plan) {
-      this._zeigeFehler("Warte auf Plandaten… (Add-on gestartet?)");
-      return;
-    }
-    const hash = JSON.stringify([ids, this._aktivIdx, a.raster, a.plan, a.faecher,
-                                 a.bloecke, a.modus, new Date().getMinutes(), st.state]);
+    const gestapelt = this._config.layout === "untereinander" && ids.length > 1;
+    const relevant = gestapelt ? ids : [ids[this._aktivIdx]];
+    const attrListe = relevant.map(id => (hass.states[id] || {}).attributes || {});
+    const hash = JSON.stringify([ids, this._aktivIdx, this._config.layout, attrListe,
+                                 new Date().getMinutes()]);
     if (hash === this._letzterHash) return;
     this._letzterHash = hash;
-    this._render(a, ids);
+    this._render(ids, gestapelt);
   }
 
   getCardSize() { return this._config.modus === "heute" ? 3 : 6; }
@@ -69,16 +66,37 @@ class StundenplanCard extends HTMLElement {
     return `${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}`;
   }
 
-  _render(a, ids) {
-    const titel = this._config.titel || `Stundenplan ${a.kind || ""}`;
-    const inhalt = this._config.modus === "heute"
-      ? this._renderHeute(a) : this._renderWoche(a);
-    let chips = "";
-    if (ids.length > 1) {
-      chips = `<div class="sp-chips">` + ids.map((id, i) => {
-        const name = (this._hass.states[id]?.attributes?.kind) || id.replace(/^sensor\.stundenplan_|_wochenplan$/g, "");
-        return `<button class="sp-chip ${i === this._aktivIdx ? "sp-chip-aktiv" : ""}" data-idx="${i}">${name}</button>`;
-      }).join("") + `</div>`;
+  _inhaltFuer(id) {
+    const st = this._hass.states[id];
+    if (!st) return `<div class="sp-leer">Entität ${id} nicht gefunden</div>`;
+    const a = st.attributes;
+    if (!a.raster || !a.plan) return `<div class="sp-leer">Warte auf Plandaten…</div>`;
+    return this._config.modus === "heute" ? this._renderHeute(a) : this._renderWoche(a);
+  }
+
+  _kindName(id) {
+    const st = this._hass.states[id];
+    return (st && st.attributes && st.attributes.kind) ||
+      id.replace(/^sensor\.stundenplan_|_wochenplan$/g, "");
+  }
+
+  _render(ids, gestapelt) {
+    let titel, inhalt = "", chips = "";
+    if (gestapelt) {
+      titel = this._config.titel || "Stundenplan";
+      inhalt = ids.map(id =>
+        `<div class="sp-abschnitt"><h3 class="sp-kindname">${this._kindName(id)}</h3>${this._inhaltFuer(id)}</div>`
+      ).join("");
+    } else {
+      const id = ids[this._aktivIdx];
+      titel = this._config.titel ||
+        `Stundenplan ${(this._hass.states[id]?.attributes?.kind) || ""}`;
+      inhalt = this._inhaltFuer(id);
+      if (ids.length > 1) {
+        chips = `<div class="sp-chips">` + ids.map((eid, i) =>
+          `<button class="sp-chip ${i === this._aktivIdx ? "sp-chip-aktiv" : ""}" data-idx="${i}">${this._kindName(eid)}</button>`
+        ).join("") + `</div>`;
+      }
     }
     this.innerHTML = `
       <ha-card header="${titel}">
@@ -121,6 +139,15 @@ class StundenplanCard extends HTMLElement {
             font-size: .66rem; color: var(--secondary-text-color); letter-spacing: .04em; }
           .sp-pause .sp-plabel::before, .sp-pause .sp-plabel::after {
             content: ""; flex: 1; border-top: 1px dashed var(--divider-color); }
+          .sp-pause-aktiv .sp-plabel { color: var(--primary-color); font-weight: 600; }
+          .sp-pause-aktiv .sp-plabel::before, .sp-pause-aktiv .sp-plabel::after {
+            border-top-color: var(--primary-color); }
+          .sp-zeit-aktiv { background: var(--primary-color); border-radius: 8px; }
+          .sp-zeit-aktiv, .sp-zeit-aktiv b { color: var(--text-primary-color, #fff) !important; }
+          .sp-abschnitt { margin-bottom: 18px; }
+          .sp-abschnitt:last-child { margin-bottom: 0; }
+          .sp-kindname { margin: 0 0 6px; font-size: .95rem; font-weight: 600;
+            color: var(--primary-text-color); }
           .sp-banner { margin: 0 0 10px; padding: 8px 12px; border-radius: 8px;
             background: color-mix(in srgb, var(--primary-color) 12%, transparent);
             color: var(--primary-text-color); font-size: .85rem; }
@@ -160,11 +187,14 @@ class StundenplanCard extends HTMLElement {
     });
     html += `</tr></thead><tbody>`;
     const r = a.raster;
+    const istHeuteAktiv = heute >= 0 && heuteImBlock;
     r.forEach((st, si) => {
       if (this._config.zeige_pausen && si > 0 && r[si-1].bis < st.von) {
-        html += `<tr class="sp-pause"><td colspan="6"><div class="sp-plabel">Pause ${r[si-1].bis}–${st.von}</div></td></tr>`;
+        const pauseJetzt = istHeuteAktiv && r[si-1].bis <= zeit && zeit < st.von;
+        html += `<tr class="sp-pause ${pauseJetzt ? "sp-pause-aktiv" : ""}"><td colspan="6"><div class="sp-plabel">Pause ${r[si-1].bis}–${st.von}${pauseJetzt ? " · läuft" : ""}</div></td></tr>`;
       }
-      html += `<tr><td class="sp-zeit"><b>${st.nr}.</b>${st.von}</td>`;
+      const stundeJetzt = istHeuteAktiv && st.von <= zeit && zeit < st.bis;
+      html += `<tr><td class="sp-zeit ${stundeJetzt ? "sp-zeit-aktiv" : ""}"><b>${st.nr}.</b>${st.von}</td>`;
       StundenplanCard.TAGE.forEach(([tag], ti) => {
         const kz = (a.plan[tag] || [])[si] || null;
         const f = kz ? (a.faecher || {})[kz] : null;
@@ -218,13 +248,14 @@ class StundenplanCard extends HTMLElement {
 class StundenplanCardEditor extends HTMLElement {
   static LABELS = {
     entities: "Kinder",
+    layout: "Mehrere Kinder anzeigen als",
     modus: "Ansicht",
     zeige_pausen: "Pausen anzeigen",
     titel: "Titel (optional)",
   };
 
   setConfig(config) {
-    this._config = Object.assign({ modus: "woche", zeige_pausen: true, titel: "" }, config);
+    this._config = Object.assign({ modus: "woche", zeige_pausen: true, titel: "", layout: "tabs" }, config);
     if (this._config.entity && !this._config.entities) {
       this._config.entities = [this._config.entity];
       delete this._config.entity;
@@ -248,6 +279,10 @@ class StundenplanCardEditor extends HTMLElement {
       .sort((a, b) => a.label.localeCompare(b.label));
     return [
       { name: "entities", selector: { select: { multiple: true, mode: "list", options } } },
+      { name: "layout", selector: { select: { mode: "dropdown", options: [
+        { value: "tabs", label: "Tabs (Chips zum Umschalten)" },
+        { value: "untereinander", label: "Alle untereinander" },
+      ] } } },
       { name: "modus", selector: { select: { mode: "dropdown", options: [
         { value: "woche", label: "Wochenansicht (Mo–Fr)" },
         { value: "heute", label: "Heute (kompakte Liste)" },
@@ -286,4 +321,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.2.1", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.3.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
