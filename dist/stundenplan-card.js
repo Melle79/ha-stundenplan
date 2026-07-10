@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.3.1 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.4.0 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -102,12 +102,24 @@ class StundenplanCard extends HTMLElement {
       <ha-card header="${titel}">
         <style>
           .sp-wrap { padding: 0 16px 16px; container-type: inline-size; }
-          .sp-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+          .sp-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
           .sp-chip { border: 1px solid var(--divider-color); background: none;
-            color: var(--secondary-text-color); border-radius: 14px; padding: 4px 12px;
-            font-size: .78rem; cursor: pointer; font-family: inherit; }
+            color: var(--secondary-text-color); border-radius: 18px; padding: 7px 18px;
+            font-size: .92rem; cursor: pointer; font-family: inherit; }
           .sp-chip-aktiv { background: var(--primary-color); border-color: var(--primary-color);
             color: var(--text-primary-color, #fff); font-weight: 600; }
+          .sp-gross .sp-chip { font-size: 1.08rem; padding: 9px 22px; }
+          .sp-gross .sp-tabelle th { font-size: .95rem; }
+          .sp-gross .sp-zeit { font-size: .8rem; }
+          .sp-gross .sp-zeit b { font-size: .98rem; }
+          .sp-gross .sp-fach { font-size: .98rem; padding: 11px 6px; }
+          .sp-gross .sp-fach small { font-size: .76rem; }
+          .sp-gross .sp-pause .sp-plabel { font-size: .8rem; }
+          .sp-gross .sp-kindname { font-size: 1.7rem; }
+          .sp-gross .sp-liste .sp-lzeit { font-size: .9rem; width: 104px; }
+          .sp-gross .sp-liste .sp-lname { font-size: 1.08rem; }
+          .sp-gross .sp-liste .sp-lraum { font-size: .88rem; }
+          .sp-gross .sp-leer, .sp-gross .sp-banner { font-size: 1.05rem; }
           .sp-tabelle { border-collapse: separate; border-spacing: 4px; width: 100%;
             table-layout: fixed; margin: 0 -4px; }
           .sp-tabelle th { color: var(--secondary-text-color); font-size: .78rem;
@@ -163,7 +175,7 @@ class StundenplanCard extends HTMLElement {
           .sp-liste li.sp-aktuell { outline-offset: 0; }
           .sp-leer { color: var(--secondary-text-color); font-size: .88rem; padding: 4px 0; }
         </style>
-        <div class="sp-wrap">${chips}${inhalt}</div>
+        <div class="sp-wrap ${this._config.schrift === "gross" ? "sp-gross" : ""}">${chips}${inhalt}</div>
       </ha-card>`;
     this.querySelectorAll(".sp-chip").forEach(btn => {
       btn.onclick = () => {
@@ -249,13 +261,15 @@ class StundenplanCardEditor extends HTMLElement {
   static LABELS = {
     entities: "Kinder",
     layout: "Mehrere Kinder anzeigen als",
+    schrift: "Schriftgröße",
     modus: "Ansicht",
     zeige_pausen: "Pausen anzeigen",
     titel: "Titel (optional)",
   };
 
   setConfig(config) {
-    this._config = Object.assign({ modus: "woche", zeige_pausen: true, titel: "", layout: "tabs" }, config);
+    this._config = Object.assign({ modus: "woche", zeige_pausen: true, titel: "",
+                                   layout: "tabs", schrift: "normal" }, config);
     if (this._config.entity && !this._config.entities) {
       this._config.entities = [this._config.entity];
       delete this._config.entity;
@@ -286,6 +300,10 @@ class StundenplanCardEditor extends HTMLElement {
       { name: "modus", selector: { select: { mode: "dropdown", options: [
         { value: "woche", label: "Wochenansicht (Mo–Fr)" },
         { value: "heute", label: "Heute (kompakte Liste)" },
+      ] } } },
+      { name: "schrift", selector: { select: { mode: "dropdown", options: [
+        { value: "normal", label: "Normal" },
+        { value: "gross", label: "Groß" },
       ] } } },
       { name: "zeige_pausen", selector: { boolean: {} } },
       { name: "titel", selector: { text: {} } },
@@ -321,4 +339,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.3.1", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.4.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");

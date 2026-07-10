@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.6 - Juli 2026 (Card 1.4.0)
+
+- Tabs/Chips generell groesser (.92rem, mehr Padding)
+- Neue Editor-Option 'Schriftgroesse' (Normal/Gross): skaliert die gesamte Karte - Tabs, Wochentage, Fachbloecke, Zeiten, Kindernamen, Heute-Liste
+
 ## 1.2.5 - Juli 2026 (Card 1.3.1)
 
 - Layout 'untereinander': Kindernamen deutlich groesser (1.35rem, fett) und nach rechts eingerueckt, buendig mit den Wochentag-Spalten
