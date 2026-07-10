@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.4.0 - Juli 2026 (Card 1.5.0)
+
+### Neu
+- Schulferien-Integration: Zwei neue Add-on-Optionen ferien_heute / ferien_morgen (binary_sensor-Entities des Schulferien & Feiertage Managers, z.B. binary_sensor.schulferien_bayern_heute_schulfrei). Bei schulfrei zeigen die Sensoren "Schulfrei (Grund)" - inkl. Erste Stunde morgen am letzten Ferientag
+- Karte zeigt an schulfreien Tagen ein Ferien-Banner (Wochenansicht) bzw. nur den Ferien-Hinweis (Heute-Modus)
+- Blockmodus ignoriert Schulferien bewusst: Azubis haben in den Ferien Betrieb
+- Ohne konfigurierte Entities verhaelt sich alles unveraendert; Abfrage via HA-REST-API mit 60s-Cache
+
 ## 1.3.0 - Juli 2026
 
 ### Neu

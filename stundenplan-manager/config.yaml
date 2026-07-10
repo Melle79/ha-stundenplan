@@ -1,5 +1,5 @@
 name: Stundenplan Manager
-version: 1.3.0
+version: 1.4.0
 slug: stundenplan_manager
 description: Stundenpläne für Kinder verwalten – mit MQTT-Sensoren und Blockunterricht-Unterstützung
 url: https://github.com/Melle79/ha-stundenplan
@@ -22,7 +22,11 @@ options:
   log_level: info
   backup_zeit: "03:30"
   backup_anzahl: 7
+  ferien_heute: ""
+  ferien_morgen: ""
 schema:
   log_level: list(debug|info|warning|error)
   backup_zeit: str
   backup_anzahl: int(1,30)
+  ferien_heute: str?
+  ferien_morgen: str?

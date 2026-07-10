@@ -19,6 +19,8 @@ from datetime import datetime, timedelta
 
 import paho.mqtt.client as mqtt
 
+from ferien import hole_ferien
+
 log = logging.getLogger("stundenplan.mqtt")
 
 TAGE = ["mo", "di", "mi", "do", "fr"]
@@ -54,12 +56,24 @@ def _fach_label(kz, faecher):
     return f"{kz} – {f['name']}" if f else str(kz)
 
 
-def berechne_sensoren(kind: dict, faecher: dict, raster: list, jetzt: datetime) -> dict:
-    """Berechnet die vier Sensorwerte fuer ein Kind zum Zeitpunkt `jetzt`."""
+def berechne_sensoren(kind: dict, faecher: dict, raster: list, jetzt: datetime,
+                      ferien: dict = None) -> dict:
+    """Berechnet die vier Sensorwerte fuer ein Kind zum Zeitpunkt `jetzt`.
+
+    ferien: {"heute": {"schulfrei": bool, "grund": str}|None, "morgen": ...}
+    Ferien gelten nur im Modus "wochenplan" - Azubis im Blockmodus haben in
+    Schulferien Betrieb, keine freien Tage.
+    """
     zeit = jetzt.strftime("%H:%M")
+    ferien = ferien or {}
 
     def tagesinfo(offset: int):
         d = jetzt + timedelta(days=offset)
+        if kind.get("modus", "wochenplan") == "wochenplan":
+            f = ferien.get("heute" if offset == 0 else "morgen")
+            if f and f.get("schulfrei"):
+                grund = f.get("grund") or ""
+                return None, f"Schulfrei ({grund})" if grund else "Schulfrei"
         if d.weekday() > 4:
             return None, "Schulfrei"
         if not ist_im_block(kind, d):
@@ -186,6 +200,7 @@ class SensorPublisher:
         faecher = data.get("faecher", {})
         std_raster = data.get("einstellungen", {}).get("stundenraster_standard", [])
         jetzt = datetime.now()
+        ferien = hole_ferien()
         aktuelle_ids = set()
 
         for kind in data.get("kinder", []):
@@ -195,7 +210,7 @@ class SensorPublisher:
                 self._discovery(kind)
                 self._bekannte_kids.add(kid)
             raster = kind.get("stundenraster") or std_raster
-            ergebnis = berechne_sensoren(kind, faecher, raster, jetzt)
+            ergebnis = berechne_sensoren(kind, faecher, raster, jetzt, ferien)
             payload = json.dumps(ergebnis["state"], ensure_ascii=False)
             if self._letzter_state.get(kid) != payload:
                 self._client.publish(f"{BASE_TOPIC}/{kid}/state", payload, retain=True)
@@ -209,6 +224,7 @@ class SensorPublisher:
             plan_payload = json.dumps({
                 "kind": kind["name"],
                 "modus": kind.get("modus", "wochenplan"),
+                "ferien": ferien if kind.get("modus", "wochenplan") == "wochenplan" else {},
                 "raster": raster,
                 "plan": kind.get("plan", {}),
                 "faecher": {kz: f for kz, f in faecher.items() if kz in genutzt},

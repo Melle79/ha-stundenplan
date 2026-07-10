@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.4.0 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.5.0 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -191,6 +191,10 @@ class StundenplanCard extends HTMLElement {
     const zeit = this._jetztZeit();
     const heuteImBlock = this._imBlock(a, new Date());
     let html = "";
+    const ferienHeute = a.modus !== "block" && a.ferien && a.ferien.heute &&
+      a.ferien.heute.schulfrei ? a.ferien.heute : null;
+    if (ferienHeute)
+      html += `<div class="sp-banner">🏖 Heute schulfrei${ferienHeute.grund ? " – " + ferienHeute.grund : ""}</div>`;
     if (a.modus === "block" && !heuteImBlock)
       html += `<div class="sp-banner">🏭 Betriebsphase – aktuell kein Blockunterricht</div>`;
     html += `<table class="sp-tabelle"><colgroup><col style="width:54px"><col span="5"></colgroup><thead><tr><th></th>`;
@@ -226,6 +230,10 @@ class StundenplanCard extends HTMLElement {
   }
 
   _renderHeute(a) {
+    if (a.modus !== "block" && a.ferien && a.ferien.heute && a.ferien.heute.schulfrei) {
+      const g = a.ferien.heute.grund;
+      return `<div class="sp-leer">🏖 Heute schulfrei${g ? " – " + g : ""}</div>`;
+    }
     const heute = this._heuteIdx();
     if (heute < 0) return `<div class="sp-leer">🎉 Wochenende – schulfrei!</div>`;
     if (!this._imBlock(a, new Date()))
@@ -339,4 +347,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.4.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.5.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");

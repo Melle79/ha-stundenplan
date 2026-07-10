@@ -14,6 +14,8 @@ else
     bashio::log.warning "Kein MQTT-Service verfuegbar - Sensoren werden nicht publiziert"
 fi
 
+export FERIEN_HEUTE=$(bashio::config 'ferien_heute')
+export FERIEN_MORGEN=$(bashio::config 'ferien_morgen')
 export DATA_DIR=/data
 
 if [ -d /homeassistant ]; then

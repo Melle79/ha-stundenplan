@@ -53,8 +53,18 @@ zeige_pausen: true
 titel: ""                # optional, Standard: "Stundenplan {Name}"
 ```
 
-## Geplant (v1.3+)
+## Schulferien-Integration
 
-- Integration mit dem Schulferien & Feiertage Manager (Sensor zeigt „Schulfrei" an Ferientagen)
+In den Add-on-Optionen die schulfrei-Sensoren des Schulferien & Feiertage Managers eintragen:
+
+```yaml
+ferien_heute: binary_sensor.schulferien_bayern_heute_schulfrei
+ferien_morgen: binary_sensor.schulferien_bayern_morgen_schulfrei
+```
+
+An schulfreien Tagen zeigen die Sensoren dann „Schulfrei (Grund)" und die Karte ein Ferien-Banner. Kinder im Blockmodus sind bewusst ausgenommen (Azubis haben in Schulferien Betrieb).
+
+## Geplant (v1.5+)
+
 - Morgen-Push-Benachrichtigung
 - Materialliste pro Fach
