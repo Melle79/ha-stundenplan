@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.1 - Juli 2026
+
+- Pausen werden im Wochenplan-Raster dezent als schmale Trennzeilen angezeigt (mit Uhrzeit und Dauer)
+
 ## 1.1.0 - Juli 2026
 
 ### Neu
