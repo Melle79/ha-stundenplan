@@ -1,5 +1,5 @@
 name: Stundenplan Manager
-version: 1.2.0
+version: 1.2.1
 slug: stundenplan_manager
 description: Stundenpläne für Kinder verwalten – mit MQTT-Sensoren und Blockunterricht-Unterstützung
 url: https://github.com/Melle79/ha-stundenplan
@@ -16,6 +16,7 @@ services:
   - mqtt:need
 map:
   - addon_config:rw
+  - homeassistant_config:rw
 options:
   log_level: info
   backup_zeit: "03:30"

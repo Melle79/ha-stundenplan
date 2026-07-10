@@ -16,6 +16,12 @@ fi
 
 export DATA_DIR=/data
 
+if [ -d /homeassistant ]; then
+    mkdir -p /homeassistant/www
+    cp /card/stundenplan-card.js /homeassistant/www/stundenplan-card.js
+    bashio::log.info "Stundenplan Card nach /config/www kopiert (Ressource: /local/stundenplan-card.js)"
+fi
+
 bashio::log.info "Starte Stundenplan Manager..."
 cd /app
 exec python3 -m server

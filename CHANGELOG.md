@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.1 - Juli 2026
+
+- Add-on liefert die Stundenplan Card jetzt selbst aus: beim Start wird sie nach /config/www kopiert, einmalig als Ressource /local/stundenplan-card.js registrieren - Karten-Updates kommen dann automatisch mit jedem Add-on-Update (HACS weiterhin als Alternative moeglich)
+- README ueberarbeitet (Karten-Doku war zuvor durch stilles Replace-Fehlschlagen nicht gelandet)
+
 ## Card 1.1.0 - Juli 2026
 
 - Visueller Konfigurations-Editor fuer die Stundenplan Card: Entity-Auswahl, Ansicht-Dropdown (Woche/Heute), Pausen-Toggle und Titelfeld direkt im Dashboard-Editor, kein YAML noetig
