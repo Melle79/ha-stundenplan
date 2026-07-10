@@ -163,12 +163,21 @@ let DATA = null;
 let aktivKid = null;
 let dirty = false;
 let pickCtx = null;
+let saveTimer = null;
 
 function setDirty(d) {
   dirty = d;
   const el = document.getElementById("saveStatus");
-  el.textContent = d ? "● Ungespeicherte Änderungen" : "Gespeichert";
-  el.className = "status " + (d ? "dirty" : "ok");
+  if (d) {
+    el.textContent = "● Speichert gleich…";
+    el.className = "status dirty";
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(speichern, 800);
+  } else {
+    const t = new Date().toLocaleTimeString("de-DE", {hour:"2-digit", minute:"2-digit"});
+    el.textContent = `✓ Gespeichert ${t}`;
+    el.className = "status ok";
+  }
 }
 
 async function laden() {
@@ -179,10 +188,29 @@ async function laden() {
 }
 
 async function speichern() {
-  const res = await fetch("api/data", { method: "POST",
-    headers: {"Content-Type":"application/json"}, body: JSON.stringify(DATA) });
-  if (res.ok) setDirty(false);
-  else alert("Speichern fehlgeschlagen");
+  clearTimeout(saveTimer);
+  if (!DATA) return;
+  try {
+    const res = await fetch("api/data", { method: "POST",
+      headers: {"Content-Type":"application/json"}, body: JSON.stringify(DATA),
+      keepalive: true });
+    if (res.ok) setDirty(false);
+    else throw new Error("HTTP " + res.status);
+  } catch (e) {
+    const el = document.getElementById("saveStatus");
+    el.textContent = "⚠ Speichern fehlgeschlagen - erneut versucht in 3s";
+    el.className = "status dirty";
+    saveTimer = setTimeout(speichern, 3000);
+  }
+}
+
+function sofortSpeichern() {
+  if (dirty && DATA) {
+    navigator.sendBeacon ?
+      navigator.sendBeacon("api/data", new Blob([JSON.stringify(DATA)], {type:"application/json"})) :
+      speichern();
+    dirty = false;
+  }
 }
 
 function renderAll() { renderChips(); renderKid(); renderFaecher(); renderRasterStd(); }
@@ -414,7 +442,7 @@ async function standardFaecherLaden() {
     if (!DATA.faecher[kz]) { DATA.faecher[kz] = f; neu++; }
   }
   if (neu) { setDirty(true); renderFaecher(); renderKid(); }
-  alert(neu ? `${neu} Fächer hinzugefügt. Nicht vergessen zu speichern!`
+  alert(neu ? `${neu} Fächer hinzugefügt.`
             : "Alle Standard-Fächer sind bereits vorhanden.");
 }
 
@@ -464,6 +492,7 @@ function esc(s) { return String(s ?? "").replace(/[&<>"']/g,
 
 document.querySelectorAll("nav button").forEach(b => {
   b.onclick = () => {
+    if (dirty) speichern();
     document.querySelectorAll("nav button").forEach(x => x.classList.remove("active"));
     document.querySelectorAll(".panel").forEach(x => x.classList.remove("active"));
     b.classList.add("active");
@@ -471,7 +500,10 @@ document.querySelectorAll("nav button").forEach(b => {
   };
 });
 
-window.addEventListener("beforeunload", e => { if (dirty) e.preventDefault(); });
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") sofortSpeichern();
+});
+window.addEventListener("pagehide", sofortSpeichern);
 laden();
 </script>
 </body>

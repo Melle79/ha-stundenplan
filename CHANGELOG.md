@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.3 - Juli 2026
+
+- Auto-Save: Aenderungen werden automatisch gespeichert (0,8s nach letzter Eingabe, sofort bei Tab-/Seitenwechsel via sendBeacon)
+- Fehlerbehandlung: bei fehlgeschlagenem Speichern automatischer Neuversuch nach 3s
+
 ## 1.0.2 - Juli 2026
 
 - Fach-Kuerzel nachtraeglich editierbar (mit Kollisionspruefung, Plaene werden automatisch migriert)
