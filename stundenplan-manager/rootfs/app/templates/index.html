@@ -354,7 +354,8 @@ function renderFaecher() {
   tb.innerHTML = "";
   for (const [kz, f] of Object.entries(DATA.faecher)) {
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td><b>${esc(kz)}</b></td>
+    tr.innerHTML = `<td><input class="kurz" value="${esc(kz)}" maxlength="4" style="font-weight:600"
+        onchange="fachUmbenennen('${esc(kz)}', this)"></td>
       <td><input value="${esc(f.name)}" onchange="DATA.faecher['${esc(kz)}'].name=this.value;setDirty(true)"></td>
       <td><input type="color" value="${f.farbe}" onchange="DATA.faecher['${esc(kz)}'].farbe=this.value;setDirty(true);renderKid()"></td>
       <td><input value="${esc(f.raum||"")}" style="width:100px" onchange="DATA.faecher['${esc(kz)}'].raum=this.value;setDirty(true)"></td>
@@ -384,6 +385,24 @@ function fachLoeschen(kz) {
   for (const k of DATA.kinder)
     for (const tag of Object.keys(k.plan))
       k.plan[tag] = k.plan[tag].map(x => x === kz ? null : x);
+  setDirty(true); renderFaecher(); renderKid();
+}
+
+function fachUmbenennen(alt, inputEl) {
+  const neu = inputEl.value.trim().toUpperCase();
+  if (neu === alt) { inputEl.value = alt; return; }
+  if (!neu) { alert("Kürzel darf nicht leer sein."); inputEl.value = alt; return; }
+  if (DATA.faecher[neu]) {
+    alert(`Kürzel „${neu}" existiert bereits (${DATA.faecher[neu].name}).`);
+    inputEl.value = alt; return;
+  }
+  const umgebaut = {};
+  for (const [kz, f] of Object.entries(DATA.faecher))
+    umgebaut[kz === alt ? neu : kz] = f;
+  DATA.faecher = umgebaut;
+  for (const k of DATA.kinder)
+    for (const tag of Object.keys(k.plan))
+      k.plan[tag] = k.plan[tag].map(x => x === alt ? neu : x);
   setDirty(true); renderFaecher(); renderKid();
 }
 
