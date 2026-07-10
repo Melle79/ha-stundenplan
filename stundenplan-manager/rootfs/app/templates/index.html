@@ -91,6 +91,26 @@
     transition: transform .15s; }
   details.collapse[open] summary::before { transform: rotate(90deg); }
   details.collapse summary h2 { margin: 0; }
+  #printArea { display: none; }
+  @media print {
+    @page { size: A4 landscape; margin: 12mm; }
+    body { background: #fff; padding: 0; }
+    body > *:not(#printArea) { display: none !important; }
+    #printArea { display: block; color: #1a1a1a; font-family: -apple-system, "Segoe UI", sans-serif;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    #printArea h1 { font-size: 18pt; margin: 0 0 2mm; }
+    #printArea .sub { color: #666; font-size: 9pt; margin: 0 0 5mm; }
+    #printArea table { border-collapse: collapse; width: 100%; }
+    #printArea th, #printArea td { border: 1px solid #999; padding: 2mm; text-align: center;
+      font-size: 9pt; }
+    #printArea th { background: #eee; font-weight: 600; }
+    #printArea td.pz { font-size: 8pt; color: #444; width: 24mm; }
+    #printArea td.pz b { font-size: 10pt; display: block; }
+    #printArea .fach b { font-size: 10pt; display: block; }
+    #printArea .fach small { font-size: 7.5pt; color: #333; }
+    #printArea tr.ppause td { background: #f5f5f5; color: #888; font-size: 7.5pt;
+      padding: 1mm; letter-spacing: .05em; }
+  }
 </style>
 </head>
 <body>
@@ -151,6 +171,8 @@
   <span class="status" id="saveStatus">Geladen</span>
   <button class="btn" onclick="speichern()">💾 Speichern</button>
 </div>
+
+<div id="printArea"></div>
 
 <div class="overlay" id="pickerOverlay" onclick="if(event.target===this)closePicker()">
   <div class="picker">
@@ -283,6 +305,7 @@ function renderKid() {
       </select>
       <label><input type="checkbox" ${k.stundenraster?"checked":""} onchange="toggleEigenesRaster(this.checked)"> Eigenes Stundenraster</label>
       <span style="flex:1"></span>
+      <button class="btn ghost" onclick="drucken()">🖨 Drucken</button>
       <button class="btn danger" onclick="kindLoeschen()">Löschen</button>
     </div>`;
 
@@ -373,6 +396,43 @@ function toggleEigenesRaster(on) {
   const k = kind();
   k.stundenraster = on ? JSON.parse(JSON.stringify(DATA.einstellungen.stundenraster_standard)) : null;
   setDirty(true); renderKid();
+}
+
+function drucken() {
+  const k = kind();
+  if (!k) return;
+  const r = raster(k);
+  let html = `<h1>Stundenplan ${esc(k.name)}</h1>
+    <p class="sub">Stand: ${new Date().toLocaleDateString("de-DE")}${k.modus === "block" ? " · Blockunterricht" : ""}</p>
+    <table><thead><tr><th>Stunde</th>`;
+  for (const [,label] of TAGE) html += `<th>${label}</th>`;
+  html += `</tr></thead><tbody>`;
+  r.forEach((st, si) => {
+    if (si > 0 && r[si-1].bis < st.von) {
+      const min = (h => h(st.von) - h(r[si-1].bis))(s => +s.slice(0,2)*60 + +s.slice(3));
+      html += `<tr class="ppause"><td colspan="${TAGE.length+1}">Pause ${r[si-1].bis}–${st.von} (${min} min)</td></tr>`;
+    }
+    html += `<tr><td class="pz"><b>${st.nr}.</b>${st.von}–${st.bis}</td>`;
+    for (const [tag] of TAGE) {
+      const kz = (k.plan[tag]||[])[si] || null;
+      const f = kz ? DATA.faecher[kz] : null;
+      if (f) {
+        html += `<td class="fach" style="background:color-mix(in srgb, ${f.farbe} 22%, white)">
+          <b>${esc(f.name)}</b><small>${esc(kz)}${f.raum ? " · Raum " + esc(f.raum) : ""}</small></td>`;
+      } else {
+        html += `<td></td>`;
+      }
+    }
+    html += `</tr>`;
+  });
+  html += `</tbody></table>`;
+  if (k.modus === "block" && k.bloecke.length) {
+    const fmt = d => new Date(d + "T00:00").toLocaleDateString("de-DE");
+    html += `<p class="sub" style="margin-top:4mm">Blockzeiträume: ` +
+      k.bloecke.map(b => `${esc(b.label || "Block")} ${fmt(b.von)}–${fmt(b.bis)}`).join(" · ") + `</p>`;
+  }
+  document.getElementById("printArea").innerHTML = html;
+  window.print();
 }
 
 /* ---------- Fach-Picker ---------- */

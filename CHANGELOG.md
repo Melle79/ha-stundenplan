@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.3 - Juli 2026
+
+### Neu
+- Druckoption pro Kind: heller A4-Querformat-Ausdruck mit vollen Fachnamen, Raeumen, Pausen und dezenten Fachfarben; im Blockmodus werden die Blockzeitraeume unter dem Plan aufgelistet
+
 ## 1.1.2 - Juli 2026
 
 ### Behoben
