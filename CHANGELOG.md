@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.2 - Juli 2026
+
+### Behoben
+- Zeiteingabe im Stundenraster: Eingabefeld verlor bei jeder Ziffer den Fokus, weil das Panel komplett neu gerendert wurde. Zeitaenderungen aktualisieren jetzt nur noch gezielt die Plan-Tabelle und die Kurzinfos - der Editor bleibt stehen, der Collapse bleibt offen
+
 ## 1.1.1 - Juli 2026
 
 - Pausen werden im Wochenplan-Raster dezent als schmale Trennzeilen angezeigt (mit Uhrzeit und Dauer)

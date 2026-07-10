@@ -307,14 +307,21 @@ function renderKid() {
     const r0 = k.stundenraster;
     html += `<details class="collapse" style="margin-top:14px">
       <summary><h2>⏰ Stundenraster (nur ${esc(k.name)})</h2>
-        <span class="hint">${r0.length} Stunden · ${r0.length ? r0[0].von + "–" + r0[r0.length-1].bis : ""}</span></summary>
+        <span class="hint" id="rasterKidInfo">${r0.length} Stunden · ${r0.length ? r0[0].von + "–" + r0[r0.length-1].bis : ""}</span></summary>
       <div id="rasterKid" style="margin-top:10px"></div>
       <button class="btn ghost" style="margin-top:8px" onclick="rasterZeile('kid')">+ Stunde</button>
     </details>`;
   }
 
   html += `<h2 style="margin-top:16px">📅 Wochenplan</h2>
-    <div style="overflow-x:auto"><table class="plan"><thead><tr><th class="zeit">Stunde</th>`;
+    <div id="planWrap">${planTabelleHTML(k, r)}</div>
+    <p class="hint">Auf eine Zelle klicken, um ein Fach zuzuweisen.</p></div>`;
+  box.innerHTML = html;
+  if (k.stundenraster) renderRasterEditor(document.getElementById("rasterKid"), k.stundenraster);
+}
+
+function planTabelleHTML(k, r) {
+  let html = `<div style="overflow-x:auto"><table class="plan"><thead><tr><th class="zeit">Stunde</th>`;
   for (const [,label] of TAGE) html += `<th>${label.slice(0,2)}</th>`;
   html += `</tr></thead><tbody>`;
   r.forEach((st, si) => {
@@ -336,10 +343,23 @@ function renderKid() {
     }
     html += `</tr>`;
   });
-  html += `</tbody></table></div>
-    <p class="hint">Auf eine Zelle klicken, um ein Fach zuzuweisen.</p></div>`;
-  box.innerHTML = html;
-  if (k.stundenraster) renderRasterEditor(document.getElementById("rasterKid"), k.stundenraster);
+  html += `</tbody></table></div>`;
+  return html;
+}
+
+function planAktualisieren() {
+  const wrap = document.getElementById("planWrap");
+  const k = kind();
+  if (wrap && k) wrap.innerHTML = planTabelleHTML(k, raster(k));
+}
+
+function rasterInfosAktualisieren() {
+  const fmt = a => a.length ? `${a.length} Stunden · ${a[0].von}–${a[a.length-1].bis}` : "leer";
+  const std = document.getElementById("rasterStdInfo");
+  if (std) std.textContent = fmt(DATA.einstellungen.stundenraster_standard);
+  const k = kind();
+  const ki = document.getElementById("rasterKidInfo");
+  if (ki && k && k.stundenraster) ki.textContent = fmt(k.stundenraster);
 }
 
 function blockHinzufuegen() {
@@ -458,11 +478,8 @@ async function standardFaecherLaden() {
 
 /* ---------- Stundenraster ---------- */
 function renderRasterStd() {
-  const arr = DATA.einstellungen.stundenraster_standard;
-  const info = document.getElementById("rasterStdInfo");
-  if (info) info.textContent = arr.length
-    ? `${arr.length} Stunden · ${arr[0].von}–${arr[arr.length-1].bis}` : "leer";
-  renderRasterEditor(document.getElementById("rasterStd"), arr);
+  renderRasterEditor(document.getElementById("rasterStd"), DATA.einstellungen.stundenraster_standard);
+  rasterInfosAktualisieren();
 }
 
 function renderRasterEditor(el, arr) {
@@ -478,13 +495,18 @@ function renderRasterEditor(el, arr) {
   });
   el.innerHTML = html;
   el.querySelectorAll("input[type=time]").forEach(inp => {
-    inp.onchange = () => { arr[+inp.dataset.i][inp.dataset.f] = inp.value; setDirty(true); renderKid(); };
+    inp.onchange = () => {
+      arr[+inp.dataset.i][inp.dataset.f] = inp.value;
+      setDirty(true); planAktualisieren(); rasterInfosAktualisieren();
+    };
   });
   el.querySelectorAll("button[data-del]").forEach(btn => {
     btn.onclick = () => {
       arr.splice(+btn.dataset.del, 1);
       arr.forEach((s, i) => s.nr = i + 1);
-      setDirty(true); renderRasterStd(); renderKid();
+      setDirty(true);
+      renderRasterEditor(el, arr);
+      planAktualisieren(); rasterInfosAktualisieren();
     };
   });
 }
@@ -493,7 +515,10 @@ function rasterZeile(ziel) {
   const arr = ziel === "std" ? DATA.einstellungen.stundenraster_standard : kind().stundenraster;
   const last = arr[arr.length - 1];
   arr.push({ nr: arr.length + 1, von: last ? last.bis : "08:00", bis: last ? last.bis : "08:45" });
-  setDirty(true); renderRasterStd(); renderKid();
+  setDirty(true);
+  const el = document.getElementById(ziel === "std" ? "rasterStd" : "rasterKid");
+  if (el) renderRasterEditor(el, arr);
+  planAktualisieren(); rasterInfosAktualisieren();
 }
 
 /* ---------- Utils / Tabs ---------- */
