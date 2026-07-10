@@ -80,6 +80,13 @@
   .blockrow { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
   .badge { font-size: .72rem; padding: 3px 8px; border-radius: 10px; background: var(--card2);
     border: 1px solid var(--border); color: var(--muted); }
+  details.collapse summary { cursor: pointer; display: flex; align-items: center; gap: 10px;
+    list-style: none; user-select: none; }
+  details.collapse summary::-webkit-details-marker { display: none; }
+  details.collapse summary::before { content: "▸"; color: var(--muted); font-size: .8rem;
+    transition: transform .15s; }
+  details.collapse[open] summary::before { transform: rotate(90deg); }
+  details.collapse summary h2 { margin: 0; }
 </style>
 </head>
 <body>
@@ -124,10 +131,12 @@
   <!-- ============ TAB: EINSTELLUNGEN ============ -->
   <section id="tab-settings" class="panel">
     <div class="card">
-      <h2>⏰ Standard-Stundenraster</h2>
-      <p class="hint" style="margin:0 0 10px">Gilt für alle Kinder ohne eigenes Raster. Pausen ergeben sich aus Lücken zwischen den Stunden.</p>
-      <div id="rasterStd"></div>
-      <button class="btn ghost" style="margin-top:8px" onclick="rasterZeile('std')">+ Stunde</button>
+      <details class="collapse">
+        <summary><h2>⏰ Standard-Stundenraster</h2><span class="hint" id="rasterStdInfo"></span></summary>
+        <p class="hint" style="margin:10px 0">Gilt für alle Kinder ohne eigenes Raster. Pausen ergeben sich aus Lücken zwischen den Stunden.</p>
+        <div id="rasterStd"></div>
+        <button class="btn ghost" style="margin-top:8px" onclick="rasterZeile('std')">+ Stunde</button>
+      </details>
     </div>
   </section>
 </main>
@@ -261,8 +270,13 @@ function renderKid() {
   }
 
   if (k.stundenraster) {
-    html += `<h2 style="margin-top:14px">⏰ Stundenraster (nur ${esc(k.name)})</h2><div id="rasterKid"></div>
-      <button class="btn ghost" style="margin-top:8px" onclick="rasterZeile('kid')">+ Stunde</button>`;
+    const r0 = k.stundenraster;
+    html += `<details class="collapse" style="margin-top:14px">
+      <summary><h2>⏰ Stundenraster (nur ${esc(k.name)})</h2>
+        <span class="hint">${r0.length} Stunden · ${r0.length ? r0[0].von + "–" + r0[r0.length-1].bis : ""}</span></summary>
+      <div id="rasterKid" style="margin-top:10px"></div>
+      <button class="btn ghost" style="margin-top:8px" onclick="rasterZeile('kid')">+ Stunde</button>
+    </details>`;
   }
 
   html += `<h2 style="margin-top:16px">📅 Wochenplan</h2>
@@ -373,7 +387,11 @@ function fachLoeschen(kz) {
 
 /* ---------- Stundenraster ---------- */
 function renderRasterStd() {
-  renderRasterEditor(document.getElementById("rasterStd"), DATA.einstellungen.stundenraster_standard);
+  const arr = DATA.einstellungen.stundenraster_standard;
+  const info = document.getElementById("rasterStdInfo");
+  if (info) info.textContent = arr.length
+    ? `${arr.length} Stunden · ${arr[0].von}–${arr[arr.length-1].bis}` : "leer";
+  renderRasterEditor(document.getElementById("rasterStd"), arr);
 }
 
 function renderRasterEditor(el, arr) {
