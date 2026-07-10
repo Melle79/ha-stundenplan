@@ -49,6 +49,30 @@ app = Flask(__name__)
 # }
 # ---------------------------------------------------------------------------
 
+STANDARD_FAECHER = {
+    "DE":  {"name": "Deutsch",                "farbe": "#e05d5d", "raum": ""},
+    "MA":  {"name": "Mathematik",             "farbe": "#4a90d9", "raum": ""},
+    "EN":  {"name": "Englisch",               "farbe": "#e0b34c", "raum": ""},
+    "FR":  {"name": "Französisch",            "farbe": "#9b6dd6", "raum": ""},
+    "LA":  {"name": "Latein",                 "farbe": "#8d6e63", "raum": ""},
+    "BIO": {"name": "Biologie",               "farbe": "#4caf7d", "raum": ""},
+    "CH":  {"name": "Chemie",                 "farbe": "#26a69a", "raum": ""},
+    "PH":  {"name": "Physik",                 "farbe": "#5c6bc0", "raum": ""},
+    "NUT": {"name": "Natur und Technik",      "farbe": "#66bb6a", "raum": ""},
+    "INF": {"name": "Informatik",             "farbe": "#455a64", "raum": ""},
+    "GE":  {"name": "Geschichte",             "farbe": "#a1887f", "raum": ""},
+    "GEO": {"name": "Geographie",             "farbe": "#7cb342", "raum": ""},
+    "PUG": {"name": "Politik und Gesellschaft", "farbe": "#ef6c00", "raum": ""},
+    "WR":  {"name": "Wirtschaft und Recht",   "farbe": "#f4a742", "raum": ""},
+    "REL": {"name": "Religion",               "farbe": "#b39ddb", "raum": ""},
+    "ETH": {"name": "Ethik",                  "farbe": "#90a4ae", "raum": ""},
+    "KU":  {"name": "Kunst",                  "farbe": "#ec407a", "raum": ""},
+    "MU":  {"name": "Musik",                  "farbe": "#ab47bc", "raum": ""},
+    "SP":  {"name": "Sport",                  "farbe": "#29b6f6", "raum": ""},
+    "HSU": {"name": "Heimat- und Sachunterricht", "farbe": "#8bc34a", "raum": ""},
+    "WG":  {"name": "Werken und Gestalten",   "farbe": "#bcaaa4", "raum": ""},
+}
+
 DEFAULT_DATA = {
     "version": 1,
     "einstellungen": {
@@ -61,7 +85,7 @@ DEFAULT_DATA = {
             {"nr": 6, "von": "12:25", "bis": "13:10"},
         ]
     },
-    "faecher": {},
+    "faecher": dict(STANDARD_FAECHER),
     "kinder": [],
 }
 
@@ -111,6 +135,11 @@ def health():
         "kinder": len(data.get("kinder", [])),
         "mqtt": bool(os.environ.get("MQTT_HOST")),
     })
+
+
+@app.route("/api/standard-faecher")
+def standard_faecher():
+    return jsonify(STANDARD_FAECHER)
 
 
 @app.route("/api/data", methods=["GET"])

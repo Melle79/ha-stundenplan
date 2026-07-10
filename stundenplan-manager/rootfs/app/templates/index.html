@@ -123,6 +123,8 @@
         <input type="color" id="nfFarbe" value="#4a90d9">
         <input id="nfRaum" placeholder="Raum (optional)" style="width:120px">
         <button class="btn" onclick="fachHinzufuegen()">+ Fach</button>
+        <span style="flex:1"></span>
+        <button class="btn ghost" onclick="standardFaecherLaden()">📥 Standard-Fächer hinzufügen</button>
       </div>
       <p class="hint">Das Kürzel erscheint im Plan-Raster. Fächer werden von allen Kindern gemeinsam genutzt.</p>
     </div>
@@ -383,6 +385,18 @@ function fachLoeschen(kz) {
     for (const tag of Object.keys(k.plan))
       k.plan[tag] = k.plan[tag].map(x => x === kz ? null : x);
   setDirty(true); renderFaecher(); renderKid();
+}
+
+async function standardFaecherLaden() {
+  const res = await fetch("api/standard-faecher");
+  const std = await res.json();
+  let neu = 0;
+  for (const [kz, f] of Object.entries(std)) {
+    if (!DATA.faecher[kz]) { DATA.faecher[kz] = f; neu++; }
+  }
+  if (neu) { setDirty(true); renderFaecher(); renderKid(); }
+  alert(neu ? `${neu} Fächer hinzugefügt. Nicht vergessen zu speichern!`
+            : "Alle Standard-Fächer sind bereits vorhanden.");
 }
 
 /* ---------- Stundenraster ---------- */
