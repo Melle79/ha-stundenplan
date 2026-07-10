@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.2.0 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.2.1 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -83,30 +83,44 @@ class StundenplanCard extends HTMLElement {
     this.innerHTML = `
       <ha-card header="${titel}">
         <style>
-          .sp-wrap { padding: 0 16px 16px; }
+          .sp-wrap { padding: 0 16px 16px; container-type: inline-size; }
           .sp-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
           .sp-chip { border: 1px solid var(--divider-color); background: none;
             color: var(--secondary-text-color); border-radius: 14px; padding: 4px 12px;
             font-size: .78rem; cursor: pointer; font-family: inherit; }
           .sp-chip-aktiv { background: var(--primary-color); border-color: var(--primary-color);
             color: var(--text-primary-color, #fff); font-weight: 600; }
-          .sp-tabelle { border-collapse: collapse; width: 100%; }
-          .sp-tabelle th { color: var(--secondary-text-color); font-size: .75rem;
-            font-weight: 600; padding: 4px 2px; border-bottom: 1px solid var(--divider-color); }
+          .sp-tabelle { border-collapse: separate; border-spacing: 4px; width: 100%;
+            table-layout: fixed; margin: 0 -4px; }
+          .sp-tabelle th { color: var(--secondary-text-color); font-size: .78rem;
+            font-weight: 600; padding: 2px 0 6px; }
           .sp-tabelle th.sp-heute { color: var(--primary-color); }
-          .sp-tabelle td { text-align: center; padding: 2px; }
+          .sp-tabelle th.sp-heute::after { content: " ●"; font-size: .5rem; vertical-align: middle; }
+          .sp-tabelle td { text-align: center; padding: 0; }
           .sp-zeit { font-size: .68rem; color: var(--secondary-text-color);
-            white-space: nowrap; padding-right: 6px !important; text-align: right !important; }
-          .sp-zeit b { display: block; font-size: .8rem; color: var(--primary-text-color); }
-          .sp-fach { border-radius: 6px; padding: 5px 2px; font-weight: 600;
-            font-size: .78rem; color: #fff; line-height: 1.2; }
-          .sp-fach small { display: block; font-weight: 400; font-size: .62rem; opacity: .9; }
-          .sp-frei { color: var(--disabled-text-color); font-size: .75rem; }
-          .sp-aktuell { outline: 2px solid var(--primary-color); outline-offset: 1px; }
-          .sp-heute-spalte { background: color-mix(in srgb, var(--primary-color) 7%, transparent); }
-          .sp-pause td { padding: 1px; }
-          .sp-pause .sp-plabel { font-size: .62rem; color: var(--disabled-text-color);
-            letter-spacing: .05em; text-align: center; }
+            white-space: nowrap; padding-right: 6px !important; text-align: right !important;
+            vertical-align: middle; }
+          .sp-zeit b { display: block; font-size: .82rem; color: var(--primary-text-color); }
+          .sp-fach { border-radius: 8px; padding: 8px 4px; font-weight: 600;
+            font-size: .8rem; color: #fff; line-height: 1.25;
+            text-shadow: 0 1px 1px rgba(0,0,0,.25); }
+          .sp-fach small { display: block; font-weight: 400; font-size: .62rem; opacity: .92; }
+          .sp-fach .sp-name { display: none; }
+          @container (min-width: 620px) {
+            .sp-fach { padding: 8px 6px; }
+            .sp-fach .sp-name { display: block; }
+          }
+          .sp-frei { display: block; border-radius: 8px; height: 100%; min-height: 34px;
+            background: color-mix(in srgb, var(--divider-color) 30%, transparent); }
+          .sp-aktuell { outline: 2px solid var(--primary-color); outline-offset: 1px;
+            box-shadow: 0 0 8px color-mix(in srgb, var(--primary-color) 55%, transparent); }
+          .sp-heute-spalte .sp-frei {
+            background: color-mix(in srgb, var(--primary-color) 9%, transparent); }
+          .sp-pause td { padding: 2px 0; }
+          .sp-pause .sp-plabel { display: flex; align-items: center; gap: 10px;
+            font-size: .66rem; color: var(--secondary-text-color); letter-spacing: .04em; }
+          .sp-pause .sp-plabel::before, .sp-pause .sp-plabel::after {
+            content: ""; flex: 1; border-top: 1px dashed var(--divider-color); }
           .sp-banner { margin: 0 0 10px; padding: 8px 12px; border-radius: 8px;
             background: color-mix(in srgb, var(--primary-color) 12%, transparent);
             color: var(--primary-text-color); font-size: .85rem; }
@@ -140,7 +154,7 @@ class StundenplanCard extends HTMLElement {
     let html = "";
     if (a.modus === "block" && !heuteImBlock)
       html += `<div class="sp-banner">🏭 Betriebsphase – aktuell kein Blockunterricht</div>`;
-    html += `<table class="sp-tabelle"><thead><tr><th></th>`;
+    html += `<table class="sp-tabelle"><colgroup><col style="width:54px"><col span="5"></colgroup><thead><tr><th></th>`;
     StundenplanCard.TAGE.forEach(([,l], i) => {
       html += `<th class="${i === heute ? "sp-heute" : ""}">${l}</th>`;
     });
@@ -148,7 +162,7 @@ class StundenplanCard extends HTMLElement {
     const r = a.raster;
     r.forEach((st, si) => {
       if (this._config.zeige_pausen && si > 0 && r[si-1].bis < st.von) {
-        html += `<tr class="sp-pause"><td colspan="6"><div class="sp-plabel">· · · Pause ${r[si-1].bis}–${st.von} · · ·</div></td></tr>`;
+        html += `<tr class="sp-pause"><td colspan="6"><div class="sp-plabel">Pause ${r[si-1].bis}–${st.von}</div></td></tr>`;
       }
       html += `<tr><td class="sp-zeit"><b>${st.nr}.</b>${st.von}</td>`;
       StundenplanCard.TAGE.forEach(([tag], ti) => {
@@ -159,9 +173,9 @@ class StundenplanCard extends HTMLElement {
         const spalte = ti === heute ? "sp-heute-spalte" : "";
         if (f) {
           html += `<td class="${spalte}"><div class="sp-fach ${istJetzt ? "sp-aktuell" : ""}"
-            style="background:${f.farbe}" title="${f.name}">${kz}${f.raum ? `<small>${f.raum}</small>` : ""}</div></td>`;
+            style="background:${f.farbe}" title="${f.name}">${kz}<small class="sp-name">${f.name}</small>${f.raum ? `<small>${f.raum}</small>` : ""}</div></td>`;
         } else {
-          html += `<td class="${spalte}"><span class="sp-frei">–</span></td>`;
+          html += `<td class="${spalte}"><span class="sp-frei"></span></td>`;
         }
       });
       html += `</tr>`;
@@ -272,4 +286,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.2.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.2.1", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");

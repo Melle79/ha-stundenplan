@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.3 - Juli 2026 (Card 1.2.1)
+
+### Design-Ueberarbeitung der Karte
+- Luft zwischen den Fachbloecken (4px Abstand, abgerundete Bloecke mit mehr Hoehe) statt gequetschter Streifen
+- Zeitspalte fix schmal (54px) - kein riesiger Leerraum mehr auf breiten Dashboards
+- Auf breiten Karten (ab 620px) wird der volle Fachname unter dem Kuerzel eingeblendet (Container Query)
+- Pausen als klar lesbare Trennzeile mit gestrichelten Linien links und rechts
+- Freie Stunden als dezente Platzhalter-Flaechen statt Gedankenstrich
+- Heutiger Tag: Punkt-Markierung im Spaltenkopf, laufende Stunde mit sanftem Glow
+
 ## 1.2.2 - Juli 2026 (Card 1.2.0)
 
 - Editor findet Wochenplan-Sensoren automatisch und zeigt die Kinder als Checkbox-Liste zum Anhaken (statt Entity-Suchfeld)
