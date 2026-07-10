@@ -28,11 +28,7 @@ Die Stundenplan Card zeigt Wochen- oder Tagesansicht direkt im Dashboard – mit
 
 Das Add-on kopiert die Karte beim Start automatisch nach `/config/www/stundenplan-card.js` – Karten-Updates kommen damit automatisch mit jedem Add-on-Update. Einmalig registrieren:
 
-1. **Einstellungen → Dashboards → ⋮ → Ressourcen**
-2. Ressource hinzufügen: URL `/local/stundenplan-card.js`, Typ **JavaScript-Modul**
-3. Browser hart neu laden (Cmd+Shift+R)
-
-Tipp: Nach einem Add-on-Update mit Karten-Änderungen die Ressourcen-URL auf `/local/stundenplan-card.js?v=2` ändern (Zähler hochzählen), damit der Browser die neue Version lädt.
+Ab v1.3.0 registriert das Add-on die Dashboard-Ressource automatisch (inkl. Versions-Cache-Buster) - es ist nichts weiter zu tun. Nach einem Karten-Update genuegt ein normaler Browser-Reload. Nur bei Dashboards im YAML-Modus muss die Ressource manuell eingebunden werden (Hinweis erscheint im Add-on-Log).
 
 ### Alternativ: Installation via HACS
 

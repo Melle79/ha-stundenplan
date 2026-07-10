@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.0 - Juli 2026
+
+### Neu
+- Automatische Lovelace-Ressourcen-Registrierung: Das Add-on registriert /local/stundenplan-card.js?v={Kartenversion} beim Start selbst ueber die HA-API und aktualisiert die Version nach jedem Karten-Update - kein manuelles ?v=X-Hochzaehlen mehr, nur noch normaler Browser-Reload
+- Bestehende /local-Ressourcen (auch mit altem ?v=) werden erkannt und aktualisiert; bei YAML-Dashboards erscheint ein Hinweis im Log
+
 ## 1.2.6 - Juli 2026 (Card 1.4.0)
 
 - Tabs/Chips generell groesser (.92rem, mehr Padding)

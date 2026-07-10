@@ -8,6 +8,7 @@ from pathlib import Path
 from flask import Flask, jsonify, render_template, request
 
 from mqtt_publisher import SensorPublisher, ist_im_block  # noqa: F401
+from resource_registrar import registriere_ressource_async
 
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "info").upper()
 logging.basicConfig(level=getattr(logging, LOG_LEVEL, logging.INFO),
@@ -157,4 +158,5 @@ def post_data():
 if __name__ == "__main__":
     log.info("Stundenplan Manager startet auf Port 8098")
     PUBLISHER.start()
+    registriere_ressource_async()
     app.run(host="0.0.0.0", port=8098)
