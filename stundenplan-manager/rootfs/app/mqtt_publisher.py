@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 
 import paho.mqtt.client as mqtt
 
-from ferien import hole_ferien
+from ferien import hole_schulfrei_zeitraeume, schulfrei_grund
 
 log = logging.getLogger("stundenplan.mqtt")
 
@@ -35,6 +35,20 @@ SENSOREN = [
     ("schulschluss_heute", "Schulschluss heute", "mdi:home-clock"),
     ("wochenplan", "Wochenplan", "mdi:calendar-week"),
 ]
+
+
+def _schulfrei_woche(kind: dict, zeitraeume: list, jetzt: datetime) -> dict:
+    """Grund je Wochentag (mo-fr) der aktuellen Woche, None = Unterricht.
+    Am Wochenende wird die kommende Woche betrachtet. Blockmodus: alles None."""
+    ergebnis = {t: None for t in TAGE}
+    if kind.get("modus", "wochenplan") != "wochenplan" or not zeitraeume:
+        return ergebnis
+    start = jetzt - timedelta(days=jetzt.weekday())
+    if jetzt.weekday() > 4:
+        start = start + timedelta(days=7)
+    for i, tag in enumerate(TAGE):
+        ergebnis[tag] = schulfrei_grund((start + timedelta(days=i)).date(), zeitraeume)
+    return ergebnis
 
 
 def slugify(name: str) -> str:
@@ -57,23 +71,22 @@ def _fach_label(kz, faecher):
 
 
 def berechne_sensoren(kind: dict, faecher: dict, raster: list, jetzt: datetime,
-                      ferien: dict = None) -> dict:
+                      zeitraeume: list = None) -> dict:
     """Berechnet die vier Sensorwerte fuer ein Kind zum Zeitpunkt `jetzt`.
 
-    ferien: {"heute": {"schulfrei": bool, "grund": str}|None, "morgen": ...}
-    Ferien gelten nur im Modus "wochenplan" - Azubis im Blockmodus haben in
+    zeitraeume: schulfreie Zeitraeume [{"von","bis","grund"}, ...].
+    Sie gelten nur im Modus "wochenplan" - Azubis im Blockmodus haben in
     Schulferien Betrieb, keine freien Tage.
     """
     zeit = jetzt.strftime("%H:%M")
-    ferien = ferien or {}
+    zeitraeume = zeitraeume or []
 
     def tagesinfo(offset: int):
         d = jetzt + timedelta(days=offset)
         if kind.get("modus", "wochenplan") == "wochenplan":
-            f = ferien.get("heute" if offset == 0 else "morgen")
-            if f and f.get("schulfrei"):
-                grund = f.get("grund") or ""
-                return None, f"Schulfrei ({grund})" if grund else "Schulfrei"
+            grund = schulfrei_grund(d.date(), zeitraeume)
+            if grund:
+                return None, f"Schulfrei ({grund})"
         if d.weekday() > 4:
             return None, "Schulfrei"
         if not ist_im_block(kind, d):
@@ -201,7 +214,8 @@ class SensorPublisher:
         std_raster = data.get("einstellungen", {}).get("stundenraster_standard", [])
         jetzt = datetime.now()
         einst = data.get("einstellungen", {})
-        ferien = hole_ferien(einst.get("ferien_heute", ""), einst.get("ferien_morgen", ""))
+        zeitraeume = hole_schulfrei_zeitraeume(
+            einst.get("ferien_sensor", ""), einst.get("feiertag_sensor", ""))
         aktuelle_ids = set()
 
         for kind in data.get("kinder", []):
@@ -211,7 +225,7 @@ class SensorPublisher:
                 self._discovery(kind)
                 self._bekannte_kids.add(kid)
             raster = kind.get("stundenraster") or std_raster
-            ergebnis = berechne_sensoren(kind, faecher, raster, jetzt, ferien)
+            ergebnis = berechne_sensoren(kind, faecher, raster, jetzt, zeitraeume)
             payload = json.dumps(ergebnis["state"], ensure_ascii=False)
             if self._letzter_state.get(kid) != payload:
                 self._client.publish(f"{BASE_TOPIC}/{kid}/state", payload, retain=True)
@@ -225,7 +239,7 @@ class SensorPublisher:
             plan_payload = json.dumps({
                 "kind": kind["name"],
                 "modus": kind.get("modus", "wochenplan"),
-                "ferien": ferien if kind.get("modus", "wochenplan") == "wochenplan" else {},
+                "schulfrei_tage": _schulfrei_woche(kind, zeitraeume, jetzt),
                 "raster": raster,
                 "plan": kind.get("plan", {}),
                 "faecher": {kz: f for kz, f in faecher.items() if kz in genutzt},

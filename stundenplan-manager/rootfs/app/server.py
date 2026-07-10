@@ -2,6 +2,7 @@
 import json
 import logging
 import os
+import re
 from datetime import datetime
 from pathlib import Path
 
@@ -147,18 +148,24 @@ def ha_entities():
 
 
 def migriere_ferien_optionen():
-    """Einmalig: Add-on-Optionen (env) in die App-Einstellungen uebernehmen."""
+    """Alte heute/morgen-Binaersensoren auf die Zeitraum-Sensoren umstellen.
+    Nutzt den gemeinsamen Entity-Praefix (z.B. schulferien_bayern)."""
     data = load_data()
     einst = data.setdefault("einstellungen", {})
-    geaendert = False
-    for key, env in (("ferien_heute", "FERIEN_HEUTE"), ("ferien_morgen", "FERIEN_MORGEN")):
-        wert = os.environ.get(env, "").strip()
-        if wert and not einst.get(key):
-            einst[key] = wert
-            geaendert = True
-            log.info("Ferien-Option aus Add-on-Konfiguration uebernommen: %s = %s", key, wert)
-    if geaendert:
-        save_data(data)
+    if einst.get("ferien_sensor") or einst.get("feiertag_sensor"):
+        return
+    alt = einst.get("ferien_heute") or einst.get("ferien_morgen") or \
+        os.environ.get("FERIEN_HEUTE", "").strip()
+    m = re.match(r"^binary_sensor\.(.+?)_(heute|morgen)_(schulfrei|feiertag)$", alt or "")
+    if not m:
+        return
+    praefix = m.group(1)
+    einst["ferien_sensor"] = f"sensor.{praefix}_naechste_schulferien"
+    einst["feiertag_sensor"] = f"sensor.{praefix}_naechster_feiertag"
+    einst.pop("ferien_heute", None)
+    einst.pop("ferien_morgen", None)
+    log.info("Ferien-Konfiguration auf Zeitraum-Sensoren migriert (%s)", praefix)
+    save_data(data)
 
 
 @app.route("/api/standard-faecher")

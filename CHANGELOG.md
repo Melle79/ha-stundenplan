@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.0 - Juli 2026 (Card 1.7.0)
+
+### Verbessert
+- Ferien-Integration auf Zeitraum-Sensoren umgestellt: statt heute/morgen-Binaersensoren jetzt 'Naechste Schulferien' (beginn/ende + laufende Ferien) und 'Naechster Feiertag' (Datum + 14-Tage-Vorschau)
+- Die Karte markiert damit ALLE schulfreien Tage der Woche (z.B. Feiertag am Donnerstag schon montags sichtbar, Ferienwochen komplett gedimmt), jeweils mit Grund im Spaltenkopf
+- Sensoren zeigen 'Schulfrei (Grund)' fuer beliebige Tage, inkl. 'Erste Stunde morgen' am Vorabend eines Feiertags
+- Bestehende Konfiguration mit Binaersensoren wird automatisch auf die Zeitraum-Sensoren migriert (gleicher Geraete-Praefix)
+
 ## 1.5.2 - Juli 2026 (Card 1.6.1)
 
 - Fix: Heute-Punkt im Spaltenkopf steht jetzt direkt hinter dem Tageskuerzel statt verloren unter dem Schulfrei-Vermerk

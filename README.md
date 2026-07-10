@@ -55,7 +55,7 @@ titel: ""                # optional, Standard: "Stundenplan {Name}"
 
 ## Schulferien-Integration
 
-In der Web-UI unter **Einstellungen -> Schulferien-Integration** die schulfrei-Sensoren des Schulferien & Feiertage Managers auswaehlen - passende Sensoren werden automatisch gefunden und als Dropdown angeboten.
+In der Web-UI unter **Einstellungen -> Schulferien-Integration** die Zeitraum-Sensoren des Schulferien & Feiertage Managers auswaehlen ("Naechste Schulferien" und "Naechster Feiertag") - passende Sensoren werden automatisch gefunden und als Dropdown angeboten. Die Karte markiert damit alle schulfreien Tage der Woche mit Grund.
 
 An schulfreien Tagen zeigen die Sensoren dann „Schulfrei (Grund)" und die Karte ein Ferien-Banner. Kinder im Blockmodus sind bewusst ausgenommen (Azubis haben in Schulferien Betrieb).
 

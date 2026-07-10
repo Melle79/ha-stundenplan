@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.6.1 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.7.0 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -195,13 +195,10 @@ class StundenplanCard extends HTMLElement {
     const heuteImBlock = this._imBlock(a, new Date());
     let html = "";
     const freiTage = {};
-    if (a.modus !== "block" && a.ferien) {
-      if (heute >= 0 && a.ferien.heute && a.ferien.heute.schulfrei)
-        freiTage[heute] = a.ferien.heute.grund || "schulfrei";
-      const wdMorgen = (new Date().getDay() + 1) % 7;
-      const morgenIdx = wdMorgen >= 1 && wdMorgen <= 5 ? wdMorgen - 1 : -1;
-      if (morgenIdx >= 0 && a.ferien.morgen && a.ferien.morgen.schulfrei)
-        freiTage[morgenIdx] = a.ferien.morgen.grund || "schulfrei";
+    if (a.schulfrei_tage) {
+      StundenplanCard.TAGE.forEach(([tag], i) => {
+        if (a.schulfrei_tage[tag]) freiTage[i] = a.schulfrei_tage[tag];
+      });
     }
     if (a.modus === "block" && !heuteImBlock)
       html += `<div class="sp-banner">🏭 Betriebsphase – aktuell kein Blockunterricht</div>`;
@@ -241,9 +238,10 @@ class StundenplanCard extends HTMLElement {
   }
 
   _renderHeute(a) {
-    if (a.modus !== "block" && a.ferien && a.ferien.heute && a.ferien.heute.schulfrei) {
-      const g = a.ferien.heute.grund;
-      return `<div class="sp-leer">🏖 Heute schulfrei${g ? " – " + g : ""}</div>`;
+    const heute0 = this._heuteIdx();
+    if (heute0 >= 0 && a.schulfrei_tage) {
+      const g = a.schulfrei_tage[StundenplanCard.TAGE[heute0][0]];
+      if (g) return `<div class="sp-leer">🏖 Heute schulfrei – ${g}</div>`;
     }
     const heute = this._heuteIdx();
     if (heute < 0) return `<div class="sp-leer">🎉 Wochenende – schulfrei!</div>`;
@@ -358,4 +356,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.6.1", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.7.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
