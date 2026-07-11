@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 
 from ferien import hole_schulfrei_zeitraeume, schulfrei_grund, API_URL
 from mqtt_publisher import TAGE, ist_im_block, plan_fuer_datum
-from schulmanager import hole_aenderungen, hole_zusatzinfos
+from schulmanager import hole_aenderungen, hole_hausaufgaben_items, hole_zusatzinfos
 
 log = logging.getLogger("stundenplan.push")
 
@@ -74,7 +74,14 @@ def baue_nachricht(data: dict, jetzt: datetime) -> str:
         if kind.get("schulmanager"):
             try:
                 zusatz = hole_zusatzinfos(kind["schulmanager"])
-                if (zusatz.get("hausaufgaben_offen") or 0) > 0:
+                faellig = [h for h in hole_hausaufgaben_items(kind["schulmanager"])
+                           if h["due"] and h["due"] <= morgen.date().isoformat()]
+                if faellig:
+                    kurz = [h["titel"][:40] for h in faellig[:3] if h["titel"]]
+                    rest = len(faellig) - len(kurz)
+                    zeilen.append("  📚 Bis morgen: " + "; ".join(kurz)
+                                  + (f" (+{rest} weitere)" if rest > 0 else ""))
+                elif (zusatz.get("hausaufgaben_offen") or 0) > 0:
                     zeilen.append(f"  📚 {zusatz['hausaufgaben_offen']} offene Hausaufgaben")
                 arbeit = zusatz.get("naechste_arbeit")
                 if arbeit and arbeit["datum"] == morgen.date().isoformat():

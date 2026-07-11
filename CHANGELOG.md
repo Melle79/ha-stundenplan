@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.11.1 - Juli 2026 (Card 1.12.1)
+
+### Neu
+- Konkrete Hausaufgaben statt nur Anzahl: Die Heute-Ansicht listet demnaechst faellige Aufgaben (bis 3 Tage voraus, ueberfaellige rot markiert) mit Faelligkeits-Label (heute/morgen/Wochentag). Quelle: todo.get_items der Schulmanager-Todo-Liste
+- Morgen-Push nennt die bis morgen faelligen Aufgaben beim Namen ('Bis morgen: Mathe AB S. 12; Englisch Vokabeln' + Zaehler bei mehr als drei) statt nur der Gesamtzahl
+
 ## 1.11.0 - Juli 2026 (Card 1.12.0)
 
 ### Neu (nur bei Schulmanager-Verknuepfung, optional)

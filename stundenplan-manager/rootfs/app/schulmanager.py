@@ -149,3 +149,33 @@ def hole_zusatzinfos(basis: str) -> dict:
     except Exception as exc:
         log.debug("Arbeiten fuer %s nicht abrufbar: %s", basis, exc)
     return info
+
+
+def hole_hausaufgaben_items(basis: str) -> list:
+    """Offene Hausaufgaben aus der Todo-Entity via todo.get_items.
+
+    Rueckgabe: [{"titel": str, "due": iso|None}], nach Faelligkeit sortiert.
+    """
+    token = os.environ.get("SUPERVISOR_TOKEN")
+    if not token:
+        return []
+    entity = basis.replace("sensor.", "todo.", 1) + "_hausaufgaben"
+    body = json.dumps({"entity_id": entity}).encode()
+    req = urllib.request.Request(
+        f"{API_URL}/services/todo/get_items?return_response", data=body,
+        method="POST",
+        headers={"Authorization": f"Bearer {token}",
+                 "Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=10) as r:
+        antwort = json.load(r)
+    daten = antwort.get("service_response", antwort) or {}
+    items = (daten.get(entity) or {}).get("items") or []
+    offene = []
+    for it in items:
+        if it.get("status") not in (None, "needs_action"):
+            continue
+        due = it.get("due")
+        offene.append({"titel": (it.get("summary") or "").strip(),
+                       "due": str(due)[:10] if due else None})
+    offene.sort(key=lambda x: x["due"] or "9999-99-99")
+    return offene

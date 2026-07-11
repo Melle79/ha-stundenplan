@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.12.0 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.12.1 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -248,6 +248,15 @@ class StundenplanCard extends HTMLElement {
             font-size: .8rem; color: var(--secondary-text-color);
             border: 1px solid var(--divider-color); }
           .sp-gross .sp-info { font-size: .92rem; }
+          .sp-ha-liste { list-style: none; margin: 6px 0 0; padding: 0; }
+          .sp-ha-liste li { display: flex; gap: 8px; align-items: baseline;
+            font-size: .8rem; color: var(--primary-text-color); padding: 3px 2px;
+            border-bottom: 1px dashed var(--divider-color); }
+          .sp-ha-liste li:last-child { border-bottom: none; }
+          .sp-ha-due { flex: 0 0 auto; min-width: 62px; font-weight: 600;
+            font-size: .72rem; color: var(--primary-color); }
+          .sp-ha-due.sp-ha-spaet { color: var(--error-color, #e05d5d); }
+          .sp-gross .sp-ha-liste li { font-size: .95rem; }
           .sp-ha-badge { font-size: .72rem; font-weight: 600; margin-left: 8px;
             padding: 2px 7px; border-radius: 10px; vertical-align: 2px;
             background: color-mix(in srgb, var(--primary-color) 14%, transparent);
@@ -435,7 +444,17 @@ class StundenplanCard extends HTMLElement {
       const wann = arb.in_tagen === 0 ? "heute" : arb.in_tagen === 1 ? "morgen" : `in ${arb.in_tagen} Tagen`;
       teile.push(`📝 ${arb.typ}${arb.fach ? " " + arb.fach : ""} ${wann}`);
     }
-    return teile.length ? `<div class="sp-info">${teile.join(" · ")}</div>` : "";
+    let html = teile.length ? `<div class="sp-info">${teile.join(" · ")}</div>` : "";
+    const faellig = a.hausaufgaben_faellig || [];
+    if (faellig.length) {
+      const heute = this._iso(new Date());
+      const morgen = this._iso(new Date(Date.now() + 864e5));
+      const label = d => d < heute ? "überfällig!" : d === heute ? "heute"
+        : d === morgen ? "morgen" : new Date(d + "T00:00").toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
+      html += `<ul class="sp-ha-liste">` + faellig.map(h =>
+        `<li><span class="sp-ha-due ${h.due < heute ? "sp-ha-spaet" : ""}">${label(h.due)}</span>${h.titel}</li>`).join("") + `</ul>`;
+    }
+    return html;
   }
 
   _renderHeute(a) {
@@ -572,4 +591,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.12.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.12.1", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
