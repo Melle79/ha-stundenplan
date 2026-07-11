@@ -74,8 +74,9 @@ def baue_nachricht(data: dict, jetzt: datetime) -> str:
         if kind.get("schulmanager"):
             try:
                 zusatz = hole_zusatzinfos(kind["schulmanager"])
+                ab = (jetzt.date() - timedelta(days=3)).isoformat()
                 faellig = [h for h in hole_hausaufgaben_items(kind["schulmanager"])
-                           if h["due"] and h["due"] <= morgen.date().isoformat()]
+                           if h["due"] and ab <= h["due"] <= morgen.date().isoformat()]
                 if faellig:
                     kurz = [h["titel"][:40] for h in faellig[:3] if h["titel"]]
                     rest = len(faellig) - len(kurz)

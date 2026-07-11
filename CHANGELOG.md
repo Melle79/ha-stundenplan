@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.11.2 - Juli 2026
+
+### Behoben
+- Hausaufgaben-Liste blieb leer: Die Schulmanager-Todo-Eintraege haben kein due-Feld (supported_features 4), das Datum steht im Titel ('[2026-07-13] Mathe: ...'). Das Datum wird jetzt aus dem Titel geparst (ISO- und deutsches Format), das Praefix fuer die Anzeige entfernt
+- Ueberfaellige Aufgaben werden auf die letzten 7 Tage begrenzt (Push: 3 Tage), damit alte nie abgehakte Eintraege die Anzeige nicht fluten
+
 ## 1.11.1 - Juli 2026 (Card 1.12.1)
 
 ### Neu

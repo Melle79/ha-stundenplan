@@ -19,6 +19,7 @@ from ferien import API_URL
 
 log = logging.getLogger("stundenplan.schulmanager")
 
+DUE_IM_TITEL = re.compile(r"^\[(\d{4}-\d{2}-\d{2}|\d{2}\.\d{2}\.\d{4})\]\s*")
 WOCHENPLAN_MUSTER = re.compile(r"^sensor\.schule_.+_wochenplan_json$")
 STUNDE_MUSTER = re.compile(r"^(\d+)\.\s*(\d{2}:\d{2}):\d{2}\s*-\s*(\d{2}:\d{2})")
 TAG_KEYS = [("Mo", "mo"), ("Di", "di"), ("Mi", "mi"), ("Do", "do"), ("Fr", "fr")]
@@ -174,8 +175,14 @@ def hole_hausaufgaben_items(basis: str) -> list:
     for it in items:
         if it.get("status") not in (None, "needs_action"):
             continue
-        due = it.get("due")
-        offene.append({"titel": (it.get("summary") or "").strip(),
-                       "due": str(due)[:10] if due else None})
+        titel = (it.get("summary") or "").strip()
+        due = str(it.get("due"))[:10] if it.get("due") else None
+        m = DUE_IM_TITEL.match(titel)
+        if m:
+            titel = titel[m.end():].strip()
+            if not due:
+                d = m.group(1)
+                due = d if "-" in d else f"{d[6:10]}-{d[3:5]}-{d[0:2]}"
+        offene.append({"titel": titel, "due": due})
     offene.sort(key=lambda x: x["due"] or "9999-99-99")
     return offene

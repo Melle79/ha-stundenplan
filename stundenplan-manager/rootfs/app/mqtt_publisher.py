@@ -247,9 +247,10 @@ class SensorPublisher:
                 try:
                     aenderungen = hole_aenderungen(kind["schulmanager"], jetzt.date())
                     zusatz = hole_zusatzinfos(kind["schulmanager"])
-                    limit = (jetzt.date() + timedelta(days=3)).isoformat()
+                    bis = (jetzt.date() + timedelta(days=3)).isoformat()
+                    ab = (jetzt.date() - timedelta(days=7)).isoformat()
                     ha_faellig = [h for h in hole_hausaufgaben_items(kind["schulmanager"])
-                                  if h["due"] and h["due"] <= limit][:8]
+                                  if h["due"] and ab <= h["due"] <= bis][:8]
                 except Exception:
                     log.debug("Schulmanager-Daten fuer %s nicht abrufbar", kind["name"])
                 if zusatz["hausaufgaben_offen"] is not None:
