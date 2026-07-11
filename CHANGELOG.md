@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.12.0 - Juli 2026 (Card 1.13.0)
+
+### Neu
+- Klassenarbeiten direkt im Stundenplan: Die Wochenansicht markiert Arbeiten am Tag (roter Vermerk im Spaltenkopf, z.B. '📝 M' mit Typ als Tooltip) und umrandet die passende Fachstunde - beim Blaettern in kuenftige Wochen inklusive
+- Heute-Ansicht listet alle Arbeiten der naechsten 14 Tage (statt nur der naechsten), Quelle: upcoming_exams des Schulmanager-Sensors
+
 ## 1.11.2 - Juli 2026
 
 ### Behoben

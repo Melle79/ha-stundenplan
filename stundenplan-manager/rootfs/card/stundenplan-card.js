@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.12.1 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.13.0 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -191,6 +191,9 @@ class StundenplanCard extends HTMLElement {
           .sp-entfall .sp-aend { color: var(--error-color, #ff8a80); }
           .sp-vertretung { outline: 2px dashed var(--warning-color, #e0b34c); outline-offset: 1px; }
           .sp-aend { display: block; font-weight: 600; font-size: .6rem; margin-top: 1px; }
+          .sp-arbeit-kopf { display: block; font-weight: 600; font-size: .62rem; margin-top: 1px;
+            color: var(--error-color, #e05d5d); }
+          .sp-arbeit { box-shadow: inset 0 0 0 2px var(--error-color, #e05d5d); }
           .sp-tag-frei small { display: block; font-weight: 500; font-size: .64rem;
             color: var(--secondary-text-color); margin-top: 1px; }
           .sp-datum { display: block; font-weight: 400; font-size: .62rem;
@@ -324,13 +327,19 @@ class StundenplanCard extends HTMLElement {
     const aend = {};
     for (const x of a.aenderungen || [])
       if (x.stunde != null) aend[`${x.datum}|${x.stunde}`] = x;
+    const arbTag = {};
+    for (const x of a.arbeiten || [])
+      (arbTag[x.datum] = arbTag[x.datum] || []).push(x);
+    const arbKz = x => (x.kuerzel || x.fach || "").toUpperCase();
 
     html += `<table class="sp-tabelle"><colgroup><col style="width:54px"><col span="5"></colgroup><thead><tr><th></th>`;
     for (const t of tage) {
       const istHeute = aktuelleWoche && t.i === heute;
       const punkt = istHeute ? `<span class="sp-punkt-heute"> ●</span>` : "";
       const frei = t.frei ? `<small>${t.frei}</small>` : "";
-      html += `<th class="${istHeute ? "sp-heute" : ""} ${t.frei ? "sp-tag-frei" : ""}">${t.l}${punkt}<small class="sp-datum">${fmt(t.datum)}</small>${frei}</th>`;
+      const arb = (arbTag[t.iso] || []).map(x =>
+        `<small class="sp-arbeit-kopf" title="${x.typ}${x.fach ? " " + x.fach : ""}">📝 ${x.kuerzel || x.fach || x.typ}</small>`).join("");
+      html += `<th class="${istHeute ? "sp-heute" : ""} ${t.frei ? "sp-tag-frei" : ""}">${t.l}${punkt}<small class="sp-datum">${fmt(t.datum)}</small>${frei}${arb}</th>`;
     }
     html += `</tr></thead><tbody>`;
 
@@ -351,14 +360,16 @@ class StundenplanCard extends HTMLElement {
           st.von <= zeit && zeit < st.bis && f;
         const spalte = aktuelleWoche && t.i === heute ? "sp-heute-spalte" : "";
         const x = aend[`${t.iso}|${st.nr}`];
+        const arbeit = kz && (arbTag[t.iso] || []).find(w => arbKz(w) === kz.toUpperCase()
+          || (w.fach && f && w.fach.toUpperCase() === f.name.toUpperCase()));
         const entfall = x && x.typ === "cancelledLesson";
         const vertretung = x && !entfall;
         const badge = entfall ? `<small class="sp-aend">✕ Entfall</small>`
           : vertretung ? `<small class="sp-aend">🔁 ${x.label}${x.fach ? " " + x.fach : ""}${x.raum ? " · " + x.raum : ""}</small>` : "";
-        const aCls = entfall ? "sp-entfall" : vertretung ? "sp-vertretung" : "";
+        const aCls = (entfall ? "sp-entfall" : vertretung ? "sp-vertretung" : "") + (arbeit ? " sp-arbeit" : "");
         if (f) {
           html += `<td class="${spalte}"><div class="sp-fach ${istJetzt ? "sp-aktuell" : ""} ${t.frei ? "sp-gedimmt" : ""} ${aCls}"
-            style="background:${f.farbe}" title="${f.name}${x ? " – " + x.label : ""}">${kz}<small class="sp-name">${f.name}</small>${f.raum ? `<small>${f.raum}</small>` : ""}${badge}</div></td>`;
+            style="background:${f.farbe}" title="${f.name}${x ? " – " + x.label : ""}${arbeit ? " – " + arbeit.typ : ""}">${kz}${arbeit ? " 📝" : ""}<small class="sp-name">${f.name}</small>${f.raum ? `<small>${f.raum}</small>` : ""}${badge}</div></td>`;
         } else if (x) {
           html += `<td class="${spalte}"><div class="sp-fach ${aCls}" style="background:var(--secondary-background-color,#444)">${badge}</div></td>`;
         } else {
@@ -439,9 +450,15 @@ class StundenplanCard extends HTMLElement {
     const teile = [];
     if (a.hausaufgaben_offen > 0)
       teile.push(`📚 ${a.hausaufgaben_offen} offene Hausaufgabe${a.hausaufgaben_offen === 1 ? "" : "n"}`);
-    const arb = a.naechste_arbeit;
-    if (arb && arb.in_tagen != null && arb.in_tagen <= 14) {
-      const wann = arb.in_tagen === 0 ? "heute" : arb.in_tagen === 1 ? "morgen" : `in ${arb.in_tagen} Tagen`;
+    const heuteIso = this._iso(new Date());
+    const grenze = this._iso(new Date(Date.now() + 14 * 864e5));
+    const liste = (a.arbeiten && a.arbeiten.length) ? a.arbeiten
+      : a.naechste_arbeit ? [a.naechste_arbeit] : [];
+    for (const arb of liste) {
+      const d = arb.datum;
+      if (!d || d < heuteIso || d > grenze) continue;
+      const tage = Math.round((new Date(d + "T00:00") - new Date(heuteIso + "T00:00")) / 864e5);
+      const wann = tage === 0 ? "heute" : tage === 1 ? "morgen" : `in ${tage} Tagen`;
       teile.push(`📝 ${arb.typ}${arb.fach ? " " + arb.fach : ""} ${wann}`);
     }
     let html = teile.length ? `<div class="sp-info">${teile.join(" · ")}</div>` : "";
@@ -591,4 +608,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.12.1", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.13.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");

@@ -20,7 +20,7 @@ from datetime import datetime, timedelta
 import paho.mqtt.client as mqtt
 
 from ferien import hole_schulfrei_zeitraeume, schulfrei_grund
-from schulmanager import hole_aenderungen, hole_hausaufgaben_items, hole_zusatzinfos
+from schulmanager import hole_aenderungen, hole_arbeiten, hole_hausaufgaben_items, hole_zusatzinfos
 
 log = logging.getLogger("stundenplan.mqtt")
 
@@ -243,6 +243,7 @@ class SensorPublisher:
             aenderungen = []
             zusatz = {"hausaufgaben_offen": None, "naechste_arbeit": None}
             ha_faellig = []
+            arbeiten = []
             if kind.get("schulmanager"):
                 try:
                     aenderungen = hole_aenderungen(kind["schulmanager"], jetzt.date())
@@ -251,6 +252,7 @@ class SensorPublisher:
                     ab = (jetzt.date() - timedelta(days=7)).isoformat()
                     ha_faellig = [h for h in hole_hausaufgaben_items(kind["schulmanager"])
                                   if h["due"] and ab <= h["due"] <= bis][:8]
+                    arbeiten = hole_arbeiten(kind["schulmanager"])
                 except Exception:
                     log.debug("Schulmanager-Daten fuer %s nicht abrufbar", kind["name"])
                 if zusatz["hausaufgaben_offen"] is not None:
@@ -263,6 +265,7 @@ class SensorPublisher:
                 "aenderungen": aenderungen,
                 "hausaufgaben_offen": zusatz["hausaufgaben_offen"],
                 "hausaufgaben_faellig": ha_faellig,
+                "arbeiten": arbeiten,
                 "naechste_arbeit": zusatz["naechste_arbeit"],
                 "schulfrei_zeitraeume": zeitraeume if kind.get("modus", "wochenplan") == "wochenplan" else [],
                 "raster": raster,

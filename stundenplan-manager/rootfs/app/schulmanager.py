@@ -186,3 +186,26 @@ def hole_hausaufgaben_items(basis: str) -> list:
         offene.append({"titel": titel, "due": due})
     offene.sort(key=lambda x: x["due"] or "9999-99-99")
     return offene
+
+
+def hole_arbeiten(basis: str) -> list:
+    """Kommende Klassenarbeiten: [{"datum","fach","kuerzel","typ"}]."""
+    try:
+        d = _hole_state(f"{basis}_tage_bis_nachste_arbeit")
+    except Exception as exc:
+        log.debug("Arbeiten fuer %s nicht abrufbar: %s", basis, exc)
+        return []
+    a = d.get("attributes") or {}
+    eintraege = a.get("upcoming_exams")
+    if not eintraege and a.get("next_exam"):
+        eintraege = [a["next_exam"]]
+    arbeiten = []
+    for e in eintraege or []:
+        if not e.get("date"):
+            continue
+        arbeiten.append({"datum": str(e["date"])[:10],
+                         "fach": e.get("subject") or "",
+                         "kuerzel": e.get("subject_abbr") or "",
+                         "typ": e.get("type") or "Arbeit"})
+    arbeiten.sort(key=lambda x: x["datum"])
+    return arbeiten
