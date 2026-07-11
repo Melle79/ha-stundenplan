@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.11.0 - Juli 2026 (Card 1.12.0)
+
+### Neu (nur bei Schulmanager-Verknuepfung, optional)
+- Offene Hausaufgaben: Anzahl aus der Schulmanager-Todo-Liste in der Heute-Ansicht, als Badge in der Schulschluss-Ansicht, im Morgen-Push und als Sensor-Attribut hausaufgaben_offen
+- Naechste Klassenarbeit: Heute-Ansicht zeigt anstehende Arbeiten (bis 14 Tage im Voraus, z.B. 'Schulaufgabe Mathematik in 3 Tagen'), der Morgen-Push warnt am Vorabend ('Schulaufgabe Mathematik morgen!'), Sensor-Attribut naechste_arbeit
+- Wochenansicht bleibt bewusst clean (nur der Plan); Noten werden bewusst nicht angezeigt
+
 ## 1.10.1 - Juli 2026
 
 ### Neu

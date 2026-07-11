@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.11.0 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.12.0 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -244,6 +244,14 @@ class StundenplanCard extends HTMLElement {
           .sp-liste li.sp-liste-entfall { opacity: .55; }
           .sp-laend { color: var(--warning-color, #e0b34c); font-size: .78rem; font-weight: 600; }
           .sp-leer { color: var(--secondary-text-color); font-size: .88rem; padding: 4px 0; }
+          .sp-info { margin-top: 8px; padding: 6px 12px; border-radius: 8px;
+            font-size: .8rem; color: var(--secondary-text-color);
+            border: 1px solid var(--divider-color); }
+          .sp-gross .sp-info { font-size: .92rem; }
+          .sp-ha-badge { font-size: .72rem; font-weight: 600; margin-left: 8px;
+            padding: 2px 7px; border-radius: 10px; vertical-align: 2px;
+            background: color-mix(in srgb, var(--primary-color) 14%, transparent);
+            color: var(--primary-color); }
           .sp-material { margin-top: 8px; padding: 8px 12px; border-radius: 8px;
             font-size: .82rem; color: var(--primary-text-color);
             background: color-mix(in srgb, var(--primary-color) 10%, transparent); }
@@ -407,8 +415,10 @@ class StundenplanCard extends HTMLElement {
         cls = "sp-schluss-frei";
       }
 
+      const ha = a && a.hausaufgaben_offen > 0
+        ? `<span class="sp-ha-badge" title="offene Hausaufgaben">📚 ${a.hausaufgaben_offen}</span>` : "";
       html += `<li>
-        <span class="sp-schluss-name">${name}</span>
+        <span class="sp-schluss-name">${name}${ha}</span>
         <span class="sp-schluss-sub">${sub}</span>
         <span class="sp-schluss-zeit ${cls}">${wert}</span>
       </li>`;
@@ -416,14 +426,26 @@ class StundenplanCard extends HTMLElement {
     return html + `</ul>`;
   }
 
+  _schuleInfoZeile(a) {
+    const teile = [];
+    if (a.hausaufgaben_offen > 0)
+      teile.push(`📚 ${a.hausaufgaben_offen} offene Hausaufgabe${a.hausaufgaben_offen === 1 ? "" : "n"}`);
+    const arb = a.naechste_arbeit;
+    if (arb && arb.in_tagen != null && arb.in_tagen <= 14) {
+      const wann = arb.in_tagen === 0 ? "heute" : arb.in_tagen === 1 ? "morgen" : `in ${arb.in_tagen} Tagen`;
+      teile.push(`📝 ${arb.typ}${arb.fach ? " " + arb.fach : ""} ${wann}`);
+    }
+    return teile.length ? `<div class="sp-info">${teile.join(" · ")}</div>` : "";
+  }
+
   _renderHeute(a) {
     const isoHeute = this._iso(new Date());
     if (a.modus !== "block") {
       const g = this._freiGrund(a, isoHeute);
-      if (g) return `<div class="sp-leer">${g.replace("🏖 ", "🏖 Heute schulfrei – ")}</div>`;
+      if (g) return `<div class="sp-leer">${g.replace("🏖 ", "🏖 Heute schulfrei – ")}</div>` + this._schuleInfoZeile(a);
     }
     const heute = this._heuteIdx();
-    if (heute < 0) return `<div class="sp-leer">🎉 Wochenende – schulfrei!</div>`;
+    if (heute < 0) return `<div class="sp-leer">🎉 Wochenende – schulfrei!</div>` + this._schuleInfoZeile(a);
     if (!this._imBlock(a, new Date()))
       return `<div class="sp-leer">🏭 Betriebsphase – kein Blockunterricht heute</div>`;
     const tag = StundenplanCard.TAGE[heute][0];
@@ -458,7 +480,8 @@ class StundenplanCard extends HTMLElement {
     });
     if (stunden && material.length)
       html += `<div class="sp-material">🎒 Heute dabei: ${material.join(", ")}</div>`;
-    return stunden ? html : `<div class="sp-leer">Heute kein Unterricht 🎈</div>`;
+    html += this._schuleInfoZeile(a);
+    return stunden ? html : `<div class="sp-leer">Heute kein Unterricht 🎈</div>` + this._schuleInfoZeile(a);
   }
 
   _zeigeFehler(msg) {
@@ -549,4 +572,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.11.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.12.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");

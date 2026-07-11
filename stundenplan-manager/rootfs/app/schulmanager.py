@@ -120,3 +120,32 @@ def hole_aenderungen(basis: str, heute: date = None) -> list:
                 "grund": c.get("reason") or c.get("note") or "",
             })
     return ergebnis
+
+
+def hole_zusatzinfos(basis: str) -> dict:
+    """Offene Hausaufgaben (todo-Entity) und naechste Klassenarbeit.
+
+    Rueckgabe: {"hausaufgaben_offen": int|None,
+                "naechste_arbeit": {"datum","in_tagen","fach","typ"}|None}
+    """
+    info = {"hausaufgaben_offen": None, "naechste_arbeit": None}
+    todo_entity = basis.replace("sensor.", "todo.", 1) + "_hausaufgaben"
+    try:
+        d = _hole_state(todo_entity)
+        if d.get("state") not in (None, "unknown", "unavailable"):
+            info["hausaufgaben_offen"] = int(d["state"])
+    except Exception as exc:
+        log.debug("Hausaufgaben fuer %s nicht abrufbar: %s", basis, exc)
+    try:
+        d = _hole_state(f"{basis}_tage_bis_nachste_arbeit")
+        ne = (d.get("attributes") or {}).get("next_exam")
+        if ne and ne.get("date"):
+            info["naechste_arbeit"] = {
+                "datum": str(ne["date"])[:10],
+                "in_tagen": ne.get("days_from_now"),
+                "fach": ne.get("subject") or ne.get("subject_abbr") or "",
+                "typ": ne.get("type") or "Arbeit",
+            }
+    except Exception as exc:
+        log.debug("Arbeiten fuer %s nicht abrufbar: %s", basis, exc)
+    return info

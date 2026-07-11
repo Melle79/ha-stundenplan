@@ -20,7 +20,7 @@ from datetime import datetime, timedelta
 import paho.mqtt.client as mqtt
 
 from ferien import hole_schulfrei_zeitraeume, schulfrei_grund
-from schulmanager import hole_aenderungen
+from schulmanager import hole_aenderungen, hole_zusatzinfos
 
 log = logging.getLogger("stundenplan.mqtt")
 
@@ -241,15 +241,23 @@ class SensorPublisher:
             genutzt = {kz for p in [kind.get("plan", {})] + [v.get("plan", {}) for v in kind.get("plaene", [])]
                        for tag in TAGE for kz in p.get(tag, []) if kz}
             aenderungen = []
+            zusatz = {"hausaufgaben_offen": None, "naechste_arbeit": None}
             if kind.get("schulmanager"):
                 try:
                     aenderungen = hole_aenderungen(kind["schulmanager"], jetzt.date())
+                    zusatz = hole_zusatzinfos(kind["schulmanager"])
                 except Exception:
-                    log.debug("Aenderungen fuer %s nicht abrufbar", kind["name"])
+                    log.debug("Schulmanager-Daten fuer %s nicht abrufbar", kind["name"])
+                if zusatz["hausaufgaben_offen"] is not None:
+                    ergebnis["attrs"]["hausaufgaben_offen"] = zusatz["hausaufgaben_offen"]
+                if zusatz["naechste_arbeit"]:
+                    ergebnis["attrs"]["naechste_arbeit"] = zusatz["naechste_arbeit"]
             plan_payload = json.dumps({
                 "kind": kind["name"],
                 "modus": kind.get("modus", "wochenplan"),
                 "aenderungen": aenderungen,
+                "hausaufgaben_offen": zusatz["hausaufgaben_offen"],
+                "naechste_arbeit": zusatz["naechste_arbeit"],
                 "schulfrei_zeitraeume": zeitraeume if kind.get("modus", "wochenplan") == "wochenplan" else [],
                 "raster": raster,
                 "plan": kind.get("plan", {}),
