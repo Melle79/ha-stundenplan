@@ -171,6 +171,37 @@ def ha_entities():
         return jsonify([])
 
 
+def _entity_existiert(entity: str) -> bool:
+    token = os.environ.get("SUPERVISOR_TOKEN")
+    if not token or not entity:
+        return False
+    try:
+        import urllib.request
+        from ferien import API_URL
+        req = urllib.request.Request(f"{API_URL}/states/{entity}",
+                                     headers={"Authorization": f"Bearer {token}"})
+        with urllib.request.urlopen(req, timeout=5) as r:
+            return r.status == 200
+    except Exception:
+        return False
+
+
+def migriere_auf_kalender():
+    """Upgrade auf den Kalender-Sensor, falls einer mit gleichem Praefix existiert."""
+    data = load_data()
+    einst = data.setdefault("einstellungen", {})
+    aktuell = einst.get("ferien_sensor", "")
+    m = re.match(r"^sensor\.(.+?)_(naechste_schulferien|naechster_feiertag)$", aktuell)
+    if not m:
+        return
+    kalender = f"sensor.{m.group(1)}_kalender"
+    if _entity_existiert(kalender):
+        einst["ferien_sensor"] = kalender
+        einst["feiertag_sensor"] = ""
+        log.info("Ferien-Konfiguration auf Kalender-Sensor migriert: %s", kalender)
+        save_data(data)
+
+
 def migriere_ferien_optionen():
     """Alte heute/morgen-Binaersensoren auf die Zeitraum-Sensoren umstellen.
     Nutzt den gemeinsamen Entity-Praefix (z.B. schulferien_bayern)."""
@@ -214,6 +245,7 @@ def post_data():
 if __name__ == "__main__":
     log.info("Stundenplan Manager startet auf Port 8098")
     migriere_ferien_optionen()
+    migriere_auf_kalender()
     PUBLISHER.start()
     PushScheduler(lambda: load_data()).start()
     registriere_ressource_async()

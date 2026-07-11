@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.9.0 - Juli 2026
+
+### Verbessert
+- Unterstuetzung fuer den neuen Kalender-Sensor des Schulferien-Managers (Attribute schulferien/feiertage mit allen Zeitraeumen): ein einziges Dropdown-Feld genuegt, das Wochen-Blaettern der Karte zeigt damit weit in die Zukunft korrekte Ferien- und Feiertags-Markierungen (z.B. Herbstferien, Buss- und Bettag, Weihnachtsferien)
+- Format-Erkennung automatisch am Attribut-Set - die bisherigen Einzelsensoren funktionieren unveraendert weiter
+- Auto-Migration: Ist ein Kalender-Sensor mit gleichem Praefix vorhanden, wird die Konfiguration beim Start automatisch umgestellt
+
 ## 1.8.0 - Juli 2026 (Card 1.10.0)
 
 ### Neu (beides optional)

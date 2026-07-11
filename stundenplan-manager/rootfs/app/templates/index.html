@@ -166,13 +166,13 @@
     </div>
     <div class="card">
       <h2>🏖 Schulferien-Integration</h2>
-      <p class="hint" style="margin:0 0 12px">Verknüpfe die Zeitraum-Sensoren deines Schulferien-Add-ons („Nächste Schulferien" und „Nächster Feiertag"). Sensoren und Karte zeigen dann für die ganze Woche „Schulfrei (Grund)". Kinder im Blockmodus sind ausgenommen (Betrieb statt Ferien).</p>
+      <p class="hint" style="margin:0 0 12px">Verknüpfe den Kalender-Sensor deines Schulferien-Add-ons (alle Ferien und Feiertage) – dann reicht das erste Feld. Alternativ die beiden Einzelsensoren „Nächste Schulferien" und „Nächster Feiertag". Kinder im Blockmodus sind ausgenommen (Betrieb statt Ferien).</p>
       <div class="row">
-        <label style="width:130px">Ferien-Sensor:</label>
+        <label style="width:130px">Kalender/Ferien:</label>
         <select id="ferienHeute" onchange="ferienSetzen('ferien_sensor', this.value)"></select>
       </div>
       <div class="row">
-        <label style="width:130px">Feiertag-Sensor:</label>
+        <label style="width:130px">Feiertage (optional):</label>
         <select id="ferienMorgen" onchange="ferienSetzen('feiertag_sensor', this.value)"></select>
       </div>
     </div>

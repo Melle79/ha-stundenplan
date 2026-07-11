@@ -35,9 +35,59 @@ def _hole_state(entity: str, token: str) -> dict:
         return json.load(r)
 
 
+def _parse_zeitraeume(state_obj: dict) -> list:
+    """Erkennt das Sensor-Format am Attribut-Set und liefert Zeitraeume.
+
+    Unterstuetzt:
+      - Kalender-Sensor: Attribute 'schulferien' (Liste mit beginn/ende/name)
+        und/oder 'feiertage' (Liste mit datum/name) - komplette Jahresdaten
+      - Legacy 'naechste_schulferien': beginn/ende + aktuell_ferien(_beginn/_ende)
+      - Legacy 'naechster_feiertag': datum + 14-Tage-vorschau
+    """
+    a = state_obj.get("attributes", {}) or {}
+    z = []
+
+    if isinstance(a.get("schulferien"), list) or isinstance(a.get("feiertage"), list):
+        for e in a.get("schulferien") or []:
+            if e.get("beginn") and e.get("ende"):
+                z.append({"von": e["beginn"], "bis": e["ende"],
+                          "grund": e.get("name") or "Ferien"})
+        for e in a.get("feiertage") or []:
+            if e.get("datum"):
+                z.append({"von": e["datum"], "bis": e["datum"],
+                          "grund": e.get("name") or "Feiertag"})
+        return z
+
+    if a.get("beginn") and a.get("ende"):
+        if a.get("aktuell_ferien") and a.get("aktuell_ferien_beginn") \
+                and a.get("aktuell_ferien_ende"):
+            z.append({"von": a["aktuell_ferien_beginn"],
+                      "bis": a["aktuell_ferien_ende"],
+                      "grund": a["aktuell_ferien"]})
+        z.append({"von": a["beginn"], "bis": a["ende"],
+                  "grund": state_obj.get("state") or "Ferien"})
+        return z
+
+    if a.get("datum") or a.get("vorschau"):
+        if a.get("datum"):
+            z.append({"von": a["datum"], "bis": a["datum"],
+                      "grund": state_obj.get("state") or "Feiertag"})
+        for tag in a.get("vorschau") or []:
+            status = (tag.get("status") or "").lower()
+            if status in ("", "normal", "wochenende") or not tag.get("date"):
+                continue
+            grund = "Feiertag" if status == "feiertag" else status.capitalize()
+            if status == "feiertag" and tag["date"] == a.get("datum"):
+                grund = state_obj.get("state") or grund
+            z.append({"von": tag["date"], "bis": tag["date"], "grund": grund})
+    return z
+
+
 def hole_schulfrei_zeitraeume(ferien_entity: str = "",
                               feiertag_entity: str = "") -> list:
-    """Liste von {"von": iso, "bis": iso, "grund": str}, gecacht."""
+    """Liste von {"von": iso, "bis": iso, "grund": str}, gecacht.
+    Beide Felder akzeptieren jedes unterstuetzte Format; beim Kalender-Sensor
+    reicht ein einziges Feld."""
     schluessel = (ferien_entity, feiertag_entity)
     jetzt = time.monotonic()
     if _cache["schluessel"] == schluessel and jetzt - _cache["zeit"] < CACHE_TTL:
@@ -45,40 +95,16 @@ def hole_schulfrei_zeitraeume(ferien_entity: str = "",
 
     token = os.environ.get("SUPERVISOR_TOKEN")
     zeitraeume = []
-
-    if token and (ferien_entity or "").strip():
+    gesehen = set()
+    for entity in (ferien_entity, feiertag_entity):
+        entity = (entity or "").strip()
+        if not entity or not token or entity in gesehen:
+            continue
+        gesehen.add(entity)
         try:
-            d = _hole_state(ferien_entity.strip(), token)
-            a = d.get("attributes", {}) or {}
-            if a.get("aktuell_ferien") and a.get("aktuell_ferien_beginn") \
-                    and a.get("aktuell_ferien_ende"):
-                zeitraeume.append({"von": a["aktuell_ferien_beginn"],
-                                   "bis": a["aktuell_ferien_ende"],
-                                   "grund": a["aktuell_ferien"]})
-            if a.get("beginn") and a.get("ende"):
-                zeitraeume.append({"von": a["beginn"], "bis": a["ende"],
-                                   "grund": d.get("state") or "Ferien"})
+            zeitraeume.extend(_parse_zeitraeume(_hole_state(entity, token)))
         except Exception as exc:
-            log.debug("Ferien-Sensor %s nicht abrufbar: %s", ferien_entity, exc)
-
-    if token and (feiertag_entity or "").strip():
-        try:
-            d = _hole_state(feiertag_entity.strip(), token)
-            a = d.get("attributes", {}) or {}
-            if a.get("datum"):
-                zeitraeume.append({"von": a["datum"], "bis": a["datum"],
-                                   "grund": d.get("state") or "Feiertag"})
-            for tag in a.get("vorschau") or []:
-                status = (tag.get("status") or "").lower()
-                if status in ("", "normal", "wochenende") or not tag.get("date"):
-                    continue
-                grund = "Feiertag" if status == "feiertag" else status.capitalize()
-                if status == "feiertag" and tag["date"] == a.get("datum"):
-                    grund = d.get("state") or grund
-                zeitraeume.append({"von": tag["date"], "bis": tag["date"],
-                                   "grund": grund})
-        except Exception as exc:
-            log.debug("Feiertag-Sensor %s nicht abrufbar: %s", feiertag_entity, exc)
+            log.debug("Ferien-Entity %s nicht abrufbar: %s", entity, exc)
 
     _cache["zeit"] = jetzt
     _cache["schluessel"] = schluessel
