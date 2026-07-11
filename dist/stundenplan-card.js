@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.9.0 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.9.1 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -40,8 +40,12 @@ class StundenplanCard extends HTMLElement {
     const gestapelt = this._config.layout === "untereinander" && ids.length > 1;
     const relevant = (gestapelt || schulschluss) ? ids : [ids[this._aktivIdx]];
     const attrListe = relevant.map(id => (hass.states[id] || {}).attributes || {});
+    const schwestern = schulschluss ? relevant.flatMap(id =>
+      ["_schulschluss_heute", "_aktuelle_stunde"].map(s =>
+        ((hass.states[id.replace(/_wochenplan$/, s)] || {}).state) || "")) : [];
     const hash = JSON.stringify([ids, this._aktivIdx, this._wocheOffset,
-                                 this._config.layout, attrListe, new Date().getMinutes()]);
+                                 this._config.layout, attrListe, schwestern,
+                                 new Date().getMinutes()]);
     if (hash === this._letzterHash) return;
     this._letzterHash = hash;
     this._render(ids, gestapelt && !schulschluss);
@@ -332,38 +336,54 @@ class StundenplanCard extends HTMLElement {
     const zeit = this._jetztZeit();
     let html = `<ul class="sp-schluss">`;
     for (const id of ids) {
-      const st = this._hass.states[id];
-      const a = st && st.attributes;
+      const a = (this._hass.states[id] || {}).attributes;
       const name = this._kindName(id);
+      const sensor = s => {
+        const st = this._hass.states[id.replace(/_wochenplan$/, s)];
+        return st && !["unavailable", "unknown"].includes(st.state) ? st.state : null;
+      };
       let wert = "–", sub = "", cls = "";
-      if (!a || !a.raster || !a.plan) {
-        sub = "keine Daten";
-      } else {
+
+      // Primaerquelle: die Backend-Sensoren (Single Source of Truth)
+      let schluss = sensor("_schulschluss_heute");
+      const aktuell = sensor("_aktuelle_stunde") || "";
+
+      if (schluss === null && a && a.raster && a.plan) {
+        // Fallback: lokal berechnen, falls der Sensor deaktiviert ist
         const frei = this._freiGrund(a, isoHeute);
-        if (frei) {
-          wert = frei.replace(/^🏖 |^🏭 /, "");
-          cls = "sp-schluss-frei";
-        } else if (heute < 0) {
-          wert = "Wochenende";
-          cls = "sp-schluss-frei";
-        } else {
+        if (frei) schluss = "–";
+        else if (heute < 0) schluss = "–";
+        else {
           const plan = this._planFuerDatum(a, isoHeute)[StundenplanCard.TAGE[heute][0]] || [];
           const belegte = plan.map((kz, i) => kz && i < a.raster.length ? i : null)
             .filter(i => i !== null);
-          if (!belegte.length) {
-            wert = "Schulfrei";
-            cls = "sp-schluss-frei";
-          } else {
-            const ende = a.raster[belegte[belegte.length - 1]].bis;
-            wert = ende;
-            if (zeit >= ende) { sub = "Schule ist aus"; cls = "sp-schluss-vorbei"; }
-            else {
-              const f = (a.faecher || {})[plan[belegte[belegte.length - 1]]];
-              sub = "noch bis " + ende + (f ? " · zuletzt " + f.name : "");
-            }
-          }
+          schluss = belegte.length ? a.raster[belegte[belegte.length - 1]].bis : "–";
         }
       }
+
+      if (schluss === null) {
+        sub = "keine Daten";
+      } else if (/^\d{2}:\d{2}$/.test(schluss)) {
+        wert = schluss;
+        if (zeit >= schluss) { sub = "Schule ist aus"; cls = "sp-schluss-vorbei"; }
+        else {
+          sub = "noch bis " + schluss;
+          if (a && a.raster && a.plan && heute >= 0) {
+            const plan = this._planFuerDatum(a, isoHeute)[StundenplanCard.TAGE[heute][0]] || [];
+            const belegte = plan.map((kz, i) => kz && i < a.raster.length ? i : null)
+              .filter(i => i !== null);
+            const f = belegte.length ? (a.faecher || {})[plan[belegte[belegte.length - 1]]] : null;
+            if (f) sub += " · zuletzt " + f.name;
+          }
+        }
+      } else {
+        // Kein Schulschluss heute: Grund aus dem Aktuelle-Stunde-Sensor
+        const m = aktuell.match(/^Schulfrei \((.+)\)$/);
+        wert = m ? m[1] : (aktuell === "Betrieb" ? "Betrieb"
+          : heute < 0 ? "Wochenende" : "Schulfrei");
+        cls = "sp-schluss-frei";
+      }
+
       html += `<li>
         <span class="sp-schluss-name">${name}</span>
         <span class="sp-schluss-sub">${sub}</span>
@@ -493,4 +513,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.9.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.9.1", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");

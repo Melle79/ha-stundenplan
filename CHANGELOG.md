@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.2 - Juli 2026 (Card 1.9.1)
+
+- Schulschluss-Ansicht nutzt jetzt die vorhandenen Backend-Sensoren als primaere Quelle (schulschluss_heute fuer die Uhrzeit, aktuelle_stunde fuer den Frei-Grund) statt doppelter Berechnung - Karte und Automationen zeigen garantiert dasselbe. Lokale Berechnung bleibt als Fallback, wenn die Sensoren deaktiviert sind; das 'zuletzt {Fach}'-Detail wird weiterhin lokal angereichert
+
 ## 1.7.1 - Juli 2026 (Card 1.9.0)
 
 ### Neu
