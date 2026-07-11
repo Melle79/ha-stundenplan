@@ -1,0 +1,128 @@
+"""Stundenplan Manager - optionaler Morgen-Push.
+
+Sendet einmal taeglich (konfigurierbare Uhrzeit, default abends) eine gesammelte
+Benachrichtigung ueber den morgigen Schultag aller Kinder an einen
+HA-Notify-Service. Standardmaessig deaktiviert. An Tagen, an denen alle Kinder
+frei haben, wird nichts gesendet.
+"""
+import json
+import logging
+import os
+import threading
+import urllib.request
+from datetime import datetime, timedelta
+
+from ferien import hole_schulfrei_zeitraeume, schulfrei_grund, API_URL
+from mqtt_publisher import TAGE, ist_im_block, plan_fuer_datum
+
+log = logging.getLogger("stundenplan.push")
+
+
+def liste_notify_services() -> list:
+    token = os.environ.get("SUPERVISOR_TOKEN")
+    if not token:
+        return []
+    req = urllib.request.Request(f"{API_URL}/services",
+                                 headers={"Authorization": f"Bearer {token}"})
+    with urllib.request.urlopen(req, timeout=10) as r:
+        domains = json.load(r)
+    dienste = []
+    for d in domains:
+        if d.get("domain") == "notify":
+            for name in (d.get("services") or {}):
+                if name != "notify" or len(d["services"]) == 1:
+                    dienste.append(name)
+    return sorted(dienste)
+
+
+def baue_nachricht(data: dict, jetzt: datetime) -> str:
+    """Zeilen fuer den morgigen Tag; leerer String wenn alle frei haben."""
+    einst = data.get("einstellungen", {})
+    zeitraeume = hole_schulfrei_zeitraeume(
+        einst.get("ferien_sensor", ""), einst.get("feiertag_sensor", ""))
+    faecher = data.get("faecher", {})
+    std_raster = einst.get("stundenraster_standard", [])
+    morgen = jetzt + timedelta(days=1)
+    zeilen = []
+
+    for kind in data.get("kinder", []):
+        modus = kind.get("modus", "wochenplan")
+        if modus == "wochenplan" and schulfrei_grund(morgen.date(), zeitraeume):
+            continue
+        if morgen.weekday() > 4:
+            continue
+        if modus == "block" and not ist_im_block(kind, morgen):
+            continue
+        plan = plan_fuer_datum(kind, morgen.date()).get(TAGE[morgen.weekday()], [])
+        raster = kind.get("stundenraster") or std_raster
+        belegte = [i for i, kz in enumerate(plan) if kz and i < len(raster)]
+        if not belegte:
+            continue
+        erster_kz = plan[belegte[0]]
+        f = faecher.get(erster_kz, {})
+        zeile = (f"{kind['name']}: {f.get('name', erster_kz)} um "
+                 f"{raster[belegte[0]]['von']}, Schluss {raster[belegte[-1]]['bis']}")
+        material = []
+        for i in belegte:
+            m = (faecher.get(plan[i], {}) or {}).get("material", "").strip()
+            if m and m not in material:
+                material.append(m)
+        if material:
+            zeile += " – 🎒 " + ", ".join(material)
+        zeilen.append(zeile)
+
+    return "\n".join(zeilen)
+
+
+def sende_push(service: str, nachricht: str) -> bool:
+    token = os.environ.get("SUPERVISOR_TOKEN")
+    if not token or not service:
+        return False
+    body = json.dumps({"title": "🎒 Schule morgen",
+                       "message": nachricht}).encode()
+    req = urllib.request.Request(
+        f"{API_URL}/services/notify/{service}", data=body, method="POST",
+        headers={"Authorization": f"Bearer {token}",
+                 "Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=10):
+        pass
+    log.info("Morgen-Push gesendet an notify.%s (%d Zeilen)",
+             service, nachricht.count("\n") + 1)
+    return True
+
+
+class PushScheduler:
+    """Prueft alle 30s, ob die konfigurierte Push-Zeit erreicht ist."""
+
+    def __init__(self, load_data_fn):
+        self._load_data = load_data_fn
+        self._stop = threading.Event()
+        self._zuletzt_gesendet = None  # date
+
+    def start(self):
+        threading.Thread(target=self._loop, daemon=True).start()
+        log.info("Push-Scheduler gestartet")
+
+    def _loop(self):
+        while not self._stop.wait(30):
+            try:
+                self._tick()
+            except Exception:
+                log.exception("Fehler im Push-Scheduler")
+
+    def _tick(self):
+        data = self._load_data()
+        push = (data.get("einstellungen", {}) or {}).get("push", {}) or {}
+        if not push.get("aktiv") or not push.get("service"):
+            return
+        jetzt = datetime.now()
+        if jetzt.strftime("%H:%M") != (push.get("zeit") or "19:00"):
+            return
+        if self._zuletzt_gesendet == jetzt.date():
+            return
+        self._zuletzt_gesendet = jetzt.date()
+        nachricht = baue_nachricht(data, jetzt)
+        if nachricht:
+            sende_push(push["service"], nachricht)
+        else:
+            log.info("Morgen-Push uebersprungen: morgen haben alle frei")

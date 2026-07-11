@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.8.0 - Juli 2026 (Card 1.10.0)
+
+### Neu (beides optional)
+- Morgen-Push: In den Einstellungen aktivierbar (Standard: aus) - sendet zur konfigurierten Uhrzeit (Standard 19:00) eine gesammelte Benachrichtigung ueber den morgigen Schultag aller Kinder an einen HA-Notify-Service (Geraete-Dropdown wird automatisch geladen, Test-Button inklusive). An freien Tagen bleibt der Push stumm; Blockmodus und Planversionen werden beruecksichtigt
+- Materialliste pro Fach: Optionales Material-Feld im Faecher-Tab (z.B. Sportbeutel). Erscheint im Morgen-Push, als Attribut material_morgen am Sensor 'Erste Stunde morgen' und in der Heute-Ansicht der Karte ('Heute dabei: ...') - nur wenn Material eingetragen ist
+
 ## 1.7.2 - Juli 2026 (Card 1.9.1)
 
 - Schulschluss-Ansicht nutzt jetzt die vorhandenen Backend-Sensoren als primaere Quelle (schulschluss_heute fuer die Uhrzeit, aktuelle_stunde fuer den Frei-Grund) statt doppelter Berechnung - Karte und Automationen zeigen garantiert dasselbe. Lokale Berechnung bleibt als Fallback, wenn die Sensoren deaktiviert sind; das 'zuletzt {Fach}'-Detail wird weiterhin lokal angereichert

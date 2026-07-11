@@ -138,7 +138,7 @@
     <div class="card">
       <h2>📚 Fächer</h2>
       <table class="ftable" id="fachTable">
-        <thead><tr><th>Kürzel</th><th>Name</th><th>Farbe</th><th>Raum</th><th></th></tr></thead>
+        <thead><tr><th>Kürzel</th><th>Name</th><th>Farbe</th><th>Raum</th><th>Material (optional)</th><th></th></tr></thead>
         <tbody></tbody>
       </table>
       <div class="row" style="margin-top:12px">
@@ -174,6 +174,18 @@
       <div class="row">
         <label style="width:130px">Feiertag-Sensor:</label>
         <select id="ferienMorgen" onchange="ferienSetzen('feiertag_sensor', this.value)"></select>
+      </div>
+    </div>
+    <div class="card">
+      <h2>🔔 Morgen-Push (optional)</h2>
+      <p class="hint" style="margin:0 0 12px">Sendet abends eine Benachrichtigung über den morgigen Schultag aller Kinder („Luna: Sport um 08:00, Schluss 13:10 – 🎒 Sportbeutel"). An freien Tagen wird nichts gesendet.</p>
+      <div class="row">
+        <label><input type="checkbox" id="pushAktiv" onchange="pushSetzen('aktiv', this.checked)"> Aktiviert</label>
+        <label style="margin-left:14px">Uhrzeit:</label>
+        <input type="time" id="pushZeit" onchange="pushSetzen('zeit', this.value)">
+        <label style="margin-left:14px">Gerät:</label>
+        <select id="pushService" onchange="pushSetzen('service', this.value)"></select>
+        <button class="btn ghost" onclick="pushTest(this)">Test senden</button>
       </div>
     </div>
   </section>
@@ -225,6 +237,7 @@ async function laden() {
   if (DATA.kinder.length && !aktivKid) aktivKid = DATA.kinder[0].id;
   renderAll();
   ladeFerienEntities();
+  renderPush();
 }
 
 let FERIEN_ENTITIES = null;
@@ -259,6 +272,45 @@ function ferienSetzen(key, wert) {
   if (!DATA.einstellungen) DATA.einstellungen = {};
   DATA.einstellungen[key] = wert;
   setDirty(true);
+}
+
+function pushCfg() {
+  if (!DATA.einstellungen) DATA.einstellungen = {};
+  if (!DATA.einstellungen.push) DATA.einstellungen.push = { aktiv: false, zeit: "19:00", service: "" };
+  return DATA.einstellungen.push;
+}
+
+function pushSetzen(key, wert) {
+  pushCfg()[key] = wert;
+  setDirty(true);
+}
+
+async function renderPush() {
+  const p = pushCfg();
+  document.getElementById("pushAktiv").checked = !!p.aktiv;
+  document.getElementById("pushZeit").value = p.zeit || "19:00";
+  let services = [];
+  try { services = await (await fetch("api/notify-services")).json(); } catch (e) {}
+  const sel = document.getElementById("pushService");
+  let opts = `<option value="">– Gerät wählen –</option>`;
+  let gefunden = false;
+  for (const s of services) {
+    if (s === p.service) gefunden = true;
+    opts += `<option value="${esc(s)}" ${s === p.service ? "selected" : ""}>${esc(s)}</option>`;
+  }
+  if (p.service && !gefunden) opts += `<option value="${esc(p.service)}" selected>${esc(p.service)}</option>`;
+  sel.innerHTML = opts;
+}
+
+async function pushTest(btn) {
+  if (dirty) await speichern();
+  btn.disabled = true; btn.textContent = "Sende…";
+  try {
+    const res = await fetch("api/push-test", { method: "POST" });
+    const d = await res.json();
+    alert(res.ok ? "Gesendet:\n" + d.nachricht : "Fehler: " + d.error);
+  } catch (e) { alert("Fehler: " + e); }
+  btn.disabled = false; btn.textContent = "Test senden";
 }
 
 async function speichern() {
@@ -580,6 +632,7 @@ function renderFaecher() {
       <td><input value="${esc(f.name)}" onchange="DATA.faecher['${esc(kz)}'].name=this.value;setDirty(true)"></td>
       <td><input type="color" value="${f.farbe}" onchange="DATA.faecher['${esc(kz)}'].farbe=this.value;setDirty(true);renderKid()"></td>
       <td><input value="${esc(f.raum||"")}" style="width:100px" onchange="DATA.faecher['${esc(kz)}'].raum=this.value;setDirty(true)"></td>
+      <td><input value="${esc(f.material||"")}" placeholder="z.B. Sportbeutel" style="width:160px" onchange="DATA.faecher['${esc(kz)}'].material=this.value;setDirty(true)"></td>
       <td><button class="icon" onclick="fachLoeschen('${esc(kz)}')">✕</button></td>`;
     tb.appendChild(tr);
   }

@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.9.1 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.10.0 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -236,6 +236,10 @@ class StundenplanCard extends HTMLElement {
             color: var(--secondary-text-color); }
           .sp-liste li.sp-aktuell { outline-offset: 0; }
           .sp-leer { color: var(--secondary-text-color); font-size: .88rem; padding: 4px 0; }
+          .sp-material { margin-top: 8px; padding: 8px 12px; border-radius: 8px;
+            font-size: .82rem; color: var(--primary-text-color);
+            background: color-mix(in srgb, var(--primary-color) 10%, transparent); }
+          .sp-gross .sp-material { font-size: .95rem; }
           .sp-schluss { list-style: none; margin: 0; padding: 0; }
           .sp-schluss li { display: flex; align-items: baseline; gap: 12px;
             padding: 10px 4px; border-bottom: 1px solid var(--divider-color); }
@@ -422,6 +426,14 @@ class StundenplanCard extends HTMLElement {
       </li>`;
     });
     html += `</ul>`;
+    const material = [];
+    r.forEach((st, si) => {
+      const f = plan[si] ? (a.faecher || {})[plan[si]] : null;
+      const m = f && (f.material || "").trim();
+      if (m && !material.includes(m)) material.push(m);
+    });
+    if (stunden && material.length)
+      html += `<div class="sp-material">🎒 Heute dabei: ${material.join(", ")}</div>`;
     return stunden ? html : `<div class="sp-leer">Heute kein Unterricht 🎈</div>`;
   }
 
@@ -513,4 +525,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.9.1", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.10.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");

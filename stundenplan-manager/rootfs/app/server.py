@@ -11,6 +11,7 @@ from flask import Flask, jsonify, render_template, request
 from mqtt_publisher import SensorPublisher, ist_im_block  # noqa: F401
 from resource_registrar import registriere_ressource_async
 from ferien import liste_ferien_entities
+from push import PushScheduler, baue_nachricht, liste_notify_services, sende_push
 
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "info").upper()
 logging.basicConfig(level=getattr(logging, LOG_LEVEL, logging.INFO),
@@ -138,6 +139,29 @@ def health():
     })
 
 
+@app.route("/api/notify-services")
+def notify_services():
+    try:
+        return jsonify(liste_notify_services())
+    except Exception as exc:
+        log.warning("Notify-Services nicht abrufbar: %s", exc)
+        return jsonify([])
+
+
+@app.route("/api/push-test", methods=["POST"])
+def push_test():
+    data = load_data()
+    push = (data.get("einstellungen", {}) or {}).get("push", {}) or {}
+    if not push.get("service"):
+        return jsonify({"error": "Kein Notify-Service gewählt"}), 400
+    nachricht = baue_nachricht(data, datetime.now()) or         "Testnachricht: morgen haben alle frei 🎉"
+    try:
+        sende_push(push["service"], nachricht)
+        return jsonify({"status": "gesendet", "nachricht": nachricht})
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 502
+
+
 @app.route("/api/ha-entities")
 def ha_entities():
     try:
@@ -191,5 +215,6 @@ if __name__ == "__main__":
     log.info("Stundenplan Manager startet auf Port 8098")
     migriere_ferien_optionen()
     PUBLISHER.start()
+    PushScheduler(lambda: load_data()).start()
     registriere_ressource_async()
     app.run(host="0.0.0.0", port=8098)

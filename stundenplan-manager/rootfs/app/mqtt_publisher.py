@@ -102,15 +102,21 @@ def berechne_sensoren(kind: dict, faecher: dict, raster: list, jetzt: datetime,
     _p = plan_fuer_datum(kind, jetzt.date())
     res["wochenplan"] = sum(1 for tag in TAGE for kz in _p.get(tag, []) if kz)
 
-    # --- erste_stunde_morgen ---
+    # --- erste_stunde_morgen (+ Materialliste morgen) ---
     if morgen is None:
         res["erste_stunde_morgen"] = morgen_status
     else:
+        material = []
         for i, kz in enumerate(morgen):
             if kz and i < len(raster):
-                res["erste_stunde_morgen"] = f"{_fach_label(kz, faecher)} ({raster[i]['von']})"
-                attrs["morgen_erste_von"] = raster[i]["von"]
-                break
+                if "morgen_erste_von" not in attrs:
+                    res["erste_stunde_morgen"] = f"{_fach_label(kz, faecher)} ({raster[i]['von']})"
+                    attrs["morgen_erste_von"] = raster[i]["von"]
+                m = (faecher.get(kz, {}) or {}).get("material", "").strip()
+                if m and m not in material:
+                    material.append(m)
+        if material:
+            attrs["material_morgen"] = ", ".join(material)
 
     # --- Tages-Sensoren ---
     if heute is None:
