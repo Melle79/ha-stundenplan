@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.10.0 - Juli 2026 (Card 1.11.0)
+
+### Neu: Schulmanager-Online-Anbindung (optional)
+- Voraussetzung: HACS-Integration MrIcemanLE/Schulmanager-homeassistant - der Stundenplan-Manager konsumiert deren Entities, keine eigenen Zugangsdaten noetig
+- Verknuepfung pro Kind: Dropdown 'Schulmanager' im Kind-Panel (automatisch gefundene Schueler)
+- Plan-Import: Button 'Plan importieren' uebernimmt den Wochenplan aus dem Wochenplan-JSON-Sensor in die gewaehlte Planversion; unbekannte Faecher werden mit Farbpalette angelegt, vorhandene Kuerzel (case-insensitive) wiederverwendet, Stundenraster optional als kind-eigenes Raster uebernommen
+- Vertretungs-Overlay in der Karte: Entfall durchgestrichen und gedimmt, Vertretung/Lehrerwechsel/Sonderstunde mit gestricheltem Rahmen und Detail-Badge (Fach, Raum) - in Wochen- und Heute-Ansicht, fuer heute und morgen
+- Morgen-Push warnt bei Aenderungen: '5. Std Vertretung Mathe (Raum 204)'
+- Gekapselt in eigenem Adapter-Modul (schulmanager.py) - bei API-Aenderungen der Quelle muss nur dieses Modul angepasst werden
+
 ## 1.9.1 - Juli 2026
 
 - Schulferien-Einstellungen auf ein einziges Kalender-Sensor-Feld vereinfacht. Ein noch gesetztes zweites Feld (Legacy-Einzelsensoren) wird im Hintergrund weiterhin ausgewertet

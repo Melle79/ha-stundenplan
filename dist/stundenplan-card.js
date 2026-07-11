@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.10.0 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.11.0 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -185,6 +185,12 @@ class StundenplanCard extends HTMLElement {
           .sp-fach small { display: block; font-weight: 400; font-size: .62rem; opacity: .92; }
           .sp-fach .sp-name { display: none; }
           .sp-gedimmt { opacity: .35; filter: saturate(.5); }
+          .sp-entfall { position: relative; opacity: .45; }
+          .sp-entfall::after { content: ""; position: absolute; left: 6%; right: 6%;
+            top: 50%; border-top: 2px solid var(--error-color, #e05d5d); transform: rotate(-4deg); }
+          .sp-entfall .sp-aend { color: var(--error-color, #ff8a80); }
+          .sp-vertretung { outline: 2px dashed var(--warning-color, #e0b34c); outline-offset: 1px; }
+          .sp-aend { display: block; font-weight: 600; font-size: .6rem; margin-top: 1px; }
           .sp-tag-frei small { display: block; font-weight: 500; font-size: .64rem;
             color: var(--secondary-text-color); margin-top: 1px; }
           .sp-datum { display: block; font-weight: 400; font-size: .62rem;
@@ -235,6 +241,8 @@ class StundenplanCard extends HTMLElement {
           .sp-liste .sp-lraum { margin-left: auto; font-size: .72rem;
             color: var(--secondary-text-color); }
           .sp-liste li.sp-aktuell { outline-offset: 0; }
+          .sp-liste li.sp-liste-entfall { opacity: .55; }
+          .sp-laend { color: var(--warning-color, #e0b34c); font-size: .78rem; font-weight: 600; }
           .sp-leer { color: var(--secondary-text-color); font-size: .88rem; padding: 4px 0; }
           .sp-material { margin-top: 8px; padding: 8px 12px; border-radius: 8px;
             font-size: .82rem; color: var(--primary-text-color);
@@ -296,6 +304,9 @@ class StundenplanCard extends HTMLElement {
       return { tag, l, i, iso, datum, frei: this._freiGrund(a, iso),
                plan: this._planFuerDatum(a, iso) };
     });
+    const aend = {};
+    for (const x of a.aenderungen || [])
+      if (x.stunde != null) aend[`${x.datum}|${x.stunde}`] = x;
 
     html += `<table class="sp-tabelle"><colgroup><col style="width:54px"><col span="5"></colgroup><thead><tr><th></th>`;
     for (const t of tage) {
@@ -322,9 +333,17 @@ class StundenplanCard extends HTMLElement {
         const istJetzt = aktuelleWoche && t.i === heute && !t.frei &&
           st.von <= zeit && zeit < st.bis && f;
         const spalte = aktuelleWoche && t.i === heute ? "sp-heute-spalte" : "";
+        const x = aend[`${t.iso}|${st.nr}`];
+        const entfall = x && x.typ === "cancelledLesson";
+        const vertretung = x && !entfall;
+        const badge = entfall ? `<small class="sp-aend">✕ Entfall</small>`
+          : vertretung ? `<small class="sp-aend">🔁 ${x.label}${x.fach ? " " + x.fach : ""}${x.raum ? " · " + x.raum : ""}</small>` : "";
+        const aCls = entfall ? "sp-entfall" : vertretung ? "sp-vertretung" : "";
         if (f) {
-          html += `<td class="${spalte}"><div class="sp-fach ${istJetzt ? "sp-aktuell" : ""} ${t.frei ? "sp-gedimmt" : ""}"
-            style="background:${f.farbe}" title="${f.name}">${kz}<small class="sp-name">${f.name}</small>${f.raum ? `<small>${f.raum}</small>` : ""}</div></td>`;
+          html += `<td class="${spalte}"><div class="sp-fach ${istJetzt ? "sp-aktuell" : ""} ${t.frei ? "sp-gedimmt" : ""} ${aCls}"
+            style="background:${f.farbe}" title="${f.name}${x ? " – " + x.label : ""}">${kz}<small class="sp-name">${f.name}</small>${f.raum ? `<small>${f.raum}</small>` : ""}${badge}</div></td>`;
+        } else if (x) {
+          html += `<td class="${spalte}"><div class="sp-fach ${aCls}" style="background:var(--secondary-background-color,#444)">${badge}</div></td>`;
         } else {
           html += `<td class="${spalte}"><span class="sp-frei"></span></td>`;
         }
@@ -411,18 +430,23 @@ class StundenplanCard extends HTMLElement {
     const plan = this._planFuerDatum(a, isoHeute)[tag] || [];
     const zeit = this._jetztZeit();
     const r = a.raster;
+    const aendH = {};
+    for (const x of a.aenderungen || [])
+      if (x.datum === isoHeute && x.stunde != null) aendH[x.stunde] = x;
     let html = `<ul class="sp-liste">`, stunden = 0;
     r.forEach((st, si) => {
       const kz = plan[si];
-      if (!kz) return;
-      const f = (a.faecher || {})[kz] || { name: kz, farbe: "#888" };
+      const x = aendH[st.nr];
+      if (!kz && !x) return;
+      const f = kz ? ((a.faecher || {})[kz] || { name: kz, farbe: "#888" }) : { name: "", farbe: "#888" };
       const istJetzt = st.von <= zeit && zeit < st.bis;
       stunden++;
-      html += `<li class="${istJetzt ? "sp-aktuell" : ""}">
+      const entf = x && x.typ === "cancelledLesson";
+      html += `<li class="${istJetzt ? "sp-aktuell" : ""} ${entf ? "sp-liste-entfall" : ""}">
         <span class="sp-punkt" style="background:${f.farbe}"></span>
         <span class="sp-lzeit">${st.von}–${st.bis}</span>
-        <span class="sp-lname">${f.name}</span>
-        ${f.raum ? `<span class="sp-lraum">Raum ${f.raum}</span>` : ""}
+        <span class="sp-lname">${entf ? `<s>${f.name}</s> ✕ Entfall` : f.name}${x && !entf ? ` <span class="sp-laend">🔁 ${x.label}${x.fach ? " " + x.fach : ""}</span>` : ""}</span>
+        ${x && x.raum ? `<span class="sp-lraum">Raum ${x.raum}</span>` : f.raum ? `<span class="sp-lraum">Raum ${f.raum}</span>` : ""}
       </li>`;
     });
     html += `</ul>`;
@@ -525,4 +549,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.10.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.11.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");

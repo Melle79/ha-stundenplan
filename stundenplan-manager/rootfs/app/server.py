@@ -12,6 +12,7 @@ from mqtt_publisher import SensorPublisher, ist_im_block  # noqa: F401
 from resource_registrar import registriere_ressource_async
 from ferien import liste_ferien_entities
 from push import PushScheduler, baue_nachricht, liste_notify_services, sende_push
+from schulmanager import hole_wochenplan, liste_schueler
 
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "info").upper()
 logging.basicConfig(level=getattr(logging, LOG_LEVEL, logging.INFO),
@@ -137,6 +138,26 @@ def health():
         "kinder": len(data.get("kinder", [])),
         "mqtt": bool(os.environ.get("MQTT_HOST")),
     })
+
+
+@app.route("/api/schulmanager/schueler")
+def schulmanager_schueler():
+    try:
+        return jsonify(liste_schueler())
+    except Exception as exc:
+        log.warning("Schulmanager-Schueler nicht abrufbar: %s", exc)
+        return jsonify([])
+
+
+@app.route("/api/schulmanager/wochenplan")
+def schulmanager_wochenplan():
+    entity = request.args.get("entity", "")
+    if not entity.startswith("sensor.schule_"):
+        return jsonify({"error": "Ungueltige Entity"}), 400
+    try:
+        return jsonify(hole_wochenplan(entity))
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 502
 
 
 @app.route("/api/notify-services")

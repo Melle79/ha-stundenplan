@@ -14,6 +14,7 @@ from datetime import datetime, timedelta
 
 from ferien import hole_schulfrei_zeitraeume, schulfrei_grund, API_URL
 from mqtt_publisher import TAGE, ist_im_block, plan_fuer_datum
+from schulmanager import hole_aenderungen
 
 log = logging.getLogger("stundenplan.push")
 
@@ -70,6 +71,20 @@ def baue_nachricht(data: dict, jetzt: datetime) -> str:
         if material:
             zeile += " – 🎒 " + ", ".join(material)
         zeilen.append(zeile)
+        if kind.get("schulmanager"):
+            try:
+                morgen_iso = morgen.date().isoformat()
+                for a in hole_aenderungen(kind["schulmanager"], jetzt.date()):
+                    if a["datum"] != morgen_iso:
+                        continue
+                    detail = f"{a['stunde']}. Std {a['label']}" if a["stunde"] else a["label"]
+                    if a["fach"]:
+                        detail += f" {a['fach']}"
+                    if a["raum"]:
+                        detail += f" (Raum {a['raum']})"
+                    zeilen.append(f"  ⚠ {detail}")
+            except Exception:
+                log.debug("Aenderungen fuer Push nicht abrufbar")
 
     return "\n".join(zeilen)
 

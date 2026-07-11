@@ -20,6 +20,7 @@ from datetime import datetime, timedelta
 import paho.mqtt.client as mqtt
 
 from ferien import hole_schulfrei_zeitraeume, schulfrei_grund
+from schulmanager import hole_aenderungen
 
 log = logging.getLogger("stundenplan.mqtt")
 
@@ -239,9 +240,16 @@ class SensorPublisher:
 
             genutzt = {kz for p in [kind.get("plan", {})] + [v.get("plan", {}) for v in kind.get("plaene", [])]
                        for tag in TAGE for kz in p.get(tag, []) if kz}
+            aenderungen = []
+            if kind.get("schulmanager"):
+                try:
+                    aenderungen = hole_aenderungen(kind["schulmanager"], jetzt.date())
+                except Exception:
+                    log.debug("Aenderungen fuer %s nicht abrufbar", kind["name"])
             plan_payload = json.dumps({
                 "kind": kind["name"],
                 "modus": kind.get("modus", "wochenplan"),
+                "aenderungen": aenderungen,
                 "schulfrei_zeitraeume": zeitraeume if kind.get("modus", "wochenplan") == "wochenplan" else [],
                 "raster": raster,
                 "plan": kind.get("plan", {}),
