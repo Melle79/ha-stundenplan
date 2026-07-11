@@ -47,7 +47,7 @@ type: custom:stundenplan-card
 entities:                # weglassen = alle Kinder automatisch
   - sensor.stundenplan_max_wochenplan
 layout: tabs             # tabs | untereinander (bei mehreren Kindern)
-modus: woche             # woche | heute
+modus: woche             # woche | heute | schulschluss
 schrift: normal          # normal | gross
 zeige_pausen: true
 titel: ""                # optional, Standard: "Stundenplan {Name}"

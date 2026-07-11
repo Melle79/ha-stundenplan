@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.8.0 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.9.0 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -36,17 +36,18 @@ class StundenplanCard extends HTMLElement {
       return;
     }
     if (this._aktivIdx >= ids.length) this._aktivIdx = 0;
+    const schulschluss = this._config.modus === "schulschluss";
     const gestapelt = this._config.layout === "untereinander" && ids.length > 1;
-    const relevant = gestapelt ? ids : [ids[this._aktivIdx]];
+    const relevant = (gestapelt || schulschluss) ? ids : [ids[this._aktivIdx]];
     const attrListe = relevant.map(id => (hass.states[id] || {}).attributes || {});
     const hash = JSON.stringify([ids, this._aktivIdx, this._wocheOffset,
                                  this._config.layout, attrListe, new Date().getMinutes()]);
     if (hash === this._letzterHash) return;
     this._letzterHash = hash;
-    this._render(ids, gestapelt);
+    this._render(ids, gestapelt && !schulschluss);
   }
 
-  getCardSize() { return this._config.modus === "heute" ? 3 : 6; }
+  getCardSize() { return this._config.modus === "heute" ? 3 : this._config.modus === "schulschluss" ? 2 : 6; }
   static getConfigElement() { return document.createElement("stundenplan-card-editor"); }
   static getStubConfig() { return { entity: "", modus: "woche", zeige_pausen: true, titel: "" }; }
 
@@ -122,7 +123,10 @@ class StundenplanCard extends HTMLElement {
 
   _render(ids, gestapelt) {
     let titel, inhalt = "", chips = "";
-    if (gestapelt) {
+    if (this._config.modus === "schulschluss") {
+      titel = this._config.titel || "Schulschluss heute";
+      inhalt = this._renderSchulschluss(ids);
+    } else if (gestapelt) {
       titel = this._config.titel || "Stundenplan";
       inhalt = ids.map(id =>
         `<div class="sp-abschnitt"><h3 class="sp-kindname">${this._kindName(id)}</h3>${this._inhaltFuer(id)}</div>`
@@ -228,6 +232,20 @@ class StundenplanCard extends HTMLElement {
             color: var(--secondary-text-color); }
           .sp-liste li.sp-aktuell { outline-offset: 0; }
           .sp-leer { color: var(--secondary-text-color); font-size: .88rem; padding: 4px 0; }
+          .sp-schluss { list-style: none; margin: 0; padding: 0; }
+          .sp-schluss li { display: flex; align-items: baseline; gap: 12px;
+            padding: 10px 4px; border-bottom: 1px solid var(--divider-color); }
+          .sp-schluss li:last-child { border-bottom: none; }
+          .sp-schluss-name { font-size: 1.05rem; font-weight: 600; }
+          .sp-schluss-sub { color: var(--secondary-text-color); font-size: .78rem; flex: 1; }
+          .sp-schluss-zeit { font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums;
+            color: var(--primary-color); }
+          .sp-schluss-zeit.sp-schluss-vorbei { color: var(--secondary-text-color); }
+          .sp-schluss-zeit.sp-schluss-frei { font-size: 1.05rem; font-weight: 600;
+            color: var(--secondary-text-color); }
+          .sp-gross .sp-schluss-name { font-size: 1.25rem; }
+          .sp-gross .sp-schluss-zeit { font-size: 1.9rem; }
+          .sp-gross .sp-schluss-sub { font-size: .9rem; }
         </style>
         <div class="sp-wrap ${this._config.schrift === "gross" ? "sp-gross" : ""}">${chips}${inhalt}</div>
       </ha-card>`;
@@ -306,6 +324,53 @@ class StundenplanCard extends HTMLElement {
       html += `</tr>`;
     });
     return html + `</tbody></table>`;
+  }
+
+  _renderSchulschluss(ids) {
+    const isoHeute = this._iso(new Date());
+    const heute = this._heuteIdx();
+    const zeit = this._jetztZeit();
+    let html = `<ul class="sp-schluss">`;
+    for (const id of ids) {
+      const st = this._hass.states[id];
+      const a = st && st.attributes;
+      const name = this._kindName(id);
+      let wert = "–", sub = "", cls = "";
+      if (!a || !a.raster || !a.plan) {
+        sub = "keine Daten";
+      } else {
+        const frei = this._freiGrund(a, isoHeute);
+        if (frei) {
+          wert = frei.replace(/^🏖 |^🏭 /, "");
+          cls = "sp-schluss-frei";
+        } else if (heute < 0) {
+          wert = "Wochenende";
+          cls = "sp-schluss-frei";
+        } else {
+          const plan = this._planFuerDatum(a, isoHeute)[StundenplanCard.TAGE[heute][0]] || [];
+          const belegte = plan.map((kz, i) => kz && i < a.raster.length ? i : null)
+            .filter(i => i !== null);
+          if (!belegte.length) {
+            wert = "Schulfrei";
+            cls = "sp-schluss-frei";
+          } else {
+            const ende = a.raster[belegte[belegte.length - 1]].bis;
+            wert = ende;
+            if (zeit >= ende) { sub = "Schule ist aus"; cls = "sp-schluss-vorbei"; }
+            else {
+              const f = (a.faecher || {})[plan[belegte[belegte.length - 1]]];
+              sub = "noch bis " + ende + (f ? " · zuletzt " + f.name : "");
+            }
+          }
+        }
+      }
+      html += `<li>
+        <span class="sp-schluss-name">${name}</span>
+        <span class="sp-schluss-sub">${sub}</span>
+        <span class="sp-schluss-zeit ${cls}">${wert}</span>
+      </li>`;
+    }
+    return html + `</ul>`;
   }
 
   _renderHeute(a) {
@@ -388,6 +453,7 @@ class StundenplanCardEditor extends HTMLElement {
       { name: "modus", selector: { select: { mode: "dropdown", options: [
         { value: "woche", label: "Wochenansicht (Mo–Fr)" },
         { value: "heute", label: "Heute (kompakte Liste)" },
+        { value: "schulschluss", label: "Schulschluss heute (alle Kinder)" },
       ] } } },
       { name: "schrift", selector: { select: { mode: "dropdown", options: [
         { value: "normal", label: "Normal" },
@@ -427,4 +493,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.8.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.9.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");

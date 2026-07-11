@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.1 - Juli 2026 (Card 1.9.0)
+
+### Neu
+- Dritte Kartenansicht 'Schulschluss heute': alle Kinder in einer kompakten Liste mit grosser Schluss-Uhrzeit, Hinweis 'noch bis ... - zuletzt {Fach}' bzw. 'Schule ist aus', an freien Tagen der Grund (Ferien/Feiertag/Wochenende/Betrieb). Beruecksichtigt Planversionen und wird komplett in der Karte berechnet
+
 ## 1.7.0 - Juli 2026 (Card 1.8.0)
 
 ### Neu
