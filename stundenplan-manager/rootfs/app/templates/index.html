@@ -166,14 +166,10 @@
     </div>
     <div class="card">
       <h2>🏖 Schulferien-Integration</h2>
-      <p class="hint" style="margin:0 0 12px">Verknüpfe den Kalender-Sensor deines Schulferien-Add-ons (alle Ferien und Feiertage) – dann reicht das erste Feld. Alternativ die beiden Einzelsensoren „Nächste Schulferien" und „Nächster Feiertag". Kinder im Blockmodus sind ausgenommen (Betrieb statt Ferien).</p>
+      <p class="hint" style="margin:0 0 12px">Verknüpfe den Kalender-Sensor deines Schulferien-Add-ons (alle Ferien und Feiertage in einer Entität). Sensoren und Karte zeigen dann „Schulfrei (Grund)" – auch beim Wochen-Blättern. Kinder im Blockmodus sind ausgenommen (Betrieb statt Ferien).</p>
       <div class="row">
-        <label style="width:130px">Kalender/Ferien:</label>
+        <label style="width:130px">Kalender-Sensor:</label>
         <select id="ferienHeute" onchange="ferienSetzen('ferien_sensor', this.value)"></select>
-      </div>
-      <div class="row">
-        <label style="width:130px">Feiertage (optional):</label>
-        <select id="ferienMorgen" onchange="ferienSetzen('feiertag_sensor', this.value)"></select>
       </div>
     </div>
     <div class="card">
@@ -252,7 +248,7 @@ async function ladeFerienEntities() {
 
 function renderFerien() {
   if (FERIEN_ENTITIES === null) return;
-  for (const [selId, key] of [["ferienHeute","ferien_sensor"],["ferienMorgen","feiertag_sensor"]]) {
+  for (const [selId, key] of [["ferienHeute","ferien_sensor"]]) {
     const sel = document.getElementById(selId);
     if (!sel) continue;
     const aktuell = (DATA.einstellungen || {})[key] || "";

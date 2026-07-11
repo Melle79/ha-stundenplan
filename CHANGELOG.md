@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.9.1 - Juli 2026
+
+- Schulferien-Einstellungen auf ein einziges Kalender-Sensor-Feld vereinfacht. Ein noch gesetztes zweites Feld (Legacy-Einzelsensoren) wird im Hintergrund weiterhin ausgewertet
+
 ## 1.9.0 - Juli 2026
 
 ### Verbessert
