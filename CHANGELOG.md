@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.10.1 - Juli 2026
+
+### Neu
+- Backup-System: Die seit v1.0.0 vorhandenen Add-on-Optionen backup_zeit/backup_anzahl sind jetzt tatsaechlich implementiert - taegliches Backup der Daten nach /data/backups mit Rotation, dazu Endpoints /api/backups, /api/backup/snapshot und /api/backup/restore (mit Dateinamen-Validierung)
+- Schulmanager-Import uebernimmt nur in Schulmanager befuellte Tage - leere Tage bleiben unangetastet. Damit laesst sich der Plan inkrementell fuellen, wenn die Integration (Option schedule_weeks) nur wenige Tage liefert
+- Import rueckgaengig: Vor jedem Import wird automatisch ein Server-Snapshot angelegt; der Button 'Import rueckgaengig' stellt den kompletten Vorher-Stand wieder her (bis zum Neuladen der Seite, danach greifen die Backups)
+
+### Behoben
+- Race-Condition beim Import-Undo: Ein noch laufender Auto-Save-Timer haette den Import-Stand nach dem Restore erneut speichern koennen
+
 ## 1.10.0 - Juli 2026 (Card 1.11.0)
 
 ### Neu: Schulmanager-Online-Anbindung (optional)

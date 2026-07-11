@@ -13,6 +13,7 @@ from resource_registrar import registriere_ressource_async
 from ferien import liste_ferien_entities
 from push import PushScheduler, baue_nachricht, liste_notify_services, sende_push
 from schulmanager import hole_wochenplan, liste_schueler
+from backup import BackupScheduler, backup_erstellen, backup_wiederherstellen, liste_backups
 
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "info").upper()
 logging.basicConfig(level=getattr(logging, LOG_LEVEL, logging.INFO),
@@ -138,6 +139,31 @@ def health():
         "kinder": len(data.get("kinder", [])),
         "mqtt": bool(os.environ.get("MQTT_HOST")),
     })
+
+
+@app.route("/api/backups")
+def backups():
+    return jsonify(liste_backups())
+
+
+@app.route("/api/backup/snapshot", methods=["POST"])
+def backup_snapshot():
+    prefix = (request.get_json(silent=True) or {}).get("prefix", "snapshot")
+    if not re.match(r"^[a-z]+$", prefix):
+        return jsonify({"error": "Ungueltiger Prefix"}), 400
+    name = backup_erstellen(prefix)
+    return jsonify({"datei": name})
+
+
+@app.route("/api/backup/restore", methods=["POST"])
+def backup_restore():
+    datei = (request.get_json(silent=True) or {}).get("datei", "")
+    try:
+        backup_wiederherstellen(datei)
+        PUBLISHER.trigger()
+        return jsonify({"status": "wiederhergestellt"})
+    except (ValueError, FileNotFoundError) as exc:
+        return jsonify({"error": str(exc)}), 400
 
 
 @app.route("/api/schulmanager/schueler")
@@ -268,6 +294,7 @@ if __name__ == "__main__":
     migriere_ferien_optionen()
     migriere_auf_kalender()
     PUBLISHER.start()
+    BackupScheduler().start()
     PushScheduler(lambda: load_data()).start()
     registriere_ressource_async()
     app.run(host="0.0.0.0", port=8098)
