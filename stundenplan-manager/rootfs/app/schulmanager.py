@@ -230,6 +230,12 @@ def hole_fach_details(basis: str) -> dict:
             continue
         lessons = ((d.get("attributes") or {}).get("raw") or {}).get("lessons") or []
         for l in lessons:
+            # Nur regulaere Daten lernen: bei Vertretung/Entfall enthaelt
+            # "original" den regulaeren Stand - sonst Stunde ueberspringen,
+            # damit kein Springer-Lehrer oder Ausweichraum haengenbleibt.
+            typ = l.get("type") or "regularLesson"
+            if typ != "regularLesson":
+                l = l.get("original") or {}
             kz = (l.get("subject") or "").strip()
             if not kz:
                 continue

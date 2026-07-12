@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.14.2 - Juli 2026
+
+### Verbessert
+- Raum/Lehrer-Lernen ist jetzt vertretungssicher: Nur regulaere Stunden werden ausgewertet; bei Vertretungen wird der regulaere Stand aus den original-Daten gelernt statt Springer-Lehrer oder Ausweichraum zu uebernehmen
+- Selbstpflegender Stundenplan: Aus Schulmanager gelernte Raeume/Lehrer werden bei regulaeren Aenderungen (z.B. Raumwechsel zum Halbjahr) automatisch aktualisiert - handgepflegte Werte gewinnen dagegen immer (Herkunfts-Merker sm_raum/sm_lehrer je Fach)
+
 ## 1.14.1 - Juli 2026
 
 - Auto-Import laeuft jetzt mehrmals morgens vor Schulbeginn: 06:30, 07:00 und 07:15 Uhr (statt einmal 05:30) - so werden auch Vertretungen erfasst, die das Sekretariat erst am Morgen eintraegt. Konfigurierbar als Liste ueber auto_import_zeiten; jeder Zeitpunkt laeuft genau einmal pro Tag

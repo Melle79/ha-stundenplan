@@ -60,19 +60,28 @@ def fuehre_import_aus(data: dict, kind: dict, heute: date = None) -> dict:
                            "farbe": FARBPALETTE[len(faecher) % len(FARBPALETTE)],
                            "raum": det.get("raum", ""),
                            "lehrer": det.get("lehrer", ""),
+                           "sm_raum": det.get("raum", ""),
+                           "sm_lehrer": det.get("lehrer", ""),
                            "material": ""}
             stats["neue_faecher"] += 1
             stats["geaendert"] = True
         else:
             f = faecher[match]
-            if not f.get("raum") and det.get("raum"):
-                f["raum"] = det["raum"]
-                stats["ergaenzt"] += 1
-                stats["geaendert"] = True
-            if not f.get("lehrer") and det.get("lehrer"):
-                f["lehrer"] = det["lehrer"]
-                stats["ergaenzt"] += 1
-                stats["geaendert"] = True
+            for feld in ("raum", "lehrer"):
+                neu_wert = det.get(feld)
+                if not neu_wert:
+                    continue
+                # Feld aktualisieren nur, wenn es leer ist oder sein Wert
+                # selbst aus Schulmanager stammt - Handgepflegtes gewinnt.
+                darf = not f.get(feld) or f.get(feld) == f.get(f"sm_{feld}")
+                if darf and f.get(feld) != neu_wert:
+                    f[feld] = neu_wert
+                    stats["ergaenzt"] += 1
+                    stats["geaendert"] = True
+                # Zuletzt gelernten Wert immer festhalten
+                if f.get(f"sm_{feld}") != neu_wert:
+                    f[f"sm_{feld}"] = neu_wert
+                    stats["geaendert"] = True
             if match != kz:
                 for tag in wp["plan"]:
                     wp["plan"][tag] = [match if x == kz else x
