@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.15.0 - Juli 2026
+
+### Neu (Web-UI)
+- Wochenplan-Raster zeigt Raum und Lehrer klein in jeder Stunde
+- Statusbox 'Schulmanager heute/morgen' im Kind-Panel: Aenderungen (Entfall rot, Vertretung orange - betroffene Stunden werden auch direkt im Raster markiert), faellige Hausaufgaben und anstehende Arbeiten
+- Einstellungs-Card 'Schulmanager Auto-Import': Import-Zeiten als Komma-Liste direkt in der Web-UI einstellbar (mit Validierung)
+
+### Behoben
+- Versions-Bump fehlte im vorigen Patch, daher bot Home Assistant kein Update an
+
 ## 1.14.4 - Juli 2026
 
 ### Verbessert
