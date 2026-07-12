@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.15.0 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.15.1 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -380,8 +380,8 @@ class StundenplanCard extends HTMLElement {
           const altDetail = f ? [fNeu ? kz : "", f.raum, f.lehrer].filter(Boolean).join(" · ") : "";
           const neuDetail = [fNeu, x.raum, x.lehrer].filter(Boolean).join(" · ");
           badge = (altDetail ? `<small class="sp-orig">${altDetail}</small>` : "")
-            + (neuDetail ? `<small class="sp-neu">${neuDetail}</small>` : "")
-            + `<small class="sp-aend">🔁 ${x.label}</small>`;
+            + (neuDetail ? `<small class="sp-neu">🔁 ${neuDetail}</small>`
+                         : `<small class="sp-aend">🔁 ${x.label}</small>`);
         }
         const aCls = (entfall ? "sp-entfall" : vertretung ? "sp-vertretung" : "") + (arbeit ? " sp-arbeit" : "");
         if (f) {
@@ -521,8 +521,8 @@ class StundenplanCard extends HTMLElement {
       html += `<li class="${istJetzt ? "sp-aktuell" : ""} ${entf ? "sp-liste-entfall" : ""}">
         <span class="sp-punkt" style="background:${f.farbe}"></span>
         <span class="sp-lzeit">${st.von}–${st.bis}</span>
-        <span class="sp-lname">${entf ? `<s>${f.name}</s> ✕ ${x.label || "Entfall"}` : f.name}${x && !entf ? ` <span class="sp-laend">🔁 ${x.label}${[x.fach, x.lehrer].filter(Boolean).map(v => " " + v).join(" ·")}</span>` : ""}</span>
-        ${x && !entf && (x.raum || x.lehrer) ? `<span class="sp-lraum">${(f.raum || f.lehrer) ? `<s class="sp-orig-inline">${[f.raum, f.lehrer].filter(Boolean).join(" · ")}</s> → ` : ""}${[x.raum, x.lehrer].filter(Boolean).join(" · ")}</span>` : (f.raum || f.lehrer) ? `<span class="sp-lraum">${[f.raum ? "Raum " + f.raum : "", f.lehrer].filter(Boolean).join(" · ")}</span>` : ""}
+        <span class="sp-lname">${entf ? `<s>${f.name}</s> ✕ ${x.label || "Entfall"}` : f.name}${x && !entf && x.fach && x.fach.toUpperCase() !== (kz || "").toUpperCase() ? ` <span class="sp-laend">🔁 ${x.fach}</span>` : ""}</span>
+        ${x && !entf && (x.raum || x.lehrer) ? `<span class="sp-lraum">🔁 ${(f.raum || f.lehrer) ? `<s class="sp-orig-inline">${[f.raum, f.lehrer].filter(Boolean).join(" · ")}</s> → ` : ""}${[x.raum, x.lehrer].filter(Boolean).join(" · ")}</span>` : (f.raum || f.lehrer) ? `<span class="sp-lraum">${[f.raum ? "Raum " + f.raum : "", f.lehrer].filter(Boolean).join(" · ")}</span>` : ""}
       </li>`;
     });
     html += `</ul>`;
@@ -626,4 +626,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.15.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.15.1", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
