@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.18.1 - Juli 2026
+
+- Raeume-und-Lehrer-Tabelle im Kind-Panel kompakt gestylt (linksbuendig, feste schmale Spalten statt voller Breite)
+- Die Tabelle zeigt nur noch Faecher des aktiven Plans (und der Bloecke) - Kuerzel aus alten Planversionen blaehen die Liste nicht mehr auf
+
 ## 1.18.0 - Juli 2026
 
 ### Geaendert

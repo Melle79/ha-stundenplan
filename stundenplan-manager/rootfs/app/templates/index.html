@@ -43,6 +43,14 @@
   .slot-detail { display:block; font-weight:500; font-size:.62rem; opacity:.85; }
   .plan td.slot.ed-entfall { outline:2px solid #e05d5d; outline-offset:-2px; text-decoration:line-through; opacity:.6; }
   .plan td.slot.ed-aenderung { outline:2px dashed #e0b34c; outline-offset:-2px; }
+  .fd-tab { margin-top: 10px; border-collapse: collapse; width: auto; }
+  .fd-tab th { text-align: left; font-size: .78rem; color: var(--text-sec); font-weight: 600;
+    padding: 2px 14px 6px 2px; }
+  .fd-tab td { padding: 2px 14px 2px 2px; white-space: nowrap; }
+  .fd-tab td:first-child { min-width: 190px; }
+  .fd-tab input { width: 110px; }
+  .fd-tab .fx { display: inline-block; width: 10px; height: 10px; border-radius: 3px;
+    margin-right: 6px; vertical-align: -1px; }
   .sm-liste { margin: 4px 0 8px; padding-left: 18px; }
   .sm-liste li { padding: 1px 0; }
   .sm-entfall { color: #e05d5d; font-weight: 600; }
@@ -547,7 +555,7 @@ function fdSet(kz, feld, wert) {
 
 function fachDetailsTabelleHTML(k) {
   const genutzt = [...new Set(
-    [aktiverPlan(k), ...(k.plaene || []).map(v => v.plan), ...(k.bloecke || []).map(b => b.plan || {})]
+    [aktiverPlan(k), ...(k.bloecke || []).map(b => b.plan || {})]
       .flatMap(p => Object.values(p || {}).flat()).filter(Boolean))];
   if (!genutzt.length) return "";
   let zeilen = "";
@@ -556,11 +564,11 @@ function fachDetailsTabelleHTML(k) {
     if (!f) continue;
     const d = fdet(k, kz);
     zeilen += `<tr><td><span class="fx" style="background:${f.farbe}"></span>${esc(kz)} <small style="color:var(--text-sec)">${esc(f.name)}</small></td>
-      <td><input value="${esc(d.raum||"")}" style="width:110px" onchange="fdSet('${esc(kz)}','raum',this.value)"></td>
-      <td><input value="${esc(d.lehrer||"")}" style="width:100px" onchange="fdSet('${esc(kz)}','lehrer',this.value)"></td></tr>`;
+      <td><input value="${esc(d.raum||"")}" onchange="fdSet('${esc(kz)}','raum',this.value)"></td>
+      <td><input value="${esc(d.lehrer||"")}" onchange="fdSet('${esc(kz)}','lehrer',this.value)"></td></tr>`;
   }
   return `<details class="card" style="margin:10px 0 0"><summary style="cursor:pointer"><b>📍 Räume & Lehrer (${esc(k.name)})</b> <small style="color:var(--text-sec)">– gelten nur für dieses Kind; der Import füllt und pflegt sie, Handeinträge gewinnen</small></summary>
-    <table class="mini" style="margin-top:8px"><thead><tr><th>Fach</th><th>Raum</th><th>Lehrer</th></tr></thead><tbody>${zeilen}</tbody></table></details>`;
+    <table class="fd-tab"><thead><tr><th>Fach</th><th>Raum</th><th>Lehrer</th></tr></thead><tbody>${zeilen}</tbody></table></details>`;
 }
 
 async function renderSchulmanagerStatus() {
