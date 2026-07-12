@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.17.0 - Juli 2026
+
+### Neu
+- Eltern-Portal (eltern-portal.org) als zweite Datenquelle neben Schulmanager, via HACS-Integration workFLOw42/Elternportal_API: Das Verknuepfungs-Dropdown zeigt Kinder beider Quellen, Import/Auto-Import/Statusbox/Push funktionieren identisch
+- Eltern-Portal-Import liefert den kompletten Wochenplan inkl. Raeumen, dazu Fachnamen und Lehrerkuerzel (teachers-Block + Kuerzelverzeichnis der Schule, titel-tolerant) sowie anstehende Arbeiten aus dem Schulaufgaben-Plan; Splitfaecher (z.B. K/Ev/Eth) werden als Kombi-Fach uebernommen
+- Abweichende Stundenzeiten der Schule erzeugen wie gehabt automatisch ein Personen-Raster
+
+### Hinweis
+- Die Integration laedt Daten nur per Service elternportal.fetch_data - eine HA-Automation (z.B. 06:20/06:50/07:10 + 18:45) vor den Auto-Import-Zeiten wird empfohlen. Vertretungen und Hausaufgaben liefert das Eltern-Portal nicht
+
+### Intern
+- Neues Modul quellen.py: sync, push und server sprechen nur noch mit dem Dispatcher, Adapter sind austauschbar (kind.quelle)
+
 ## 1.16.2 - Juli 2026 (Card 1.15.2)
 
 - Neue Angaben in der Vertretungszelle jetzt in Weiss statt Gelb - besser lesbar auf den farbigen Fachkacheln

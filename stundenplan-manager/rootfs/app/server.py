@@ -12,8 +12,8 @@ from mqtt_publisher import SensorPublisher, ist_im_block  # noqa: F401
 from resource_registrar import registriere_ressource_async
 from ferien import liste_ferien_entities
 from push import PushScheduler, baue_nachricht, liste_notify_services, sende_push
-from schulmanager import (hole_aenderungen, hole_arbeiten, hole_fach_details,
-                          hole_hausaufgaben_items, hole_wochenplan, liste_schueler)
+import quellen
+from schulmanager import hole_fach_details, hole_wochenplan
 from sync import AutoImportScheduler, fuehre_import_aus
 from backup import BackupScheduler, backup_erstellen, backup_wiederherstellen, liste_backups
 
@@ -171,7 +171,7 @@ def backup_restore():
 @app.route("/api/schulmanager/schueler")
 def schulmanager_schueler():
     try:
-        return jsonify(liste_schueler())
+        return jsonify(quellen.liste_schueler())
     except Exception as exc:
         log.warning("Schulmanager-Schueler nicht abrufbar: %s", exc)
         return jsonify([])
@@ -185,23 +185,22 @@ def schulmanager_status():
                  if k.get("id") == request.args.get("kind_id")), None)
     if not kind or not kind.get("schulmanager"):
         return jsonify({"error": "Kind nicht gefunden oder nicht verknüpft"}), 400
-    basis = kind["schulmanager"]
     ergebnis = {"aenderungen": [], "hausaufgaben": [], "arbeiten": []}
     from datetime import date as _date, timedelta as _td
     heute = _date.today()
     try:
-        ergebnis["aenderungen"] = hole_aenderungen(basis, heute)
+        ergebnis["aenderungen"] = quellen.hole_aenderungen(kind, heute)
     except Exception:
         pass
     try:
         ab = (heute - _td(days=7)).isoformat()
         bis = (heute + _td(days=3)).isoformat()
-        ergebnis["hausaufgaben"] = [h for h in hole_hausaufgaben_items(basis)
+        ergebnis["hausaufgaben"] = [h for h in quellen.hole_hausaufgaben_items(kind)
                                     if h["due"] and ab <= h["due"] <= bis][:8]
     except Exception:
         pass
     try:
-        ergebnis["arbeiten"] = hole_arbeiten(basis)
+        ergebnis["arbeiten"] = quellen.hole_arbeiten(kind)
     except Exception:
         pass
     return jsonify(ergebnis)

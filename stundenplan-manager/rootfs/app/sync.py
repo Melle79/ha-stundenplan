@@ -15,7 +15,7 @@ import logging
 import threading
 from datetime import date, datetime
 
-from schulmanager import hole_fach_details, hole_tagesplaene, hole_wochenplan
+import quellen
 
 log = logging.getLogger("stundenplan.sync")
 
@@ -45,13 +45,13 @@ def fuehre_import_aus(data: dict, kind: dict, heute: date = None) -> dict:
     Faecher angelegt; Vertretungsfaecher landen weder im Plan noch in der
     Faecherliste."""
     heute = heute or date.today()
-    wp = hole_wochenplan(f"{kind['schulmanager']}_wochenplan_json")
+    wp = quellen.hole_wochenplan(kind)
     try:
-        details = hole_fach_details(kind["schulmanager"])
+        details = quellen.hole_fach_details(kind)
     except Exception:
         details = {}
     try:
-        tagesplaene = hole_tagesplaene(kind["schulmanager"])
+        tagesplaene = quellen.hole_tagesplaene(kind)
     except Exception:
         tagesplaene = {}
 

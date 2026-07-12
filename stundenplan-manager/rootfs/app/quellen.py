@@ -1,0 +1,69 @@
+"""Stundenplan Manager - Quellen-Dispatcher.
+
+Ein Kind ist ueber kind["schulmanager"] (Basis-Entity) mit einer Datenquelle
+verknuepft; kind["quelle"] bestimmt den Adapter ("schulmanager" ist der
+Default fuer Bestandsdaten). Alle Aufrufer (sync, push, server) nutzen
+ausschliesslich dieses Modul - die Adapter bleiben austauschbar.
+"""
+from datetime import date
+
+import elternportal
+import schulmanager
+
+_ADAPTER = {"schulmanager": schulmanager, "elternportal": elternportal}
+QUELLEN_LABEL = {"schulmanager": "Schulmanager", "elternportal": "Eltern-Portal"}
+
+
+def _adapter(kind: dict):
+    return _ADAPTER.get(kind.get("quelle") or "schulmanager", schulmanager)
+
+
+def label(kind: dict) -> str:
+    return QUELLEN_LABEL.get(kind.get("quelle") or "schulmanager",
+                             "Schulmanager")
+
+
+def liste_schueler() -> list:
+    """Schueler beider Quellen: [{"entity_id","basis","name","quelle"}]."""
+    ergebnis = []
+    for quelle, adapter in _ADAPTER.items():
+        try:
+            eintraege = adapter.liste_schueler()
+        except Exception:
+            eintraege = []
+        for e in eintraege:
+            e["quelle"] = quelle
+            ergebnis.append(e)
+    ergebnis.sort(key=lambda t: t["name"].lower())
+    return ergebnis
+
+
+def hole_wochenplan(kind: dict) -> dict:
+    a = _adapter(kind)
+    if a is schulmanager:
+        return a.hole_wochenplan(f"{kind['schulmanager']}_wochenplan_json")
+    return a.hole_wochenplan(kind["schulmanager"])
+
+
+def hole_fach_details(kind: dict) -> dict:
+    return _adapter(kind).hole_fach_details(kind["schulmanager"])
+
+
+def hole_tagesplaene(kind: dict) -> dict:
+    return _adapter(kind).hole_tagesplaene(kind["schulmanager"])
+
+
+def hole_aenderungen(kind: dict, heute: date) -> list:
+    return _adapter(kind).hole_aenderungen(kind["schulmanager"], heute)
+
+
+def hole_hausaufgaben_items(kind: dict) -> list:
+    return _adapter(kind).hole_hausaufgaben_items(kind["schulmanager"])
+
+
+def hole_arbeiten(kind: dict) -> list:
+    return _adapter(kind).hole_arbeiten(kind["schulmanager"])
+
+
+def hole_zusatzinfos(kind: dict) -> dict:
+    return _adapter(kind).hole_zusatzinfos(kind["schulmanager"])
