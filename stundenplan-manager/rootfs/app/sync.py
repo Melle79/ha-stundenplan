@@ -202,6 +202,7 @@ class AutoImportScheduler:
                       if k.get("auto_import") and k.get("schulmanager")]
         if not kandidaten:
             return
+        quellen.aktualisiere_quellen(kandidaten)
         backup_gemacht = False
         geaendert = False
         for kind in kandidaten:

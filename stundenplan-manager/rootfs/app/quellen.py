@@ -81,3 +81,24 @@ def faecher_fuer_kind(faecher: dict, kind: dict) -> dict:
         g["lehrer"] = d.get("lehrer", "")
         ergebnis[kz] = g
     return ergebnis
+
+
+def aktualisiere_quellen(kinder: list, **kw) -> None:
+    """Stoesst je beteiligter Quelle einen Datenabruf an (falls der Adapter
+    das anbietet, z.B. Eltern-Portal-fetch). Ein Aufruf pro Quelle genuegt,
+    da die Integrationen alle Instanzen gemeinsam aktualisieren."""
+    erledigt = set()
+    for kind in kinder:
+        if not kind.get("schulmanager"):
+            continue
+        quelle = kind.get("quelle") or "schulmanager"
+        if quelle in erledigt:
+            continue
+        erledigt.add(quelle)
+        adapter = _ADAPTER.get(quelle)
+        fetch = getattr(adapter, "fetch_daten", None)
+        if fetch:
+            try:
+                fetch(kind["schulmanager"], **kw)
+            except Exception:
+                pass

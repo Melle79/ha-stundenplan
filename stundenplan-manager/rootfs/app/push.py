@@ -46,6 +46,7 @@ def baue_nachricht(data: dict, jetzt: datetime) -> str:
     morgen = jetzt + timedelta(days=1)
     zeilen = []
 
+    quellen.aktualisiere_quellen(data.get("kinder", []))
     for kind in data.get("kinder", []):
         modus = kind.get("modus", "wochenplan")
         if modus == "wochenplan" and schulfrei_grund(morgen.date(), zeitraeume):

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.19.0 - Juli 2026
+
+### Neu
+- Das Add-on versorgt sich beim Eltern-Portal selbst mit frischen Daten: Vor jedem Auto-Import-Lauf, vor dem manuellen Import-Button und vor dem Abend-Push ruft es elternportal.fetch_data auf und wartet auf die Bestaetigung ueber last_fetch (max. 40s, danach letzter bekannter Stand). Ein Aufruf pro Lauf genuegt fuer alle Portal-Kinder
+- Die zuvor empfohlene HA-Automation fuer fetch_data ist damit ueberfluessig und kann geloescht werden
+
 ## 1.18.1 - Juli 2026
 
 - Raeume-und-Lehrer-Tabelle im Kind-Panel kompakt gestylt (linksbuendig, feste schmale Spalten statt voller Breite)

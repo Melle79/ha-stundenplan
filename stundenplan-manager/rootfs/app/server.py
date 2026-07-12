@@ -216,6 +216,7 @@ def schulmanager_import():
         return jsonify({"error": "Kind nicht gefunden oder nicht verknüpft"}), 400
     snapshot = None
     try:
+        quellen.aktualisiere_quellen([kind])
         snapshot = backup_erstellen("import")
         stats = fuehre_import_aus(data, kind)
     except Exception as exc:

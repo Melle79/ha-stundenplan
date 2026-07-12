@@ -17,6 +17,7 @@ import json
 import logging
 import os
 import re
+import time
 import urllib.request
 from datetime import date
 
@@ -278,3 +279,43 @@ def hole_zusatzinfos(basis: str) -> dict:
         info["naechste_arbeit"] = {"datum": a["datum"], "in_tagen": delta,
                                    "fach": a["fach"], "typ": a["typ"]}
     return info
+
+
+def _last_fetch(basis: str):
+    try:
+        d = _hole_state(f"{basis}_stundenplan")
+        return (d.get("attributes") or {}).get("last_fetch")
+    except Exception:
+        return None
+
+
+def fetch_daten(basis: str, timeout: int = 40, poll: float = 2.0) -> bool:
+    """Loest elternportal.fetch_data aus (aktualisiert alle Portal-Instanzen)
+    und wartet, bis der Stundenplan-Sensor einen neuen last_fetch meldet.
+
+    Rueckgabe True bei bestaetigt frischen Daten, False bei Timeout - der
+    Aufrufer arbeitet dann mit dem letzten bekannten Stand weiter.
+    """
+    token = os.environ.get("SUPERVISOR_TOKEN")
+    if not token:
+        return False
+    alt = _last_fetch(basis)
+    req = urllib.request.Request(
+        f"{API_URL}/services/elternportal/fetch_data", data=b"{}",
+        headers={"Authorization": f"Bearer {token}",
+                 "Content-Type": "application/json"}, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=15):
+            pass
+    except Exception as exc:
+        log.warning("elternportal.fetch_data fehlgeschlagen: %s", exc)
+        return False
+    ende = time.monotonic() + timeout
+    while time.monotonic() < ende:
+        time.sleep(poll)
+        neu = _last_fetch(basis)
+        if neu and neu != alt:
+            log.info("Eltern-Portal-Daten aktualisiert (last_fetch %s)", neu)
+            return True
+    log.warning("Eltern-Portal-Abruf nicht bestaetigt (Timeout %ss)", timeout)
+    return False
