@@ -95,9 +95,26 @@ def fuehre_import_aus(data: dict, kind: dict, heute: date = None) -> dict:
     return stats
 
 
+DEFAULT_ZEITEN = ["06:30", "07:00", "07:15"]
+
+
+def _import_zeiten(einstellungen: dict) -> list:
+    """Konfigurierte Auto-Import-Zeiten (Liste oder Komma-String),
+    Default kurz vor Schulbeginn."""
+    roh = einstellungen.get("auto_import_zeiten") \
+        or einstellungen.get("auto_import_zeit") \
+        or DEFAULT_ZEITEN
+    if isinstance(roh, str):
+        roh = roh.split(",")
+    zeiten = [z.strip() for z in roh if z and z.strip()]
+    return zeiten or list(DEFAULT_ZEITEN)
+
+
 class AutoImportScheduler:
-    """Fuehrt den Import taeglich (Default 05:30) fuer Kinder mit
-    auto_import=true aus. Vor Aenderungen wird ein Backup angelegt."""
+    """Fuehrt den Import mehrmals morgens vor Schulbeginn aus (Default
+    06:30, 07:00, 07:15) fuer Kinder mit auto_import=true - so werden auch
+    kurzfristig eingetragene Vertretungen noch erfasst. Jeder Zeitpunkt
+    laeuft genau einmal pro Tag; vor Aenderungen wird ein Backup angelegt."""
 
     def __init__(self, load_data_fn, save_data_fn, backup_fn, publish_fn=None):
         self._load = load_data_fn
@@ -105,7 +122,7 @@ class AutoImportScheduler:
         self._backup = backup_fn
         self._publish = publish_fn
         self._stop = threading.Event()
-        self._zuletzt = None  # date
+        self._gelaufen = set()  # {(date, "HH:MM")}
 
     def start(self):
         threading.Thread(target=self._loop, daemon=True).start()
@@ -121,10 +138,12 @@ class AutoImportScheduler:
     def _tick(self):
         jetzt = datetime.now()
         data = self._load()
-        zeit = (data.get("einstellungen", {}) or {}).get("auto_import_zeit") or "05:30"
-        if jetzt.strftime("%H:%M") != zeit or self._zuletzt == jetzt.date():
+        zeiten = _import_zeiten(data.get("einstellungen", {}) or {})
+        zeit = jetzt.strftime("%H:%M")
+        if zeit not in zeiten or (jetzt.date(), zeit) in self._gelaufen:
             return
-        self._zuletzt = jetzt.date()
+        self._gelaufen = {(d, z) for d, z in self._gelaufen if d == jetzt.date()}
+        self._gelaufen.add((jetzt.date(), zeit))
         kandidaten = [k for k in data.get("kinder", [])
                       if k.get("auto_import") and k.get("schulmanager")]
         if not kandidaten:

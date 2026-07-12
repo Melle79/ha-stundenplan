@@ -443,7 +443,7 @@ function renderKid() {
       <label>Schulmanager:</label>
       <select id="smSelect" onchange="kind().schulmanager=this.value||undefined;setDirty(true);renderKid()"></select>
       ${k.schulmanager ? `<button class="btn ghost" onclick="schulmanagerImport(this)">⬇ Plan importieren</button>` : ""}
-      ${k.schulmanager ? `<label title="Täglich um ${(DATA.einstellungen||{}).auto_import_zeit || "05:30"} Uhr"><input type="checkbox" ${k.auto_import ? "checked" : ""} onchange="kind().auto_import=this.checked||undefined;setDirty(true)"> 🔄 Auto-Import</label>` : ""}
+      ${k.schulmanager ? `<label title="Täglich um ${((DATA.einstellungen||{}).auto_import_zeiten || ["06:30","07:00","07:15"]).join ? ((DATA.einstellungen||{}).auto_import_zeiten || ["06:30","07:00","07:15"]).join(", ") : (DATA.einstellungen||{}).auto_import_zeiten} Uhr"><input type="checkbox" ${k.auto_import ? "checked" : ""} onchange="kind().auto_import=this.checked||undefined;setDirty(true)"> 🔄 Auto-Import</label>` : ""}
       ${IMPORT_SNAPSHOT ? `<button class="btn ghost" onclick="importRueckgaengig()">↩ Import rückgängig</button>` : ""}
       <span style="flex:1"></span>
       <button class="btn ghost" onclick="drucken()">🖨 Drucken</button>

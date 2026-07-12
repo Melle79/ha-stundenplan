@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.14.1 - Juli 2026
+
+- Auto-Import laeuft jetzt mehrmals morgens vor Schulbeginn: 06:30, 07:00 und 07:15 Uhr (statt einmal 05:30) - so werden auch Vertretungen erfasst, die das Sekretariat erst am Morgen eintraegt. Konfigurierbar als Liste ueber auto_import_zeiten; jeder Zeitpunkt laeuft genau einmal pro Tag
+
 ## 1.14.0 - Juli 2026
 
 ### Neu
