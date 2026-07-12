@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.14.3 - Juli 2026
+
+### Behoben
+- Altlasten-Heilung: Importe vor v1.14.2 konnten Vertretungswerte (Springer-Lehrer, Ausweichraum) als regulaere Fach-Daten speichern. Eine einmalige Migration markiert Bestandswerte als Schulmanager-gelernt, sodass der naechste Import sie aus den original-Daten korrigiert (z.B. Physik zurueck auf 'Ph 2 / her' statt '126 / rei')
+- Stundentyp 'changedLesson' (Geaenderter Unterricht) wird jetzt ueberall erkannt
+
 ## 1.14.2 - Juli 2026
 
 ### Verbessert

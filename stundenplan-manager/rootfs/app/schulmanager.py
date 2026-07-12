@@ -27,6 +27,7 @@ TAG_KEYS = [("Mo", "mo"), ("Di", "di"), ("Mi", "mi"), ("Do", "do"), ("Fr", "fr")
 TYP_LABELS = {
     "cancelledLesson": "Entfall",
     "substitution": "Vertretung",
+    "changedLesson": "Geänderter Unterricht",
     "teacherChange": "Lehrerwechsel",
     "specialLesson": "Sonderstunde",
     "irregularLesson": "Änderung",

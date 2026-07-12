@@ -277,6 +277,30 @@ def migriere_auf_kalender():
         save_data(data)
 
 
+def migriere_sm_marker():
+    """Einmalig (v1.14.3): Bestehende Raum/Lehrer-Werte als aus Schulmanager
+    gelernt markieren. Importe vor v1.14.2 setzten keine Herkunfts-Merker;
+    ohne Migration wuerden damals falsch gelernte Vertretungswerte dauerhaft
+    als handgepflegt geschuetzt. Wirklich handgepflegte Werte bleiben sicher:
+    Ueberschrieben wird ohnehin nur durch echte Schulmanager-Daten desselben
+    Fachs, und jede spaetere Handaenderung weicht vom Merker ab und ist damit
+    wieder geschuetzt."""
+    data = load_data()
+    einst = data.setdefault("einstellungen", {})
+    if einst.get("sm_marker_migriert"):
+        return
+    geaendert = False
+    for f in (data.get("faecher") or {}).values():
+        for feld in ("raum", "lehrer"):
+            if f.get(feld) and not f.get(f"sm_{feld}"):
+                f[f"sm_{feld}"] = f[feld]
+                geaendert = True
+    einst["sm_marker_migriert"] = True
+    save_data(data)
+    if geaendert:
+        log.info("Faecher-Migration: Bestandswerte als Schulmanager-gelernt markiert")
+
+
 def migriere_ferien_optionen():
     """Alte heute/morgen-Binaersensoren auf die Zeitraum-Sensoren umstellen.
     Nutzt den gemeinsamen Entity-Praefix (z.B. schulferien_bayern)."""
@@ -321,6 +345,7 @@ if __name__ == "__main__":
     log.info("Stundenplan Manager startet auf Port 8098")
     migriere_ferien_optionen()
     migriere_auf_kalender()
+    migriere_sm_marker()
     PUBLISHER.start()
     BackupScheduler().start()
     PushScheduler(lambda: load_data()).start()
