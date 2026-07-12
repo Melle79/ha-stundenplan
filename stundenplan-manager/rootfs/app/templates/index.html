@@ -138,7 +138,7 @@
     <div class="card">
       <h2>📚 Fächer</h2>
       <table class="ftable" id="fachTable">
-        <thead><tr><th>Kürzel</th><th>Name</th><th>Farbe</th><th>Raum</th><th>Material (optional)</th><th></th></tr></thead>
+        <thead><tr><th>Kürzel</th><th>Name</th><th>Farbe</th><th>Raum</th><th>Lehrer</th><th>Material (optional)</th><th></th></tr></thead>
         <tbody></tbody>
       </table>
       <div class="row" style="margin-top:12px">
@@ -524,15 +524,22 @@ let IMPORT_SNAPSHOT = null;
 
 function smMerge(d, k) {
   const vorhandene = Object.keys(DATA.faecher);
-  let neueFaecher = 0;
+  let neueFaecher = 0, ergaenzt = 0;
   for (const kz of d.kuerzel) {
     const match = vorhandene.find(v => v.toUpperCase() === kz.toUpperCase());
+    const det = (d.details || {})[kz.toUpperCase()] || {};
     if (!match) {
-      DATA.faecher[kz] = { name: kz, farbe: FARBPALETTE[(vorhandene.length + neueFaecher) % FARBPALETTE.length], raum: "", material: "" };
+      DATA.faecher[kz] = { name: det.name || kz,
+        farbe: FARBPALETTE[(vorhandene.length + neueFaecher) % FARBPALETTE.length],
+        raum: det.raum || "", lehrer: det.lehrer || "", material: "" };
       neueFaecher++;
-    } else if (match !== kz) {
-      for (const tag of Object.keys(d.plan))
-        d.plan[tag] = d.plan[tag].map(x => x === kz ? match : x);
+    } else {
+      const f = DATA.faecher[match];
+      if (!f.raum && det.raum) { f.raum = det.raum; ergaenzt++; }
+      if (!f.lehrer && det.lehrer) { f.lehrer = det.lehrer; ergaenzt++; }
+      if (match !== kz)
+        for (const tag of Object.keys(d.plan))
+          d.plan[tag] = d.plan[tag].map(x => x === kz ? match : x);
     }
   }
   const ziel = aktiverPlan(k);
@@ -542,7 +549,7 @@ function smMerge(d, k) {
     if (d.plan[tag].some(x => x)) { ziel[tag] = d.plan[tag]; importiert.push(NAMEN[tag]); }
     else uebersprungen.push(NAMEN[tag]);
   }
-  return { neueFaecher, importiert, uebersprungen };
+  return { neueFaecher, ergaenzt, importiert, uebersprungen };
 }
 
 async function schulmanagerImport(btn) {
@@ -566,7 +573,7 @@ async function schulmanagerImport(btn) {
         confirm(`Stundenraster aus Schulmanager übernehmen (${d.raster.length} Stunden, ${d.raster[0].von}–${d.raster[d.raster.length-1].bis}) als eigenes Raster für ${k.name}?`))
       k.stundenraster = d.raster;
     setDirty(true); renderAll();
-    alert(`Import (${d.kw}):\nÜbernommen: ${erg.importiert.join(", ") || "nichts"}\nUnverändert (in Schulmanager leer): ${erg.uebersprungen.join(", ") || "–"}\nNeue Fächer: ${erg.neueFaecher}\n\nRückgängig über den ↩-Button möglich (bis zum Neuladen der Seite; danach greifen die täglichen Backups).`);
+    alert(`Import (${d.kw}):\nÜbernommen: ${erg.importiert.join(", ") || "nichts"}\nUnverändert (in Schulmanager leer): ${erg.uebersprungen.join(", ") || "–"}\nNeue Fächer: ${erg.neueFaecher} (mit Name/Raum/Lehrer aus Schulmanager, soweit verfügbar)${erg.ergaenzt ? `\nBei bestehenden Fächern ergänzt: ${erg.ergaenzt} Angaben` : ""}\n\nRückgängig über den ↩-Button möglich (bis zum Neuladen der Seite; danach greifen die täglichen Backups).`);
   } catch (e) {
     alert("Import fehlgeschlagen: " + e.message);
   } finally {
@@ -723,6 +730,7 @@ function renderFaecher() {
       <td><input value="${esc(f.name)}" onchange="DATA.faecher['${esc(kz)}'].name=this.value;setDirty(true)"></td>
       <td><input type="color" value="${f.farbe}" onchange="DATA.faecher['${esc(kz)}'].farbe=this.value;setDirty(true);renderKid()"></td>
       <td><input value="${esc(f.raum||"")}" style="width:100px" onchange="DATA.faecher['${esc(kz)}'].raum=this.value;setDirty(true)"></td>
+      <td><input value="${esc(f.lehrer||"")}" style="width:90px" onchange="DATA.faecher['${esc(kz)}'].lehrer=this.value;setDirty(true)"></td>
       <td><input value="${esc(f.material||"")}" placeholder="z.B. Sportbeutel" style="width:160px" onchange="DATA.faecher['${esc(kz)}'].material=this.value;setDirty(true)"></td>
       <td><button class="icon" onclick="fachLoeschen('${esc(kz)}')">✕</button></td>`;
     tb.appendChild(tr);
@@ -736,7 +744,8 @@ function fachHinzufuegen() {
   if (DATA.faecher[kz]) { alert("Kürzel existiert bereits"); return; }
   DATA.faecher[kz] = {
     name, farbe: document.getElementById("nfFarbe").value,
-    raum: document.getElementById("nfRaum").value.trim()
+    raum: document.getElementById("nfRaum").value.trim(),
+    lehrer: "", material: ""
   };
   document.getElementById("nfKurz").value = "";
   document.getElementById("nfName").value = "";

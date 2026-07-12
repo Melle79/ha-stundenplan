@@ -12,7 +12,7 @@ from mqtt_publisher import SensorPublisher, ist_im_block  # noqa: F401
 from resource_registrar import registriere_ressource_async
 from ferien import liste_ferien_entities
 from push import PushScheduler, baue_nachricht, liste_notify_services, sende_push
-from schulmanager import hole_wochenplan, liste_schueler
+from schulmanager import hole_fach_details, hole_wochenplan, liste_schueler
 from backup import BackupScheduler, backup_erstellen, backup_wiederherstellen, liste_backups
 
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "info").upper()
@@ -181,7 +181,13 @@ def schulmanager_wochenplan():
     if not entity.startswith("sensor.schule_"):
         return jsonify({"error": "Ungueltige Entity"}), 400
     try:
-        return jsonify(hole_wochenplan(entity))
+        ergebnis = hole_wochenplan(entity)
+        try:
+            basis = entity[:-len("_wochenplan_json")]
+            ergebnis["details"] = hole_fach_details(basis)
+        except Exception:
+            ergebnis["details"] = {}
+        return jsonify(ergebnis)
     except Exception as exc:
         return jsonify({"error": str(exc)}), 502
 

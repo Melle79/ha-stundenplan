@@ -214,3 +214,30 @@ def hole_arbeiten(basis: str) -> list:
                          "typ": e.get("type") or "Arbeit"})
     arbeiten.sort(key=lambda x: x["datum"])
     return arbeiten
+
+
+def hole_fach_details(basis: str) -> dict:
+    """Raum, Lehrer und voller Fachname je Kuerzel aus den
+    Stundenplan-heute/morgen-Sensoren (raw.lessons).
+
+    Rueckgabe: {KUERZEL_UPPER: {"raum", "lehrer", "name"}}
+    """
+    details = {}
+    for suffix in ("_stundenplan_heute", "_stundenplan_morgen"):
+        try:
+            d = _hole_state(f"{basis}{suffix}")
+        except Exception:
+            continue
+        lessons = ((d.get("attributes") or {}).get("raw") or {}).get("lessons") or []
+        for l in lessons:
+            kz = (l.get("subject") or "").strip()
+            if not kz:
+                continue
+            eintrag = details.setdefault(kz.upper(), {"raum": "", "lehrer": "", "name": ""})
+            if not eintrag["raum"] and l.get("room"):
+                eintrag["raum"] = str(l["room"]).strip()
+            if not eintrag["lehrer"] and l.get("teacher"):
+                eintrag["lehrer"] = str(l["teacher"]).strip()
+            if not eintrag["name"] and l.get("subject_full"):
+                eintrag["name"] = str(l["subject_full"]).strip()
+    return details

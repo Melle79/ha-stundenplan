@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.13.0 - Juli 2026 (Card 1.14.0)
+
+### Neu
+- Faecher haben ein optionales Lehrer-Feld (Faecher-Tab); Karte zeigt Raum und Lehrer in der Wochenzelle ('126 - rei') und in der Heute-Liste
+- Schulmanager-Import uebernimmt Raum, Lehrer und vollen Fachnamen aus den Stundenplan-heute/morgen-Sensoren: Neue Faecher heissen 'Physik' statt 'Ph' und sind komplett befuellt; bei bestehenden Faechern werden nur leere Felder ergaenzt (nichts wird ueberschrieben). Da die Quelle nur heute/morgen abdeckt, vervollstaendigen sich die Angaben ueber mehrere Importe inkrementell
+
 ## 1.12.1 - Juli 2026 (Card 1.13.1)
 
 ### Behoben
