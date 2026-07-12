@@ -125,10 +125,28 @@ def fuehre_import_aus(data: dict, kind: dict, heute: date = None) -> dict:
             stats["geaendert"] = True
         stats["importiert"].append(TAG_NAMEN[tag])
 
-    if not kind.get("stundenraster") and wp["raster"]:
-        kind["stundenraster"] = wp["raster"]
-        stats["raster_gesetzt"] = True
-        stats["geaendert"] = True
+    # Stundenraster: eigenes Raster automatisch anlegen, wenn die
+    # Schulmanager-Zeiten vom Standard abweichen. Merker-Prinzip wie bei
+    # Raum/Lehrer: ein vom Import gesetztes Raster folgt spaeteren
+    # Aenderungen der Schule, ein handgepflegtes bleibt unangetastet.
+    sm_raster = wp["raster"]
+    if sm_raster:
+        std = (data.get("einstellungen", {}) or {}).get("stundenraster_standard") or []
+        eigenes = kind.get("stundenraster")
+        if eigenes is None:
+            if sm_raster != std:
+                kind["stundenraster"] = sm_raster
+                kind["sm_raster"] = sm_raster
+                stats["raster_gesetzt"] = True
+                stats["geaendert"] = True
+        elif eigenes == kind.get("sm_raster") and sm_raster != eigenes:
+            kind["stundenraster"] = sm_raster
+            kind["sm_raster"] = sm_raster
+            stats["raster_gesetzt"] = True
+            stats["geaendert"] = True
+        elif eigenes == sm_raster and kind.get("sm_raster") != sm_raster:
+            kind["sm_raster"] = sm_raster
+            stats["geaendert"] = True
     return stats
 
 

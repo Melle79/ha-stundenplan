@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.16.0 - Juli 2026 (Card 1.15.0)
+
+### Neu
+- Automatisches Personen-Raster: Weichen die Schulmanager-Stundenzeiten vom Standard-Raster ab, legt der Import automatisch ein eigenes Raster fuer das Kind an. Merker-Prinzip wie bei Raum/Lehrer: importierte Raster folgen spaeteren Zeiten-Aenderungen der Schule, handgepflegte bleiben unangetastet
+- Vertretungs-Darstellung wie im Schulmanager: Die Karte zeigt in betroffenen Stunden die Originaldaten rot durchgestrichen (bei Fachwechsel inkl. altem Kuerzel) und darunter die neuen Angaben hervorgehoben - in Wochen- und Heute-Ansicht
+
 ## 1.15.0 - Juli 2026
 
 ### Neu (Web-UI)
