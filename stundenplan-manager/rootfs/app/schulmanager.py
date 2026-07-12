@@ -248,3 +248,35 @@ def hole_fach_details(basis: str) -> dict:
             if not eintrag["name"] and l.get("subject_full"):
                 eintrag["name"] = str(l["subject_full"]).strip()
     return details
+
+
+def hole_tagesplaene(basis: str) -> dict:
+    """Originalbereinigte Tagesplaene aus den heute/morgen-Sensoren.
+
+    Bei geaenderten Stunden zaehlt das Original-Fach (Stammplan), nicht die
+    Vertretung. Rueckgabe: {"YYYY-MM-DD": {stunden_nr: kuerzel}}
+    """
+    tage = {}
+    for suffix in ("_stundenplan_heute", "_stundenplan_morgen"):
+        try:
+            d = _hole_state(f"{basis}{suffix}")
+        except Exception:
+            continue
+        lessons = ((d.get("attributes") or {}).get("raw") or {}).get("lessons") or []
+        for l in lessons:
+            datum = str(l.get("date") or "")[:10]
+            if not datum:
+                continue
+            typ = l.get("type") or "regularLesson"
+            quelle = l
+            if typ != "regularLesson" and (l.get("original") or {}).get("subject"):
+                quelle = l["original"]
+            kz = (quelle.get("subject") or "").strip()
+            if not kz:
+                continue
+            try:
+                nr = int(l.get("hour"))
+            except (TypeError, ValueError):
+                continue
+            tage.setdefault(datum, {})[nr] = kz
+    return tage

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.14.4 - Juli 2026
+
+### Verbessert
+- Import baut den Stammplan jetzt primaer aus den originalbereinigten Tages-Sensoren (heute/morgen): Bei Fach-Vertretungen landet das Original-Fach im Plan statt des Vertretungsfachs, Entfall-Stunden behalten ihr Stammfach. Der Wochenplan-JSON dient nur noch als Basis-Geruest
+- Damit setzt sich der Original-Stundenplan per Auto-Import Tag fuer Tag ueber die Woche zusammen - auch wenn die Schule (wie bei Luna) keinen Wochenplan pflegt, sondern nur den jeweils naechsten Tag
+
 ## 1.14.3 - Juli 2026
 
 ### Behoben

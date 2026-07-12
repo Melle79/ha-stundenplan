@@ -15,7 +15,7 @@ import logging
 import threading
 from datetime import date, datetime
 
-from schulmanager import hole_fach_details, hole_wochenplan
+from schulmanager import hole_fach_details, hole_tagesplaene, hole_wochenplan
 
 log = logging.getLogger("stundenplan.sync")
 
@@ -37,65 +37,93 @@ def _zielplan(kind: dict, heute: date) -> dict:
 def fuehre_import_aus(data: dict, kind: dict, heute: date = None) -> dict:
     """Mutiert data/kind. Rueckgabe-Stats:
     {geaendert, kw, importiert, uebersprungen, neue_faecher, ergaenzt,
-     raster_gesetzt}"""
+     raster_gesetzt}
+
+    Planquelle je Tag: originalbereinigter Tagesplan (heute/morgen-Sensoren,
+    bei Aenderungen zaehlt das Original-Fach) - Tage ohne Tagesdaten kommen
+    aus dem Wochenplan-JSON. Nur tatsaechlich verwendete Kuerzel werden als
+    Faecher angelegt; Vertretungsfaecher landen weder im Plan noch in der
+    Faecherliste."""
     heute = heute or date.today()
     wp = hole_wochenplan(f"{kind['schulmanager']}_wochenplan_json")
     try:
         details = hole_fach_details(kind["schulmanager"])
     except Exception:
         details = {}
+    try:
+        tagesplaene = hole_tagesplaene(kind["schulmanager"])
+    except Exception:
+        tagesplaene = {}
 
     stats = {"geaendert": False, "kw": wp.get("kw", ""), "importiert": [],
              "uebersprungen": [], "neue_faecher": 0, "ergaenzt": 0,
              "raster_gesetzt": False}
-    if not wp["raster"] or not wp["kuerzel"]:
+    raster = kind.get("stundenraster") or wp["raster"] \
+        or (data.get("einstellungen", {}) or {}).get("stundenraster_standard") or []
+    if not raster:
         return stats
 
     faecher = data.setdefault("faecher", {})
-    for kz in wp["kuerzel"]:
+
+    def fach_sicherstellen(kz):
+        """Kanonisches Kuerzel; legt das Fach bei Bedarf komplett an."""
         det = details.get(kz.upper(), {})
         match = next((v for v in faecher if v.upper() == kz.upper()), None)
-        if not match:
-            faecher[kz] = {"name": det.get("name") or kz,
-                           "farbe": FARBPALETTE[len(faecher) % len(FARBPALETTE)],
-                           "raum": det.get("raum", ""),
-                           "lehrer": det.get("lehrer", ""),
-                           "sm_raum": det.get("raum", ""),
-                           "sm_lehrer": det.get("lehrer", ""),
-                           "material": ""}
-            stats["neue_faecher"] += 1
-            stats["geaendert"] = True
-        else:
+        if match:
             f = faecher[match]
             for feld in ("raum", "lehrer"):
                 neu_wert = det.get(feld)
                 if not neu_wert:
                     continue
-                # Feld aktualisieren nur, wenn es leer ist oder sein Wert
-                # selbst aus Schulmanager stammt - Handgepflegtes gewinnt.
                 darf = not f.get(feld) or f.get(feld) == f.get(f"sm_{feld}")
                 if darf and f.get(feld) != neu_wert:
                     f[feld] = neu_wert
                     stats["ergaenzt"] += 1
                     stats["geaendert"] = True
-                # Zuletzt gelernten Wert immer festhalten
                 if f.get(f"sm_{feld}") != neu_wert:
                     f[f"sm_{feld}"] = neu_wert
                     stats["geaendert"] = True
-            if match != kz:
-                for tag in wp["plan"]:
-                    wp["plan"][tag] = [match if x == kz else x
-                                       for x in wp["plan"][tag]]
+            return match
+        faecher[kz] = {"name": det.get("name") or kz,
+                       "farbe": FARBPALETTE[len(faecher) % len(FARBPALETTE)],
+                       "raum": det.get("raum", ""),
+                       "lehrer": det.get("lehrer", ""),
+                       "sm_raum": det.get("raum", ""),
+                       "sm_lehrer": det.get("lehrer", ""),
+                       "material": ""}
+        stats["neue_faecher"] += 1
+        stats["geaendert"] = True
+        return kz
+
+    # Finalen Plan je Tag bestimmen: Tagesplan schlaegt Wochen-JSON
+    nr_index = {st["nr"]: i for i, st in enumerate(raster)}
+    tage_namen = ["mo", "di", "mi", "do", "fr"]
+    final = {}
+    for datum, stunden in tagesplaene.items():
+        wd = date.fromisoformat(datum).weekday()
+        if wd > 4:
+            continue
+        neu_tag = [None] * len(raster)
+        for nr, kz in stunden.items():
+            idx = nr_index.get(nr)
+            if idx is not None:
+                neu_tag[idx] = kz
+        if any(neu_tag):
+            final[tage_namen[wd]] = neu_tag
+    for tag, stunden in wp["plan"].items():
+        if tag not in final and any(stunden):
+            final[tag] = list(stunden)
 
     ziel = _zielplan(kind, heute)
-    for tag, stunden in wp["plan"].items():
-        if any(stunden):
-            if ziel.get(tag) != stunden:
-                ziel[tag] = stunden
-                stats["geaendert"] = True
-            stats["importiert"].append(TAG_NAMEN[tag])
-        else:
+    for tag in tage_namen:
+        if tag not in final:
             stats["uebersprungen"].append(TAG_NAMEN[tag])
+            continue
+        neu_tag = [fach_sicherstellen(kz) if kz else None for kz in final[tag]]
+        if ziel.get(tag) != neu_tag:
+            ziel[tag] = neu_tag
+            stats["geaendert"] = True
+        stats["importiert"].append(TAG_NAMEN[tag])
 
     if not kind.get("stundenraster") and wp["raster"]:
         kind["stundenraster"] = wp["raster"]
