@@ -67,3 +67,17 @@ def hole_arbeiten(kind: dict) -> list:
 
 def hole_zusatzinfos(kind: dict) -> dict:
     return _adapter(kind).hole_zusatzinfos(kind["schulmanager"])
+
+
+def faecher_fuer_kind(faecher: dict, kind: dict) -> dict:
+    """Globale Faecher (Name/Farbe/Material) mit den kindspezifischen
+    Raum/Lehrer-Details aus kind["fach_details"] zusammenfuehren."""
+    det = kind.get("fach_details") or {}
+    ergebnis = {}
+    for kz, f in faecher.items():
+        g = dict(f)
+        d = det.get(kz) or {}
+        g["raum"] = d.get("raum", "")
+        g["lehrer"] = d.get("lehrer", "")
+        ergebnis[kz] = g
+    return ergebnis

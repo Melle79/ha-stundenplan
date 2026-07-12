@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.18.0 - Juli 2026
+
+### Geaendert
+- Raum und Lehrer sind jetzt kindspezifisch (kind.fach_details) statt am globalen Fach: Geschwister an verschiedenen Schulen teilen dieselben Kuerzel (D, E, M...) mit unterschiedlichen Raeumen/Lehrern, ohne sich zu ueberschreiben. Name, Farbe und Material bleiben global
+- Neue aufklappbare Tabelle 'Raeume & Lehrer' im Kind-Panel zur Handpflege; die Raum/Lehrer-Spalten im Faecher-Tab entfallen
+- Import und Merker-Prinzip arbeiten pro Kind; einmalige Migration verteilt Bestandswerte auf die Kinder, deren Plaene das Fach nutzen
+- MQTT-Publisher liefert je Kind die gemergten Faecher - die Karte zeigt automatisch die richtigen Details, keine Karten-Aenderung noetig
+
+### Behoben
+- Publisher nutzt jetzt ebenfalls den Quellen-Dispatcher: Arbeiten von Eltern-Portal-Kindern erscheinen in den MQTT-Attributen
+
 ## 1.17.0 - Juli 2026
 
 ### Neu

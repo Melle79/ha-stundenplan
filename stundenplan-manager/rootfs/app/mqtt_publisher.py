@@ -20,7 +20,7 @@ from datetime import datetime, timedelta
 import paho.mqtt.client as mqtt
 
 from ferien import hole_schulfrei_zeitraeume, schulfrei_grund
-from schulmanager import hole_aenderungen, hole_arbeiten, hole_hausaufgaben_items, hole_zusatzinfos
+import quellen
 
 log = logging.getLogger("stundenplan.mqtt")
 
@@ -228,7 +228,8 @@ class SensorPublisher:
                 self._discovery(kind)
                 self._bekannte_kids.add(kid)
             raster = kind.get("stundenraster") or std_raster
-            ergebnis = berechne_sensoren(kind, faecher, raster, jetzt, zeitraeume)
+            kind_faecher = quellen.faecher_fuer_kind(faecher, kind)
+            ergebnis = berechne_sensoren(kind, kind_faecher, raster, jetzt, zeitraeume)
             payload = json.dumps(ergebnis["state"], ensure_ascii=False)
             if self._letzter_state.get(kid) != payload:
                 self._client.publish(f"{BASE_TOPIC}/{kid}/state", payload, retain=True)
@@ -246,13 +247,13 @@ class SensorPublisher:
             arbeiten = []
             if kind.get("schulmanager"):
                 try:
-                    aenderungen = hole_aenderungen(kind["schulmanager"], jetzt.date())
-                    zusatz = hole_zusatzinfos(kind["schulmanager"])
+                    aenderungen = quellen.hole_aenderungen(kind, jetzt.date())
+                    zusatz = quellen.hole_zusatzinfos(kind)
                     bis = (jetzt.date() + timedelta(days=3)).isoformat()
                     ab = (jetzt.date() - timedelta(days=7)).isoformat()
-                    ha_faellig = [h for h in hole_hausaufgaben_items(kind["schulmanager"])
+                    ha_faellig = [h for h in quellen.hole_hausaufgaben_items(kind)
                                   if h["due"] and ab <= h["due"] <= bis][:8]
-                    arbeiten = hole_arbeiten(kind["schulmanager"])
+                    arbeiten = quellen.hole_arbeiten(kind)
                 except Exception:
                     log.debug("Schulmanager-Daten fuer %s nicht abrufbar", kind["name"])
                 if zusatz["hausaufgaben_offen"] is not None:
@@ -271,7 +272,7 @@ class SensorPublisher:
                 "raster": raster,
                 "plan": kind.get("plan", {}),
                 "plaene": kind.get("plaene", []),
-                "faecher": {kz: f for kz, f in faecher.items() if kz in genutzt},
+                "faecher": {kz: f for kz, f in kind_faecher.items() if kz in genutzt},
                 "bloecke": kind.get("bloecke", []),
             }, ensure_ascii=False)
             if self._letzter_plan.get(kid) != plan_payload:

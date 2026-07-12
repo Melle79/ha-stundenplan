@@ -66,34 +66,33 @@ def fuehre_import_aus(data: dict, kind: dict, heute: date = None) -> dict:
     faecher = data.setdefault("faecher", {})
 
     def fach_sicherstellen(kz):
-        """Kanonisches Kuerzel; legt das Fach bei Bedarf komplett an."""
+        """Kanonisches Kuerzel; legt das globale Fach (Name/Farbe/Material)
+        bei Bedarf an. Raum/Lehrer sind kindspezifisch und wandern mit
+        Merker-Prinzip nach kind["fach_details"]."""
         det = details.get(kz.upper(), {})
         match = next((v for v in faecher if v.upper() == kz.upper()), None)
-        if match:
-            f = faecher[match]
-            for feld in ("raum", "lehrer"):
-                neu_wert = det.get(feld)
-                if not neu_wert:
-                    continue
-                darf = not f.get(feld) or f.get(feld) == f.get(f"sm_{feld}")
-                if darf and f.get(feld) != neu_wert:
-                    f[feld] = neu_wert
-                    stats["ergaenzt"] += 1
-                    stats["geaendert"] = True
-                if f.get(f"sm_{feld}") != neu_wert:
-                    f[f"sm_{feld}"] = neu_wert
-                    stats["geaendert"] = True
-            return match
-        faecher[kz] = {"name": det.get("name") or kz,
-                       "farbe": FARBPALETTE[len(faecher) % len(FARBPALETTE)],
-                       "raum": det.get("raum", ""),
-                       "lehrer": det.get("lehrer", ""),
-                       "sm_raum": det.get("raum", ""),
-                       "sm_lehrer": det.get("lehrer", ""),
-                       "material": ""}
-        stats["neue_faecher"] += 1
-        stats["geaendert"] = True
-        return kz
+        if not match:
+            match = kz
+            faecher[kz] = {"name": det.get("name") or kz,
+                           "farbe": FARBPALETTE[len(faecher) % len(FARBPALETTE)],
+                           "material": ""}
+            stats["neue_faecher"] += 1
+            stats["geaendert"] = True
+        eintrag = kind.setdefault("fach_details", {}).setdefault(match, {})
+        for feld in ("raum", "lehrer"):
+            neu_wert = det.get(feld)
+            if not neu_wert:
+                continue
+            darf = not eintrag.get(feld) \
+                or eintrag.get(feld) == eintrag.get(f"sm_{feld}")
+            if darf and eintrag.get(feld) != neu_wert:
+                eintrag[feld] = neu_wert
+                stats["ergaenzt"] += 1
+                stats["geaendert"] = True
+            if eintrag.get(f"sm_{feld}") != neu_wert:
+                eintrag[f"sm_{feld}"] = neu_wert
+                stats["geaendert"] = True
+        return match
 
     # Finalen Plan je Tag bestimmen: Tagesplan schlaegt Wochen-JSON
     nr_index = {st["nr"]: i for i, st in enumerate(raster)}

@@ -331,6 +331,38 @@ def migriere_sm_marker():
         log.info("Faecher-Migration: Bestandswerte als Schulmanager-gelernt markiert")
 
 
+def migriere_fach_details_pro_kind():
+    """Einmalig (v1.18.0): Raum/Lehrer wandern vom globalen Fach in
+    kind["fach_details"], da Geschwister an verschiedenen Schulen dieselben
+    Kuerzel mit unterschiedlichen Raeumen/Lehrern haben. Bestandswerte werden
+    in alle Kinder kopiert, deren Plaene das Fach nutzen."""
+    data = load_data()
+    einst = data.setdefault("einstellungen", {})
+    if einst.get("fach_details_migriert"):
+        return
+    faecher = data.get("faecher") or {}
+    for kind in data.get("kinder", []):
+        genutzt = {kz for p in [kind.get("plan", {})]
+                   + [v.get("plan", {}) for v in kind.get("plaene", [])]
+                   + [b.get("plan", {}) for b in kind.get("bloecke", [])]
+                   for tage in [p] for tag in tage for kz in (tage.get(tag) or [])
+                   if kz}
+        for kz in genutzt:
+            f = faecher.get(kz) or {}
+            if not (f.get("raum") or f.get("lehrer")):
+                continue
+            eintrag = kind.setdefault("fach_details", {}).setdefault(kz, {})
+            for feld in ("raum", "lehrer", "sm_raum", "sm_lehrer"):
+                if f.get(feld) and not eintrag.get(feld):
+                    eintrag[feld] = f[feld]
+    for f in faecher.values():
+        for feld in ("raum", "lehrer", "sm_raum", "sm_lehrer"):
+            f.pop(feld, None)
+    einst["fach_details_migriert"] = True
+    save_data(data)
+    log.info("Faecher-Migration: Raum/Lehrer sind jetzt kindspezifisch")
+
+
 def migriere_ferien_optionen():
     """Alte heute/morgen-Binaersensoren auf die Zeitraum-Sensoren umstellen.
     Nutzt den gemeinsamen Entity-Praefix (z.B. schulferien_bayern)."""
@@ -376,6 +408,7 @@ if __name__ == "__main__":
     migriere_ferien_optionen()
     migriere_auf_kalender()
     migriere_sm_marker()
+    migriere_fach_details_pro_kind()
     PUBLISHER.start()
     BackupScheduler().start()
     PushScheduler(lambda: load_data()).start()
