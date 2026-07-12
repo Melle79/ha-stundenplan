@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.14.0 - Juli 2026
+
+### Neu
+- Optionaler Auto-Import: Pro Kind aktivierbare Checkbox - der Schulmanager-Plan wird taeglich (Default 05:30, einstellbar via auto_import_zeit) automatisch uebernommen. Gleiche Regeln wie der Button: nur befuellte Tage, Raum/Lehrer nur ergaenzen, eigenes Stundenraster bleibt unangetastet; vor Aenderungen entsteht ein Backup (autoimport-Prefix)
+
+### Verbessert
+- Import-Logik ins Backend verlagert (sync.py): Button und Auto-Import nutzen exakt dieselbe Merge-Funktion (Single Source of Truth), der Import landet immer in der aktuell gueltigen Planversion
+
 ## 1.13.0 - Juli 2026 (Card 1.14.0)
 
 ### Neu

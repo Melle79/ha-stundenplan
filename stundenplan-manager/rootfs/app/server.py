@@ -13,6 +13,7 @@ from resource_registrar import registriere_ressource_async
 from ferien import liste_ferien_entities
 from push import PushScheduler, baue_nachricht, liste_notify_services, sende_push
 from schulmanager import hole_fach_details, hole_wochenplan, liste_schueler
+from sync import AutoImportScheduler, fuehre_import_aus
 from backup import BackupScheduler, backup_erstellen, backup_wiederherstellen, liste_backups
 
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "info").upper()
@@ -175,6 +176,27 @@ def schulmanager_schueler():
         return jsonify([])
 
 
+@app.route("/api/schulmanager/import", methods=["POST"])
+def schulmanager_import():
+    body = request.get_json(silent=True) or {}
+    data = load_data()
+    kind = next((k for k in data.get("kinder", [])
+                 if k.get("id") == body.get("kind_id")), None)
+    if not kind or not kind.get("schulmanager"):
+        return jsonify({"error": "Kind nicht gefunden oder nicht verknüpft"}), 400
+    snapshot = None
+    try:
+        snapshot = backup_erstellen("import")
+        stats = fuehre_import_aus(data, kind)
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 502
+    if stats["geaendert"]:
+        save_data(data)
+        PUBLISHER.trigger()
+    stats["snapshot"] = snapshot
+    return jsonify(stats)
+
+
 @app.route("/api/schulmanager/wochenplan")
 def schulmanager_wochenplan():
     entity = request.args.get("entity", "")
@@ -302,5 +324,7 @@ if __name__ == "__main__":
     PUBLISHER.start()
     BackupScheduler().start()
     PushScheduler(lambda: load_data()).start()
+    AutoImportScheduler(load_data, save_data, backup_erstellen,
+                        lambda: PUBLISHER.trigger()).start()
     registriere_ressource_async()
     app.run(host="0.0.0.0", port=8098)

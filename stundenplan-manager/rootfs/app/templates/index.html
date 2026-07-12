@@ -443,6 +443,7 @@ function renderKid() {
       <label>Schulmanager:</label>
       <select id="smSelect" onchange="kind().schulmanager=this.value||undefined;setDirty(true);renderKid()"></select>
       ${k.schulmanager ? `<button class="btn ghost" onclick="schulmanagerImport(this)">⬇ Plan importieren</button>` : ""}
+      ${k.schulmanager ? `<label title="Täglich um ${(DATA.einstellungen||{}).auto_import_zeit || "05:30"} Uhr"><input type="checkbox" ${k.auto_import ? "checked" : ""} onchange="kind().auto_import=this.checked||undefined;setDirty(true)"> 🔄 Auto-Import</label>` : ""}
       ${IMPORT_SNAPSHOT ? `<button class="btn ghost" onclick="importRueckgaengig()">↩ Import rückgängig</button>` : ""}
       <span style="flex:1"></span>
       <button class="btn ghost" onclick="drucken()">🖨 Drucken</button>
@@ -522,64 +523,34 @@ const FARBPALETTE = ["#e05d5d","#4a90d9","#e0b34c","#4caf7d","#9b6dd6","#26a69a"
 
 let IMPORT_SNAPSHOT = null;
 
-function smMerge(d, k) {
-  const vorhandene = Object.keys(DATA.faecher);
-  let neueFaecher = 0, ergaenzt = 0;
-  for (const kz of d.kuerzel) {
-    const match = vorhandene.find(v => v.toUpperCase() === kz.toUpperCase());
-    const det = (d.details || {})[kz.toUpperCase()] || {};
-    if (!match) {
-      DATA.faecher[kz] = { name: det.name || kz,
-        farbe: FARBPALETTE[(vorhandene.length + neueFaecher) % FARBPALETTE.length],
-        raum: det.raum || "", lehrer: det.lehrer || "", material: "" };
-      neueFaecher++;
-    } else {
-      const f = DATA.faecher[match];
-      if (!f.raum && det.raum) { f.raum = det.raum; ergaenzt++; }
-      if (!f.lehrer && det.lehrer) { f.lehrer = det.lehrer; ergaenzt++; }
-      if (match !== kz)
-        for (const tag of Object.keys(d.plan))
-          d.plan[tag] = d.plan[tag].map(x => x === kz ? match : x);
-    }
-  }
-  const ziel = aktiverPlan(k);
-  const importiert = [], uebersprungen = [];
-  const NAMEN = { mo: "Mo", di: "Di", mi: "Mi", do: "Do", fr: "Fr" };
-  for (const tag of Object.keys(d.plan)) {
-    if (d.plan[tag].some(x => x)) { ziel[tag] = d.plan[tag]; importiert.push(NAMEN[tag]); }
-    else uebersprungen.push(NAMEN[tag]);
-  }
-  return { neueFaecher, ergaenzt, importiert, uebersprungen };
-}
+
 
 async function schulmanagerImport(btn) {
   const k = kind();
   if (!k.schulmanager) return;
-  if (!confirm(`Wochenplan aus Schulmanager in „${k.name}" (${aktivPlanIdx < 0 ? "aktueller Plan" : "gewählte Version"}) übernehmen?\nNur in Schulmanager befüllte Tage werden ersetzt, leere Tage bleiben unangetastet.`)) return;
+  if (!confirm(`Wochenplan aus Schulmanager in „${k.name}" übernehmen?\nNur in Schulmanager befüllte Tage werden ersetzt; Raum/Lehrer werden bei Fächern nur ergänzt, nie überschrieben.`)) return;
   btn.disabled = true; btn.textContent = "Importiere…";
   try {
     if (dirty) await speichern();
-    const res = await fetch(`api/schulmanager/wochenplan?entity=${encodeURIComponent(k.schulmanager + "_wochenplan_json")}`);
+    const res = await fetch("api/schulmanager/import", { method: "POST",
+      headers: {"Content-Type": "application/json"}, body: JSON.stringify({ kind_id: k.id }) });
     const d = await res.json();
     if (!res.ok) throw new Error(d.error || res.status);
-    if (!d.raster.length || !d.kuerzel.length) {
-      alert("Schulmanager liefert aktuell keine Stunden (" + (d.kw || "leer") + ")."); return;
+    IMPORT_SNAPSHOT = d.snapshot || null;
+    clearTimeout(saveTimer); dirty = false;
+    await laden(); setDirty(false);
+    if (!d.importiert.length && !d.neue_faecher && !d.ergaenzt) {
+      alert("Schulmanager liefert aktuell keine Stunden (" + (d.kw || "leer") + ").");
+    } else {
+      alert(`Import (${d.kw}):\nÜbernommen: ${d.importiert.join(", ") || "nichts"}\nUnverändert (in Schulmanager leer): ${d.uebersprungen.join(", ") || "–"}\nNeue Fächer: ${d.neue_faecher} · Bei bestehenden ergänzt: ${d.ergaenzt} Angaben${d.raster_gesetzt ? "\nStundenraster übernommen" : ""}\n\nRückgängig über den ↩-Button (bis zum Neuladen der Seite; danach greifen die Backups).`);
     }
-    const snap = await fetch("api/backup/snapshot", { method: "POST",
-      headers: {"Content-Type":"application/json"}, body: JSON.stringify({ prefix: "import" }) });
-    IMPORT_SNAPSHOT = snap.ok ? (await snap.json()).datei : null;
-    const erg = smMerge(d, k);
-    if (erg.importiert.length && k.stundenraster === null &&
-        confirm(`Stundenraster aus Schulmanager übernehmen (${d.raster.length} Stunden, ${d.raster[0].von}–${d.raster[d.raster.length-1].bis}) als eigenes Raster für ${k.name}?`))
-      k.stundenraster = d.raster;
-    setDirty(true); renderAll();
-    alert(`Import (${d.kw}):\nÜbernommen: ${erg.importiert.join(", ") || "nichts"}\nUnverändert (in Schulmanager leer): ${erg.uebersprungen.join(", ") || "–"}\nNeue Fächer: ${erg.neueFaecher} (mit Name/Raum/Lehrer aus Schulmanager, soweit verfügbar)${erg.ergaenzt ? `\nBei bestehenden Fächern ergänzt: ${erg.ergaenzt} Angaben` : ""}\n\nRückgängig über den ↩-Button möglich (bis zum Neuladen der Seite; danach greifen die täglichen Backups).`);
   } catch (e) {
     alert("Import fehlgeschlagen: " + e.message);
   } finally {
     btn.disabled = false; btn.textContent = "⬇ Plan importieren";
   }
 }
+
 
 async function importRueckgaengig() {
   if (!IMPORT_SNAPSHOT) return;
