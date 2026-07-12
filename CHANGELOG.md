@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.12.1 - Juli 2026 (Card 1.13.1)
+
+### Behoben
+- Vertretungs-Overlay zeigt jetzt alle gelieferten Details: Lehrerkuerzel und Grund werden uebernommen ('Geaenderter Unterricht - Ph - rei - 126'), der Aenderungstyp wird wie von der Integration geliefert angezeigt (die Integration lokalisiert bereits auf Deutsch, das englische Code-Mapping griff daher nie)
+- Entfall-Erkennung robust fuer deutsche und englische Typbezeichnungen; Grund/Notiz erscheint im Tooltip und im Morgen-Push
+
 ## 1.12.0 - Juli 2026 (Card 1.13.0)
 
 ### Neu

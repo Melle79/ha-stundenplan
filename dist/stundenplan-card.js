@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.13.0 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.13.1 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -362,14 +362,16 @@ class StundenplanCard extends HTMLElement {
         const x = aend[`${t.iso}|${st.nr}`];
         const arbeit = kz && (arbTag[t.iso] || []).find(w => arbKz(w) === kz.toUpperCase()
           || (w.fach && f && w.fach.toUpperCase() === f.name.toUpperCase()));
-        const entfall = x && x.typ === "cancelledLesson";
+        const entfall = x && (x.entfall || x.typ === "cancelledLesson");
         const vertretung = x && !entfall;
-        const badge = entfall ? `<small class="sp-aend">✕ Entfall</small>`
-          : vertretung ? `<small class="sp-aend">🔁 ${x.label}${x.fach ? " " + x.fach : ""}${x.raum ? " · " + x.raum : ""}</small>` : "";
+        const details = x ? [x.fach, x.lehrer, x.raum].filter(Boolean).join(" · ") : "";
+        const badge = entfall ? `<small class="sp-aend">✕ ${x.label || "Entfall"}</small>`
+          : vertretung ? `<small class="sp-aend">🔁 ${x.label}${details ? " – " + details : ""}</small>` : "";
         const aCls = (entfall ? "sp-entfall" : vertretung ? "sp-vertretung" : "") + (arbeit ? " sp-arbeit" : "");
         if (f) {
+          const tip = `${f.name}${x ? " – " + x.label + (details ? " (" + details + ")" : "") + (x.grund ? ": " + x.grund : "") : ""}${arbeit ? " – " + arbeit.typ : ""}`;
           html += `<td class="${spalte}"><div class="sp-fach ${istJetzt ? "sp-aktuell" : ""} ${t.frei ? "sp-gedimmt" : ""} ${aCls}"
-            style="background:${f.farbe}" title="${f.name}${x ? " – " + x.label : ""}${arbeit ? " – " + arbeit.typ : ""}">${kz}${arbeit ? " 📝" : ""}<small class="sp-name">${f.name}</small>${f.raum ? `<small>${f.raum}</small>` : ""}${badge}</div></td>`;
+            style="background:${f.farbe}" title="${tip}">${kz}${arbeit ? " 📝" : ""}<small class="sp-name">${f.name}</small>${f.raum ? `<small>${f.raum}</small>` : ""}${badge}</div></td>`;
         } else if (x) {
           html += `<td class="${spalte}"><div class="sp-fach ${aCls}" style="background:var(--secondary-background-color,#444)">${badge}</div></td>`;
         } else {
@@ -499,11 +501,11 @@ class StundenplanCard extends HTMLElement {
       const f = kz ? ((a.faecher || {})[kz] || { name: kz, farbe: "#888" }) : { name: "", farbe: "#888" };
       const istJetzt = st.von <= zeit && zeit < st.bis;
       stunden++;
-      const entf = x && x.typ === "cancelledLesson";
+      const entf = x && (x.entfall || x.typ === "cancelledLesson");
       html += `<li class="${istJetzt ? "sp-aktuell" : ""} ${entf ? "sp-liste-entfall" : ""}">
         <span class="sp-punkt" style="background:${f.farbe}"></span>
         <span class="sp-lzeit">${st.von}–${st.bis}</span>
-        <span class="sp-lname">${entf ? `<s>${f.name}</s> ✕ Entfall` : f.name}${x && !entf ? ` <span class="sp-laend">🔁 ${x.label}${x.fach ? " " + x.fach : ""}</span>` : ""}</span>
+        <span class="sp-lname">${entf ? `<s>${f.name}</s> ✕ ${x.label || "Entfall"}` : f.name}${x && !entf ? ` <span class="sp-laend">🔁 ${x.label}${[x.fach, x.lehrer].filter(Boolean).map(v => " " + v).join(" ·")}</span>` : ""}</span>
         ${x && x.raum ? `<span class="sp-lraum">Raum ${x.raum}</span>` : f.raum ? `<span class="sp-lraum">Raum ${f.raum}</span>` : ""}
       </li>`;
     });
@@ -608,4 +610,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.13.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.13.1", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");

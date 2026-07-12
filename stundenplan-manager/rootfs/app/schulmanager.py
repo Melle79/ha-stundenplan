@@ -110,13 +110,18 @@ def hole_aenderungen(basis: str, heute: date = None) -> list:
                 stunde = int(c.get("hour"))
             except (TypeError, ValueError):
                 stunde = None
-            typ = c.get("type", "")
+            typ = (c.get("type") or "").strip()
+            label = TYP_LABELS.get(typ) or typ or "Änderung"
+            entfall = typ == "cancelledLesson" or \
+                any(w in typ.lower() for w in ("entfall", "entfällt", "ausfall", "fällt aus"))
             ergebnis.append({
                 "datum": str(datum)[:10],
                 "stunde": stunde,
                 "typ": typ,
-                "label": TYP_LABELS.get(typ, "Änderung"),
+                "label": label,
+                "entfall": entfall,
                 "fach": c.get("new_subject") or "",
+                "lehrer": c.get("new_teacher") or "",
                 "raum": c.get("new_room") or "",
                 "grund": c.get("reason") or c.get("note") or "",
             })

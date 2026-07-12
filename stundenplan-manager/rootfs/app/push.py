@@ -97,8 +97,12 @@ def baue_nachricht(data: dict, jetzt: datetime) -> str:
                     detail = f"{a['stunde']}. Std {a['label']}" if a["stunde"] else a["label"]
                     if a["fach"]:
                         detail += f" {a['fach']}"
+                    if a.get("lehrer"):
+                        detail += f" bei {a['lehrer']}"
                     if a["raum"]:
                         detail += f" (Raum {a['raum']})"
+                    if a.get("grund"):
+                        detail += f" – {a['grund']}"
                     zeilen.append(f"  ⚠ {detail}")
             except Exception:
                 log.debug("Aenderungen fuer Push nicht abrufbar")
