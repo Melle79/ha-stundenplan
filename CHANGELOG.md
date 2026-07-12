@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.16.2 - Juli 2026 (Card 1.15.2)
+
+- Neue Angaben in der Vertretungszelle jetzt in Weiss statt Gelb - besser lesbar auf den farbigen Fachkacheln
+
 ## 1.16.1 - Juli 2026 (Card 1.15.1)
 
 - Vertretungs-Zelle aufgeraeumt: Der Typ-Schriftzug ('Geaenderter Unterricht') entfaellt, das Aenderungs-Icon steht jetzt direkt vor den neuen Angaben ('120 - rei' -> '🔁 126 - rei'). Der Aenderungstyp bleibt im Tooltip erhalten
