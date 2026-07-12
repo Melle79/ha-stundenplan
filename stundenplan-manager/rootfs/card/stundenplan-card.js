@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.15.2 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.16.0 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -251,6 +251,8 @@ class StundenplanCard extends HTMLElement {
           .sp-liste li.sp-liste-entfall { opacity: .55; }
           .sp-laend { color: var(--warning-color, #e0b34c); font-size: .78rem; font-weight: 600; }
           .sp-orig-inline { color: var(--error-color, #ff8a80); }
+          .sp-stand { text-align: right; font-size: .65rem; color: var(--secondary-text-color, #9ab);
+            opacity: .75; margin-top: 4px; }
           .sp-leer { color: var(--secondary-text-color); font-size: .88rem; padding: 4px 0; }
           .sp-info { margin-top: 8px; padding: 6px 12px; border-radius: 8px;
             font-size: .8rem; color: var(--secondary-text-color);
@@ -396,7 +398,7 @@ class StundenplanCard extends HTMLElement {
       }
       html += `</tr>`;
     });
-    return html + `</tbody></table>`;
+    return html + `</tbody></table>` + this._standHTML(a);
   }
 
   _renderSchulschluss(ids) {
@@ -496,12 +498,12 @@ class StundenplanCard extends HTMLElement {
     const isoHeute = this._iso(new Date());
     if (a.modus !== "block") {
       const g = this._freiGrund(a, isoHeute);
-      if (g) return `<div class="sp-leer">${g.replace("🏖 ", "🏖 Heute schulfrei – ")}</div>` + this._schuleInfoZeile(a);
+      if (g) return `<div class="sp-leer">${g.replace("🏖 ", "🏖 Heute schulfrei – ")}</div>` + this._schuleInfoZeile(a) + this._standHTML(a);
     }
     const heute = this._heuteIdx();
-    if (heute < 0) return `<div class="sp-leer">🎉 Wochenende – schulfrei!</div>` + this._schuleInfoZeile(a);
+    if (heute < 0) return `<div class="sp-leer">🎉 Wochenende – schulfrei!</div>` + this._schuleInfoZeile(a) + this._standHTML(a);
     if (!this._imBlock(a, new Date()))
-      return `<div class="sp-leer">🏭 Betriebsphase – kein Blockunterricht heute</div>`;
+      return `<div class="sp-leer">🏭 Betriebsphase – kein Blockunterricht heute</div>` + this._standHTML(a);
     const tag = StundenplanCard.TAGE[heute][0];
     const plan = this._planFuerDatum(a, isoHeute)[tag] || [];
     const zeit = this._jetztZeit();
@@ -534,8 +536,17 @@ class StundenplanCard extends HTMLElement {
     });
     if (stunden && material.length)
       html += `<div class="sp-material">🎒 Heute dabei: ${material.join(", ")}</div>`;
-    html += this._schuleInfoZeile(a);
-    return stunden ? html : `<div class="sp-leer">Heute kein Unterricht 🎈</div>` + this._schuleInfoZeile(a);
+    html += this._schuleInfoZeile(a) + this._standHTML(a);
+    return stunden ? html : `<div class="sp-leer">Heute kein Unterricht 🎈</div>` + this._schuleInfoZeile(a) + this._standHTML(a);
+  }
+
+  _standHTML(a) {
+    if (!a || !a.daten_stand) return "";
+    const d = new Date(a.daten_stand);
+    if (isNaN(d)) return "";
+    const txt = d.toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" })
+      + ", " + d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+    return `<div class="sp-stand" title="Letzter Datenabruf aus der Schul-Integration">Daten: ${txt}</div>`;
   }
 
   _zeigeFehler(msg) {
@@ -626,4 +637,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.15.2", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.16.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");

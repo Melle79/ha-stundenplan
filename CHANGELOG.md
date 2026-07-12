@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.20.0 - Juli 2026 (Card 1.16.0)
+
+### Neu
+- Datenstand auf der Karte: Unter Wochen- und Heute-Ansicht steht klein, wann die Schul-Integration zuletzt wirklich Daten geholt hat ('Daten: So., 12.07., 20:53') - beim Eltern-Portal aus last_fetch, beim Schulmanager aus dem Abruf-Zeitstempel der Tages-Sensoren. Neues MQTT-Attribut daten_stand je Kind
+
 ## 1.19.0 - Juli 2026
 
 ### Neu

@@ -102,3 +102,10 @@ def aktualisiere_quellen(kinder: list, **kw) -> None:
                 fetch(kind["schulmanager"], **kw)
             except Exception:
                 pass
+
+
+def hole_datenstand(kind: dict):
+    try:
+        return _adapter(kind).hole_datenstand(kind["schulmanager"])
+    except Exception:
+        return None

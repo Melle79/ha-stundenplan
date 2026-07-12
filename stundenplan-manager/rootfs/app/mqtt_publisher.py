@@ -267,6 +267,7 @@ class SensorPublisher:
                 "hausaufgaben_offen": zusatz["hausaufgaben_offen"],
                 "hausaufgaben_faellig": ha_faellig,
                 "arbeiten": arbeiten,
+                "daten_stand": quellen.hole_datenstand(kind) if kind.get("schulmanager") else None,
                 "naechste_arbeit": zusatz["naechste_arbeit"],
                 "schulfrei_zeitraeume": zeitraeume if kind.get("modus", "wochenplan") == "wochenplan" else [],
                 "raster": raster,

@@ -319,3 +319,8 @@ def fetch_daten(basis: str, timeout: int = 40, poll: float = 2.0) -> bool:
             return True
     log.warning("Eltern-Portal-Abruf nicht bestaetigt (Timeout %ss)", timeout)
     return False
+
+
+def hole_datenstand(basis: str):
+    """Zeitpunkt des letzten Portal-Abrufs (last_fetch)."""
+    return _last_fetch(basis)

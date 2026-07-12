@@ -280,3 +280,21 @@ def hole_tagesplaene(basis: str) -> dict:
                 continue
             tage.setdefault(datum, {})[nr] = kz
     return tage
+
+
+def hole_datenstand(basis: str):
+    """Zeitstempel des letzten Datenabrufs der Integration (raw.date der
+    Tages-Sensoren, Fallback: HA-last_updated des Wochenplan-Sensors)."""
+    for suffix in ("_stundenplan_heute", "_stundenplan_morgen"):
+        try:
+            d = _hole_state(f"{basis}{suffix}")
+            stand = ((d.get("attributes") or {}).get("raw") or {}).get("date")
+            if stand:
+                return str(stand)
+        except Exception:
+            continue
+    try:
+        d = _hole_state(f"{basis}_wochenplan_json")
+        return d.get("last_updated")
+    except Exception:
+        return None
