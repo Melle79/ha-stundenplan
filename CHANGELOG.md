@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.20.2 - Juli 2026 (Card 1.16.2)
+
+- Notiz in Entfall-/Vertretungszellen jetzt gut lesbar: kontraststarke dunkle Pille mit weissem Text (eine CSS-Namenskollision mit der bestehenden sp-info-Klasse liess die Notiz zuvor blass und unformatiert erscheinen); Entfall-Dimmung von 45% auf 60% Sichtbarkeit angehoben
+
 ## 1.20.1 - Juli 2026 (Card 1.16.1)
 
 - Info-Notizen der Schule (note/reason, z.B. 'Aula' bei Entfall) erscheinen jetzt direkt in der Karten-Zelle als eigene Zeile mit Info-Icon - bewusst nicht durchgestrichen - sowie in der Heute-Liste; bisher steckten sie nur im Tooltip, Push und Web-UI
