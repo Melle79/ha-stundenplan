@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.21.0 - Juli 2026
+
+### Verbessert
+- Robust gegen API-Ausfaelle: Leert die Schulmanager-Integration bei Verbindungsfehlern ihre Sensoren (state unavailable/unknown), verschwinden Vertretungen, Arbeiten und Hausaufgaben nicht mehr von der Karte - der Publisher zeigt bis zu 6 Stunden den letzten bekannten Stand weiter und protokolliert eine Warnung ('zeige Stand von 10:30 weiter'). Die Datenstand-Zeile bleibt dabei ehrlich beim alten Zeitstempel
+- Wichtig: Ein erfolgreicher Abruf mit leerer Aenderungsliste gilt weiterhin sofort ('keine Vertretungen' ist eine legitime Antwort) - nur echte Fehlzustaende greifen auf den Cache zurueck
+
 ## 1.20.3 - Juli 2026 (Card 1.16.3)
 
 - Entfall-Zellen dimmen jetzt per dunklem Overlay statt Transparenz - die Notiz-Pille (z.B. 'Aula') liegt ueber dem Schleier und ist damit in vollem Weiss lesbar, waehrend der gestrichene Zellinhalt weiterhin klar als inaktiv erkennbar bleibt

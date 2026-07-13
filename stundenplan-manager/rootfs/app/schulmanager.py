@@ -34,6 +34,17 @@ TYP_LABELS = {
 }
 
 
+class QuelleNichtVerfuegbar(Exception):
+    """Der Quell-Sensor existiert, liefert aber gerade keine Daten
+    (Integration im Fehlerzustand, z.B. API-Timeout)."""
+
+
+def _pruefe_verfuegbar(d: dict) -> dict:
+    if str(d.get("state")) in ("unknown", "unavailable"):
+        raise QuelleNichtVerfuegbar(str(d.get("entity_id") or ""))
+    return d
+
+
 def _hole_state(entity: str):
     token = os.environ.get("SUPERVISOR_TOKEN")
     if not token:
@@ -98,7 +109,9 @@ def hole_aenderungen(basis: str, heute: date = None) -> list:
     """
     heute = heute or date.today()
     try:
-        d = _hole_state(f"{basis}_stundenplan_anderungen")
+        d = _pruefe_verfuegbar(_hole_state(f"{basis}_stundenplan_anderungen"))
+    except QuelleNichtVerfuegbar:
+        raise
     except Exception as exc:
         log.debug("Aenderungs-Sensor fuer %s nicht abrufbar: %s", basis, exc)
         return []

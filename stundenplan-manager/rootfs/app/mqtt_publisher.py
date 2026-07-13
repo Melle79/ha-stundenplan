@@ -21,6 +21,7 @@ import paho.mqtt.client as mqtt
 
 from ferien import hole_schulfrei_zeitraeume, schulfrei_grund
 import quellen
+from schulmanager import QuelleNichtVerfuegbar
 
 log = logging.getLogger("stundenplan.mqtt")
 
@@ -163,6 +164,7 @@ class SensorPublisher:
         self._bekannte_kids: set = set()
         self._letzter_state: dict = {}
         self._letzter_plan: dict = {}
+        self._live_cache: dict = {}
         self._wakeup = threading.Event()
         self._connected = threading.Event()
 
@@ -254,8 +256,25 @@ class SensorPublisher:
                     ha_faellig = [h for h in quellen.hole_hausaufgaben_items(kind)
                                   if h["due"] and ab <= h["due"] <= bis][:8]
                     arbeiten = quellen.hole_arbeiten(kind)
-                except Exception:
-                    log.debug("Schulmanager-Daten fuer %s nicht abrufbar", kind["name"])
+                    self._live_cache[kind["id"]] = {
+                        "ts": jetzt, "aenderungen": aenderungen, "zusatz": zusatz,
+                        "ha_faellig": ha_faellig, "arbeiten": arbeiten}
+                except Exception as exc:
+                    # Quelle gestoert (z.B. Schulmanager-API down): letzten
+                    # bekannten Stand bis zu 6h weiterzeigen statt die Karte
+                    # leerzufegen. Die Datenstand-Zeile bleibt ehrlich alt.
+                    cache = self._live_cache.get(kind["id"])
+                    if cache and (jetzt - cache["ts"]).total_seconds() < 6 * 3600:
+                        aenderungen = cache["aenderungen"]
+                        zusatz = cache["zusatz"]
+                        ha_faellig = cache["ha_faellig"]
+                        arbeiten = cache["arbeiten"]
+                        log.warning("Quelle fuer %s nicht verfuegbar (%s) - zeige Stand von %s weiter",
+                                    kind["name"], exc.__class__.__name__,
+                                    cache["ts"].strftime("%H:%M"))
+                    else:
+                        log.warning("Quelle fuer %s nicht verfuegbar (%s) - kein frischer Stand im Cache",
+                                    kind["name"], exc.__class__.__name__)
                 if zusatz["hausaufgaben_offen"] is not None:
                     ergebnis["attrs"]["hausaufgaben_offen"] = zusatz["hausaufgaben_offen"]
                 if zusatz["naechste_arbeit"]:
