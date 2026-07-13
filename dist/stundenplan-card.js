@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.16.0 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.16.1 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -251,6 +251,9 @@ class StundenplanCard extends HTMLElement {
           .sp-liste li.sp-liste-entfall { opacity: .55; }
           .sp-laend { color: var(--warning-color, #e0b34c); font-size: .78rem; font-weight: 600; }
           .sp-orig-inline { color: var(--error-color, #ff8a80); }
+          .sp-info { display: inline-block; font-size: .62rem; font-weight: 600; margin-top: 1px;
+            color: #fff; text-decoration: none; opacity: .95; }
+          .sp-info-inline { color: var(--info-color, #4fc3f7); font-size: .78rem; font-weight: 600; }
           .sp-stand { text-align: right; font-size: .65rem; color: var(--secondary-text-color, #9ab);
             opacity: .75; margin-top: 4px; }
           .sp-leer { color: var(--secondary-text-color); font-size: .88rem; padding: 4px 0; }
@@ -373,8 +376,9 @@ class StundenplanCard extends HTMLElement {
         const vertretung = x && !entfall;
         const details = x ? [x.fach, x.lehrer, x.raum].filter(Boolean).join(" · ") : "";
         let badge = "";
+        const info = x && x.grund ? `<small class="sp-info">ℹ️ ${x.grund}</small>` : "";
         if (entfall) {
-          badge = `<small class="sp-aend">✕ ${x.label || "Entfall"}</small>`;
+          badge = `<small class="sp-aend">✕ ${x.label || "Entfall"}</small>${info}`;
         } else if (vertretung) {
           // Schulmanager-Optik: Originaldaten rot durchgestrichen, neue Angaben hervorgehoben
           const fNeu = x.fach && f && x.fach.toUpperCase() !== kz.toUpperCase()
@@ -383,7 +387,7 @@ class StundenplanCard extends HTMLElement {
           const neuDetail = [fNeu, x.raum, x.lehrer].filter(Boolean).join(" · ");
           badge = (altDetail ? `<small class="sp-orig">${altDetail}</small>` : "")
             + (neuDetail ? `<small class="sp-neu">🔁 ${neuDetail}</small>`
-                         : `<small class="sp-aend">🔁 ${x.label}</small>`);
+                         : `<small class="sp-aend">🔁 ${x.label}</small>`) + info;
         }
         const aCls = (entfall ? "sp-entfall" : vertretung ? "sp-vertretung" : "") + (arbeit ? " sp-arbeit" : "");
         if (f) {
@@ -523,7 +527,7 @@ class StundenplanCard extends HTMLElement {
       html += `<li class="${istJetzt ? "sp-aktuell" : ""} ${entf ? "sp-liste-entfall" : ""}">
         <span class="sp-punkt" style="background:${f.farbe}"></span>
         <span class="sp-lzeit">${st.von}–${st.bis}</span>
-        <span class="sp-lname">${entf ? `<s>${f.name}</s> ✕ ${x.label || "Entfall"}` : f.name}${x && !entf && x.fach && x.fach.toUpperCase() !== (kz || "").toUpperCase() ? ` <span class="sp-laend">🔁 ${x.fach}</span>` : ""}</span>
+        <span class="sp-lname">${entf ? `<s>${f.name}</s> ✕ ${x.label || "Entfall"}` : f.name}${x && x.grund ? ` <span class="sp-info-inline">ℹ️ ${x.grund}</span>` : ""}${x && !entf && x.fach && x.fach.toUpperCase() !== (kz || "").toUpperCase() ? ` <span class="sp-laend">🔁 ${x.fach}</span>` : ""}</span>
         ${x && !entf && (x.raum || x.lehrer) ? `<span class="sp-lraum">🔁 ${(f.raum || f.lehrer) ? `<s class="sp-orig-inline">${[f.raum, f.lehrer].filter(Boolean).join(" · ")}</s> → ` : ""}${[x.raum, x.lehrer].filter(Boolean).join(" · ")}</span>` : (f.raum || f.lehrer) ? `<span class="sp-lraum">${[f.raum ? "Raum " + f.raum : "", f.lehrer].filter(Boolean).join(" · ")}</span>` : ""}
       </li>`;
     });
@@ -637,4 +641,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.16.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.16.1", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");

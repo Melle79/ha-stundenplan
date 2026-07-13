@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.20.1 - Juli 2026 (Card 1.16.1)
+
+- Info-Notizen der Schule (note/reason, z.B. 'Aula' bei Entfall) erscheinen jetzt direkt in der Karten-Zelle als eigene Zeile mit Info-Icon - bewusst nicht durchgestrichen - sowie in der Heute-Liste; bisher steckten sie nur im Tooltip, Push und Web-UI
+
 ## 1.20.0 - Juli 2026 (Card 1.16.0)
 
 ### Neu
