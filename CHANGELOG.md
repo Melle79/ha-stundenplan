@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.20.3 - Juli 2026 (Card 1.16.3)
+
+- Entfall-Zellen dimmen jetzt per dunklem Overlay statt Transparenz - die Notiz-Pille (z.B. 'Aula') liegt ueber dem Schleier und ist damit in vollem Weiss lesbar, waehrend der gestrichene Zellinhalt weiterhin klar als inaktiv erkennbar bleibt
+
 ## 1.20.2 - Juli 2026 (Card 1.16.2)
 
 - Notiz in Entfall-/Vertretungszellen jetzt gut lesbar: kontraststarke dunkle Pille mit weissem Text (eine CSS-Namenskollision mit der bestehenden sp-info-Klasse liess die Notiz zuvor blass und unformatiert erscheinen); Entfall-Dimmung von 45% auf 60% Sichtbarkeit angehoben

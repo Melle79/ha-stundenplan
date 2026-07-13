@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.16.2 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.16.3 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -185,7 +185,10 @@ class StundenplanCard extends HTMLElement {
           .sp-fach small { display: block; font-weight: 400; font-size: .62rem; opacity: .92; }
           .sp-fach .sp-name { display: none; }
           .sp-gedimmt { opacity: .35; filter: saturate(.5); }
-          .sp-entfall { position: relative; opacity: .6; }
+          .sp-entfall { position: relative; }
+          .sp-entfall::before { content: ""; position: absolute; inset: 0; z-index: 1;
+            background: rgba(35,44,54,.5); border-radius: inherit; pointer-events: none; }
+          .sp-entfall::after { z-index: 1; }
           .sp-entfall::after { content: ""; position: absolute; left: 6%; right: 6%;
             top: 50%; border-top: 2px solid var(--error-color, #e05d5d); transform: rotate(-4deg); }
           .sp-entfall .sp-aend { color: var(--error-color, #ff8a80); }
@@ -251,8 +254,9 @@ class StundenplanCard extends HTMLElement {
           .sp-liste li.sp-liste-entfall { opacity: .55; }
           .sp-laend { color: var(--warning-color, #e0b34c); font-size: .78rem; font-weight: 600; }
           .sp-orig-inline { color: var(--error-color, #ff8a80); }
-          .sp-notiz { display: inline-block; font-size: .72rem; font-weight: 700; margin-top: 3px;
-            color: #fff; background: rgba(0,0,0,.5); padding: 1px 8px; border-radius: 9px;
+          .sp-notiz { display: inline-block; position: relative; z-index: 2;
+            font-size: .72rem; font-weight: 700; margin-top: 3px;
+            color: #fff; background: rgba(0,0,0,.55); padding: 1px 8px; border-radius: 9px;
             text-decoration: none; }
           .sp-notiz-inline { color: #fff; background: rgba(0,0,0,.35); padding: 0 7px;
             border-radius: 9px; font-size: .78rem; font-weight: 600; }
@@ -643,4 +647,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.16.2", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.16.3", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
