@@ -13,7 +13,8 @@ import urllib.request
 from datetime import datetime, timedelta
 
 from ferien import hole_schulfrei_zeitraeume, schulfrei_grund, API_URL
-from mqtt_publisher import TAGE, ist_im_block, plan_fuer_datum
+from mqtt_publisher import (TAGE, belegte_stunden, entfall_stunden,
+                            ist_im_block, plan_fuer_datum)
 import quellen
 
 log = logging.getLogger("stundenplan.push")
@@ -57,21 +58,45 @@ def baue_nachricht(data: dict, jetzt: datetime) -> str:
             continue
         plan = plan_fuer_datum(kind, morgen.date()).get(TAGE[morgen.weekday()], [])
         raster = kind.get("stundenraster") or std_raster
-        belegte = [i for i, kz in enumerate(plan) if kz and i < len(raster)]
-        if not belegte:
+        geplant = belegte_stunden(plan, raster)
+        if not geplant:
             continue
-        erster_kz = plan[belegte[0]]
-        f = faecher.get(erster_kz, {})
-        zeile = (f"{kind['name']}: {f.get('name', erster_kz)} um "
-                 f"{raster[belegte[0]]['von']}, Schluss {raster[belegte[-1]]['bis']}")
-        material = []
-        for i in belegte:
-            m = (faecher.get(plan[i], {}) or {}).get("material", "").strip()
-            if m and m not in material:
-                material.append(m)
-        if material:
-            zeile += " – 🎒 " + ", ".join(material)
-        zeilen.append(zeile)
+
+        # Bekannte Entfaelle fuer morgen kennen wir schon jetzt - sie
+        # verschieben Schulbeginn und -schluss in der Nachricht
+        morgen_iso = morgen.date().isoformat()
+        aend_morgen = []
+        if kind.get("schulmanager"):
+            try:
+                aend_morgen = [a for a in quellen.hole_aenderungen(kind, jetzt.date())
+                               if a["datum"] == morgen_iso]
+            except Exception:
+                log.debug("Aenderungen fuer Push nicht abrufbar")
+        belegte = belegte_stunden(plan, raster,
+                                  entfall_stunden(aend_morgen, morgen.date()))
+
+        if not belegte:
+            zeilen.append(f"{kind['name']}: schulfrei – alle Stunden entfallen")
+        else:
+            erster_kz = plan[belegte[0]]
+            f = faecher.get(erster_kz, {})
+            beginn = raster[belegte[0]]["von"]
+            schluss = raster[belegte[-1]]["bis"]
+            if beginn != raster[geplant[0]]["von"]:
+                beginn += f" (statt {raster[geplant[0]]['von']})"
+            if schluss != raster[geplant[-1]]["bis"]:
+                schluss += f" (statt {raster[geplant[-1]]['bis']})"
+            zeile = (f"{kind['name']}: {f.get('name', erster_kz)} um "
+                     f"{beginn}, Schluss {schluss}")
+            material = []
+            for i in belegte:
+                m = (faecher.get(plan[i], {}) or {}).get("material", "").strip()
+                if m and m not in material:
+                    material.append(m)
+            if material:
+                zeile += " – 🎒 " + ", ".join(material)
+            zeilen.append(zeile)
+
         if kind.get("schulmanager"):
             try:
                 zusatz = quellen.hole_zusatzinfos(kind)
@@ -90,23 +115,17 @@ def baue_nachricht(data: dict, jetzt: datetime) -> str:
                     zeilen.append(f"  📝 {arbeit['typ']} {arbeit['fach']} morgen!")
             except Exception:
                 log.debug("Zusatzinfos fuer Push nicht abrufbar")
-            try:
-                morgen_iso = morgen.date().isoformat()
-                for a in quellen.hole_aenderungen(kind, jetzt.date()):
-                    if a["datum"] != morgen_iso:
-                        continue
-                    detail = f"{a['stunde']}. Std {a['label']}" if a["stunde"] else a["label"]
-                    if a["fach"]:
-                        detail += f" {a['fach']}"
-                    if a.get("lehrer"):
-                        detail += f" bei {a['lehrer']}"
-                    if a["raum"]:
-                        detail += f" (Raum {a['raum']})"
-                    if a.get("grund"):
-                        detail += f" – {a['grund']}"
-                    zeilen.append(f"  ⚠ {detail}")
-            except Exception:
-                log.debug("Aenderungen fuer Push nicht abrufbar")
+            for a in aend_morgen:
+                detail = f"{a['stunde']}. Std {a['label']}" if a["stunde"] else a["label"]
+                if a["fach"]:
+                    detail += f" {a['fach']}"
+                if a.get("lehrer"):
+                    detail += f" bei {a['lehrer']}"
+                if a["raum"]:
+                    detail += f" (Raum {a['raum']})"
+                if a.get("grund"):
+                    detail += f" – {a['grund']}"
+                zeilen.append(f"  ⚠ {detail}")
 
     return "\n".join(zeilen)
 

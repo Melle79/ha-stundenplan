@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.22.0 - Juli 2026 (Card 1.17.0)
+
+### Behoben
+- Schulschluss beruecksichtigt jetzt Entfall: Fallen die letzten Stunden des Tages aus (z.B. Werken 5./6. Stunde), zeigen Sensor und Karte das echte Ende (11:20 statt 15:00) - bisher kam die regulaere Endzeit aus dem Stammplan, weil das Vertretungs-Overlay erst nach der Sensorberechnung geholt wurde. Gleiches gilt spiegelbildlich fuer den Schulbeginn bei entfallenden ersten Stunden
+- Auch 'zuletzt <Fach>' auf der Schulschluss-Karte nennt jetzt das letzte tatsaechlich stattfindende Fach; bei verschobenem Ende steht daneben 'statt 15:00 (Entfall)'
+- Der Morgen-Push rechnet Entfaelle des Folgetags ebenfalls ein ('Schluss 11:20 (statt 15:00)') und packt kein Material fuer entfallende Faecher ein
+- Faellt der komplette Tag aus, melden die Sensoren 'Schulfrei (Entfall)' statt einer reinen Uhrzeit; eine Freistunde durch Entfall mitten am Tag heisst 'Frei (Entfall)' statt 'Pause'
+- Vertretungen (Fach-, Raum- oder Lehrertausch) aendern die Zeiten weiterhin nicht - nur ersatzloser Entfall zaehlt
+
+### Neu
+- Neue Attribute je Kind: `schulbeginn_heute`, `heute_entfall` sowie `schulschluss_regulaer`/`schulbeginn_regulaer` (nur gesetzt, wenn Randstunden entfallen) - nutzbar fuer eigene Automationen
+- Attribut-Aenderungen ohne Zustandswechsel (z.B. offene Hausaufgaben) werden jetzt ebenfalls publiziert
+
 ## 1.21.0 - Juli 2026
 
 ### Verbessert

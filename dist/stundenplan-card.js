@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.16.3 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.17.0 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -429,17 +429,25 @@ class StundenplanCard extends HTMLElement {
       let schluss = sensor("_schulschluss_heute");
       const aktuell = sensor("_aktuelle_stunde") || "";
 
+      // Entfallene Stunden gehoeren nicht zum Schultag: Randstunden
+      // verschieben Schulschluss bzw. -beginn
+      const entfallNrs = new Set(((a && a.aenderungen) || [])
+        .filter(x => x.datum === isoHeute && x.stunde != null
+                     && (x.entfall || x.typ === "cancelledLesson"))
+        .map(x => Number(x.stunde)));
+      let s = null;
+      if (a && a.raster && a.plan && heute >= 0) {
+        const plan = this._planFuerDatum(a, isoHeute)[StundenplanCard.TAGE[heute][0]] || [];
+        const alle = plan.map((kz, i) => kz && i < a.raster.length ? i : null)
+          .filter(i => i !== null);
+        s = { plan, alle, aktiv: alle.filter(i => !entfallNrs.has(Number(a.raster[i].nr))) };
+      }
+
       if (schluss === null && a && a.raster && a.plan) {
         // Fallback: lokal berechnen, falls der Sensor deaktiviert ist
         const frei = this._freiGrund(a, isoHeute);
-        if (frei) schluss = "–";
-        else if (heute < 0) schluss = "–";
-        else {
-          const plan = this._planFuerDatum(a, isoHeute)[StundenplanCard.TAGE[heute][0]] || [];
-          const belegte = plan.map((kz, i) => kz && i < a.raster.length ? i : null)
-            .filter(i => i !== null);
-          schluss = belegte.length ? a.raster[belegte[belegte.length - 1]].bis : "–";
-        }
+        schluss = (frei || !s || !s.aktiv.length) ? "–"
+          : a.raster[s.aktiv[s.aktiv.length - 1]].bis;
       }
 
       if (schluss === null) {
@@ -449,12 +457,11 @@ class StundenplanCard extends HTMLElement {
         if (zeit >= schluss) { sub = "Schule ist aus"; cls = "sp-schluss-vorbei"; }
         else {
           sub = "noch bis " + schluss;
-          if (a && a.raster && a.plan && heute >= 0) {
-            const plan = this._planFuerDatum(a, isoHeute)[StundenplanCard.TAGE[heute][0]] || [];
-            const belegte = plan.map((kz, i) => kz && i < a.raster.length ? i : null)
-              .filter(i => i !== null);
-            const f = belegte.length ? (a.faecher || {})[plan[belegte[belegte.length - 1]]] : null;
+          if (s && s.aktiv.length) {
+            const f = (a.faecher || {})[s.plan[s.aktiv[s.aktiv.length - 1]]];
             if (f) sub += " · zuletzt " + f.name;
+            const regulaer = a.raster[s.alle[s.alle.length - 1]].bis;
+            if (regulaer !== schluss) sub += " · statt " + regulaer + " (Entfall)";
           }
         }
       } else {
@@ -540,6 +547,8 @@ class StundenplanCard extends HTMLElement {
     html += `</ul>`;
     const material = [];
     r.forEach((st, si) => {
+      const x = aendH[st.nr];
+      if (x && (x.entfall || x.typ === "cancelledLesson")) return;  // entfaellt: nichts einpacken
       const f = plan[si] ? (a.faecher || {})[plan[si]] : null;
       const m = f && (f.material || "").trim();
       if (m && !material.includes(m)) material.push(m);
@@ -647,4 +656,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.16.3", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.17.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");

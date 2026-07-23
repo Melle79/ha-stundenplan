@@ -68,16 +68,51 @@ def _fach_label(kz, faecher):
     return f"{kz} – {f['name']}" if f else str(kz)
 
 
+def _nr(stunde: dict):
+    """Stundennummer aus dem Raster als int (Web-UI liefert teils Strings)."""
+    try:
+        return int(stunde.get("nr"))
+    except (TypeError, ValueError):
+        return None
+
+
+def entfall_stunden(aenderungen: list, datum) -> set:
+    """Stundennummern, die am Datum ersatzlos entfallen (kein Ersatzunterricht)."""
+    iso = datum.isoformat() if hasattr(datum, "isoformat") else str(datum)[:10]
+    nrs = set()
+    for a in aenderungen or []:
+        if str(a.get("datum", ""))[:10] != iso:
+            continue
+        if not (a.get("entfall") or a.get("typ") == "cancelledLesson"):
+            continue
+        try:
+            nrs.add(int(a.get("stunde")))
+        except (TypeError, ValueError):
+            pass  # Entfall ohne Stundenbezug (z.B. ganzer Tag) - nicht zuordenbar
+    return nrs
+
+
+def belegte_stunden(plan: list, raster: list, entfall: set = None) -> list:
+    """Indizes der tatsaechlich stattfindenden Stunden (Entfall zaehlt nicht)."""
+    entfall = entfall or set()
+    return [i for i, kz in enumerate(plan)
+            if kz and i < len(raster) and _nr(raster[i]) not in entfall]
+
+
 def berechne_sensoren(kind: dict, faecher: dict, raster: list, jetzt: datetime,
-                      zeitraeume: list = None) -> dict:
+                      zeitraeume: list = None, aenderungen: list = None) -> dict:
     """Berechnet die vier Sensorwerte fuer ein Kind zum Zeitpunkt `jetzt`.
 
     zeitraeume: schulfreie Zeitraeume [{"von","bis","grund"}, ...].
     Sie gelten nur im Modus "wochenplan" - Azubis im Blockmodus haben in
     Schulferien Betrieb, keine freien Tage.
+    aenderungen: Vertretungs-Overlay (heute/morgen) der Datenquelle. Entfallene
+    Stunden gelten als frei - sie verschieben Schulbeginn und -schluss.
     """
     zeit = jetzt.strftime("%H:%M")
     zeitraeume = zeitraeume or []
+    entfall_heute = entfall_stunden(aenderungen, jetzt.date())
+    entfall_morgen = entfall_stunden(aenderungen, (jetzt + timedelta(days=1)).date())
 
     def tagesinfo(offset: int):
         d = jetzt + timedelta(days=offset)
@@ -108,15 +143,18 @@ def berechne_sensoren(kind: dict, faecher: dict, raster: list, jetzt: datetime,
     if morgen is None:
         res["erste_stunde_morgen"] = morgen_status
     else:
+        belegte_morgen = belegte_stunden(morgen, raster, entfall_morgen)
+        if not belegte_morgen:
+            res["erste_stunde_morgen"] = "Schulfrei (Entfall)"
         material = []
-        for i, kz in enumerate(morgen):
-            if kz and i < len(raster):
-                if "morgen_erste_von" not in attrs:
-                    res["erste_stunde_morgen"] = f"{_fach_label(kz, faecher)} ({raster[i]['von']})"
-                    attrs["morgen_erste_von"] = raster[i]["von"]
-                m = (faecher.get(kz, {}) or {}).get("material", "").strip()
-                if m and m not in material:
-                    material.append(m)
+        for i in belegte_morgen:
+            kz = morgen[i]
+            if "morgen_erste_von" not in attrs:
+                res["erste_stunde_morgen"] = f"{_fach_label(kz, faecher)} ({raster[i]['von']})"
+                attrs["morgen_erste_von"] = raster[i]["von"]
+            m = (faecher.get(kz, {}) or {}).get("material", "").strip()
+            if m and m not in material:
+                material.append(m)
         if material:
             attrs["material_morgen"] = ", ".join(material)
 
@@ -127,10 +165,29 @@ def berechne_sensoren(kind: dict, faecher: dict, raster: list, jetzt: datetime,
         res["schulschluss_heute"] = "–"
         return {"state": res, "attrs": attrs}
 
-    belegte = [i for i, kz in enumerate(heute) if kz and i < len(raster)]
+    geplant = belegte_stunden(heute, raster)
+    belegte = belegte_stunden(heute, raster, entfall_heute)
+    attrs["heute_stunden"] = len(belegte)
+    if len(geplant) > len(belegte):
+        attrs["heute_entfall"] = len(geplant) - len(belegte)
+
+    if not belegte:
+        # Alle Stunden des Tages entfallen - der Tag ist faktisch schulfrei
+        res["aktuelle_stunde"] = "Schulfrei (Entfall)"
+        res["naechste_stunde"] = "Schulfrei (Entfall)"
+        res["schulschluss_heute"] = "–"
+        attrs["schulschluss_regulaer"] = raster[geplant[-1]]["bis"]
+        attrs["schulbeginn_heute"] = "–"
+        return {"state": res, "attrs": attrs}
+
     erste, letzte = belegte[0], belegte[-1]
     res["schulschluss_heute"] = raster[letzte]["bis"]
-    attrs["heute_stunden"] = len(belegte)
+    attrs["schulbeginn_heute"] = raster[erste]["von"]
+    # Regulaere Zeiten mitliefern, wenn Randstunden entfallen ("statt 15:00")
+    if raster[geplant[-1]]["bis"] != raster[letzte]["bis"]:
+        attrs["schulschluss_regulaer"] = raster[geplant[-1]]["bis"]
+    if raster[geplant[0]]["von"] != raster[erste]["von"]:
+        attrs["schulbeginn_regulaer"] = raster[geplant[0]]["von"]
 
     # aktuelle_stunde
     if zeit < raster[erste]["von"] or zeit >= raster[letzte]["bis"]:
@@ -145,6 +202,11 @@ def berechne_sensoren(kind: dict, faecher: dict, raster: list, jetzt: datetime,
                 attrs.update({"aktuell_kuerzel": kz, "aktuell_raum": f.get("raum", ""),
                               "aktuell_bis": raster[i]["bis"], "aktuell_nr": raster[i]["nr"]})
                 break
+        else:
+            # Freistunde durch Entfall mitten im Tag - nicht als "Pause" ausgeben
+            if any(raster[i]["von"] <= zeit < raster[i]["bis"] for i in geplant
+                   if i not in belegte):
+                res["aktuelle_stunde"] = "Frei (Entfall)"
 
     # naechste_stunde
     for i in belegte:
@@ -231,15 +293,6 @@ class SensorPublisher:
                 self._bekannte_kids.add(kid)
             raster = kind.get("stundenraster") or std_raster
             kind_faecher = quellen.faecher_fuer_kind(faecher, kind)
-            ergebnis = berechne_sensoren(kind, kind_faecher, raster, jetzt, zeitraeume)
-            payload = json.dumps(ergebnis["state"], ensure_ascii=False)
-            if self._letzter_state.get(kid) != payload:
-                self._client.publish(f"{BASE_TOPIC}/{kid}/state", payload, retain=True)
-                self._client.publish(f"{BASE_TOPIC}/{kid}/attributes",
-                                     json.dumps(ergebnis["attrs"], ensure_ascii=False),
-                                     retain=True)
-                self._letzter_state[kid] = payload
-                log.debug("Publiziert %s: %s", kind["name"], payload)
 
             genutzt = {kz for p in [kind.get("plan", {})] + [v.get("plan", {}) for v in kind.get("plaene", [])]
                        for tag in TAGE for kz in p.get(tag, []) if kz}
@@ -275,10 +328,25 @@ class SensorPublisher:
                     else:
                         log.warning("Quelle fuer %s nicht verfuegbar (%s) - kein frischer Stand im Cache",
                                     kind["name"], exc.__class__.__name__)
+
+            # Sensoren erst jetzt berechnen: entfallene Randstunden verschieben
+            # Schulbeginn und Schulschluss
+            ergebnis = berechne_sensoren(kind, kind_faecher, raster, jetzt,
+                                         zeitraeume, aenderungen)
+            if kind.get("schulmanager"):
                 if zusatz["hausaufgaben_offen"] is not None:
                     ergebnis["attrs"]["hausaufgaben_offen"] = zusatz["hausaufgaben_offen"]
                 if zusatz["naechste_arbeit"]:
                     ergebnis["attrs"]["naechste_arbeit"] = zusatz["naechste_arbeit"]
+            payload = json.dumps(ergebnis["state"], ensure_ascii=False)
+            attr_payload = json.dumps(ergebnis["attrs"], ensure_ascii=False)
+            if self._letzter_state.get(kid) != (payload, attr_payload):
+                self._client.publish(f"{BASE_TOPIC}/{kid}/state", payload, retain=True)
+                self._client.publish(f"{BASE_TOPIC}/{kid}/attributes", attr_payload,
+                                     retain=True)
+                self._letzter_state[kid] = (payload, attr_payload)
+                log.debug("Publiziert %s: %s", kind["name"], payload)
+
             plan_payload = json.dumps({
                 "kind": kind["name"],
                 "modus": kind.get("modus", "wochenplan"),

@@ -64,7 +64,7 @@ An schulfreien Tagen zeigen die Sensoren dann „Schulfrei (Grund)" und die Kart
 Mit der HACS-Integration [Schulmanager-homeassistant](https://github.com/MrIcemanLE/Schulmanager-homeassistant) laesst sich pro Kind ein Schulmanager-Schueler verknuepfen (Dropdown im Kind-Panel):
 
 - **Plan-Import**: Wochenplan samt Stundenraster per Knopfdruck uebernehmen, Faecher werden automatisch angelegt. Es werden nur befuellte Tage ersetzt (inkrementeller Import moeglich); vor jedem Import entsteht ein Snapshot, der Import laesst sich per Knopfdruck rueckgaengig machen. Taegliche Backups nach /data/backups (Optionen backup_zeit/backup_anzahl). Optional laesst sich pro Kind ein taeglicher Auto-Import aktivieren (Default 06:30, 07:00 und 07:15 Uhr, Liste via auto_import_zeiten)
-- **Vertretungs-Overlay**: Entfall und Vertretungen (heute/morgen) werden in der Karte markiert und im Morgen-Push gewarnt
+- **Vertretungs-Overlay**: Entfall und Vertretungen (heute/morgen) werden in der Karte markiert und im Morgen-Push gewarnt. Entfallene Rand­stunden verschieben Schulbeginn und Schulschluss - Sensoren, Karte und Push zeigen das echte Ende ("noch bis 11:20 · statt 15:00")
 - **Hausaufgaben & Klassenarbeiten**: Offene Hausaufgaben (Todo-Liste) und die naechste Arbeit erscheinen in Heute-/Schulschluss-Ansicht und im Morgen-Push
 
 ## Morgen-Push & Materialliste (optional)
