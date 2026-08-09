@@ -160,7 +160,8 @@ def hole_fach_details(basis: str) -> dict:
             if not kz:
                 continue
             eintrag = details.setdefault(kz.upper(),
-                                         {"raum": "", "lehrer": "", "name": ""})
+                                         {"raum": "", "lehrer": "", "name": "",
+                                          "lehrer_name": ""})
             if not eintrag["raum"] and raum:
                 eintrag["raum"] = raum
 
@@ -204,6 +205,10 @@ def hole_fach_details(basis: str) -> dict:
              if name and lehrer_voll.endswith(name)), "")
         details[kz]["lehrer"] = kuerzel \
             or (lehrer_voll.split()[-1] if lehrer_voll else "")
+        # Klarname mitgeben, solange er sich vom Kuerzel unterscheidet - das
+        # Portal kennt ihn, der Import fuellt damit das Lehrerverzeichnis
+        if lehrer_voll and lehrer_voll != details[kz]["lehrer"]:
+            details[kz]["lehrer_name"] = lehrer_voll
     return details
 
 

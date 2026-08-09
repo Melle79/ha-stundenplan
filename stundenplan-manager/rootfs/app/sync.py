@@ -25,6 +25,46 @@ FARBPALETTE = ["#e05d5d", "#4a90d9", "#e0b34c", "#4caf7d", "#9b6dd6", "#26a69a",
 TAG_NAMEN = {"mo": "Mo", "di": "Di", "mi": "Mi", "do": "Do", "fr": "Fr"}
 
 
+def _verz_key(verz: dict, kuerzel: str) -> str:
+    """Findet den bestehenden Verzeichnis-Schluessel case-insensitiv oder
+    legt das Kuerzel neu an (leerer Klarname, zum Handbefuellen)."""
+    treffer = next((k for k in verz if k.lower() == kuerzel.lower()), None)
+    if treffer is None:
+        verz[kuerzel] = ""
+        return kuerzel
+    return treffer
+
+
+def lehrer_verzeichnis_pflegen(kind: dict, kuerzel: str, klarname: str,
+                               stats: dict) -> None:
+    """Pflegt kind["lehrer_namen"] (Lehrer-Kuerzel -> Klarname).
+
+    - Das Kuerzel wird immer angelegt (Auto-Entdeckung), damit es in der
+      Web-UI zum Befuellen erscheint.
+    - Einen Klarname aus der Quelle (Eltern-Portal) uebernimmt/korrigiert das
+      Verzeichnis automatisch - es sei denn, er wurde von Hand abweichend
+      gesetzt (Merker-Prinzip wie bei Raum/Lehrer). Schulmanager liefert
+      keinen Klarname; dort bleibt der Handeintrag unangetastet.
+    """
+    kuerzel = (kuerzel or "").strip()
+    if not kuerzel:
+        return
+    verz = kind.setdefault("lehrer_namen", {})
+    key = _verz_key(verz, kuerzel)
+    klarname = (klarname or "").strip()
+    if not klarname:
+        return
+    quelle = kind.setdefault("lehrer_namen_quelle", {})
+    aktuell = verz.get(key, "")
+    darf = (not aktuell) or aktuell == quelle.get(key, "")
+    if darf and aktuell != klarname:
+        verz[key] = klarname
+        stats["geaendert"] = True
+    if quelle.get(key) != klarname:
+        quelle[key] = klarname
+        stats["geaendert"] = True
+
+
 def _zielplan(kind: dict, heute: date) -> dict:
     """Die am Stichtag gueltige Planversion (Objekt-Referenz aus kind)."""
     d = heute.isoformat()
@@ -92,6 +132,12 @@ def fuehre_import_aus(data: dict, kind: dict, heute: date = None) -> dict:
             if eintrag.get(f"sm_{feld}") != neu_wert:
                 eintrag[f"sm_{feld}"] = neu_wert
                 stats["geaendert"] = True
+        # Lehrerverzeichnis pflegen: Kuerzel entdecken, Klarname (nur
+        # Eltern-Portal) automatisch fuellen/korrigieren
+        teacher_kz = (eintrag.get("lehrer") or det.get("lehrer") or "").strip()
+        if teacher_kz:
+            lehrer_verzeichnis_pflegen(kind, teacher_kz,
+                                       det.get("lehrer_name") or "", stats)
         return match
 
     # Finalen Plan je Tag bestimmen: Tagesplan schlaegt Wochen-JSON

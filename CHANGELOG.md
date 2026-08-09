@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.23.0 - August 2026 (Card 1.18.0)
+
+### Neu
+- **Lehrer-Klarnamen**: Pro Kind gibt es eine aufklappbare Tabelle „👩‍🏫 Lehrernamen" (Kürzel → Klarname). Die Kürzel werden aus den gelernten Fach-Details automatisch entdeckt, die Namen lassen sich von Hand befüllen. Handeinträge gewinnen und bleiben erhalten
+- **Eltern-Portal füllt automatisch**: Das Portal kennt die Klarnamen der Lehrkräfte - der Import übernimmt und korrigiert sie selbsttätig (Merker-Prinzip wie bei Raum/Lehrer; ein von Hand abweichend gesetzter Name bleibt unangetastet). Schulmanager liefert nur das Kürzel, dort werden die Namen von Hand gepflegt
+- **Anzeige nach Platz**: Die Karte zeigt bei genügend Breite den Klarnamen, sonst das Kürzel (per Container-Query, kein Umschalten nötig) - in der Heute-Liste früher als im engeren Wochenraster. Der volle Name steht zusätzlich im Zell-Tooltip. Neues MQTT-Attribut `lehrer_namen` je Kind
+
 ## 1.22.0 - Juli 2026 (Card 1.17.0)
 
 ### Behoben

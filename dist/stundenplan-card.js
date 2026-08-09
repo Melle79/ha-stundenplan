@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.17.0 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.18.0 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -125,6 +125,25 @@ class StundenplanCard extends HTMLElement {
       id.replace(/^sensor\.stundenplan_|_wochenplan$/g, "");
   }
 
+  // Lehrer-Kürzel -> Klarname aus dem Verzeichnis (case-insensitiv), "" wenn keiner
+  _lehrerName(a, kuerzel) {
+    const dir = (a && a.lehrer_namen) || {};
+    if (!kuerzel) return "";
+    if (dir[kuerzel]) return dir[kuerzel];
+    const lk = String(kuerzel).toLowerCase();
+    for (const k in dir) if (k.toLowerCase() === lk && dir[k]) return dir[k];
+    return "";
+  }
+
+  // Anzeige: nur Kürzel, oder Kürzel+Klarname (per Container-Query umschaltbar)
+  _lehrerHTML(a, kuerzel, variante) {
+    if (!kuerzel) return "";
+    const voll = this._lehrerName(a, kuerzel);
+    if (!voll) return kuerzel;
+    const cls = variante === "grid" ? "sp-lg" : "sp-ll";
+    return `<span class="${cls}"><span class="sp-lk">${kuerzel}</span><span class="sp-lv">${voll}</span></span>`;
+  }
+
   _render(ids, gestapelt) {
     let titel, inhalt = "", chips = "";
     if (this._config.modus === "schulschluss") {
@@ -217,6 +236,14 @@ class StundenplanCard extends HTMLElement {
           @container (min-width: 620px) {
             .sp-fach { padding: 8px 6px; }
             .sp-fach .sp-name { display: block; }
+            .sp-lg .sp-lk { display: none; }
+            .sp-lg .sp-lv { display: inline; }
+          }
+          /* Lehrer: Kürzel eng, Klarname bei genug Platz (Liste früher als Raster) */
+          .sp-lg .sp-lv, .sp-ll .sp-lv { display: none; }
+          @container (min-width: 440px) {
+            .sp-ll .sp-lk { display: none; }
+            .sp-ll .sp-lv { display: inline; }
           }
           .sp-frei { display: block; border-radius: 8px; height: 100%; min-height: 34px;
             background: color-mix(in srgb, var(--divider-color) 30%, transparent); }
@@ -397,9 +424,11 @@ class StundenplanCard extends HTMLElement {
         }
         const aCls = (entfall ? "sp-entfall" : vertretung ? "sp-vertretung" : "") + (arbeit ? " sp-arbeit" : "");
         if (f) {
-          const tip = `${f.name}${x ? " – " + x.label + (details ? " (" + details + ")" : "") + (x.grund ? ": " + x.grund : "") : ""}${arbeit ? " – " + arbeit.typ : ""}`;
+          const lehrerVoll = this._lehrerName(a, f.lehrer);
+          const tip = `${f.name}${lehrerVoll ? " · " + lehrerVoll : ""}${x ? " – " + x.label + (details ? " (" + details + ")" : "") + (x.grund ? ": " + x.grund : "") : ""}${arbeit ? " – " + arbeit.typ : ""}`;
+          const raumLehrer = [f.raum || "", f.lehrer ? this._lehrerHTML(a, f.lehrer, "grid") : ""].filter(Boolean).join(" · ");
           html += `<td class="${spalte}"><div class="sp-fach ${istJetzt ? "sp-aktuell" : ""} ${t.frei ? "sp-gedimmt" : ""} ${aCls}"
-            style="background:${f.farbe}" title="${tip}">${kz}${arbeit ? " 📝" : ""}<small class="sp-name">${f.name}</small>${(f.raum || f.lehrer) && !vertretung ? `<small>${[f.raum, f.lehrer].filter(Boolean).join(" · ")}</small>` : ""}${badge}</div></td>`;
+            style="background:${f.farbe}" title="${tip}">${kz}${arbeit ? " 📝" : ""}<small class="sp-name">${f.name}</small>${(f.raum || f.lehrer) && !vertretung ? `<small>${raumLehrer}</small>` : ""}${badge}</div></td>`;
         } else if (x) {
           html += `<td class="${spalte}"><div class="sp-fach ${aCls}" style="background:var(--secondary-background-color,#444)">${badge}</div></td>`;
         } else {
@@ -541,7 +570,7 @@ class StundenplanCard extends HTMLElement {
         <span class="sp-punkt" style="background:${f.farbe}"></span>
         <span class="sp-lzeit">${st.von}–${st.bis}</span>
         <span class="sp-lname">${entf ? `<s>${f.name}</s> ✕ ${x.label || "Entfall"}` : f.name}${x && x.grund ? ` <span class="sp-notiz-inline">ℹ️ ${x.grund}</span>` : ""}${x && !entf && x.fach && x.fach.toUpperCase() !== (kz || "").toUpperCase() ? ` <span class="sp-laend">🔁 ${x.fach}</span>` : ""}</span>
-        ${x && !entf && (x.raum || x.lehrer) ? `<span class="sp-lraum">🔁 ${(f.raum || f.lehrer) ? `<s class="sp-orig-inline">${[f.raum, f.lehrer].filter(Boolean).join(" · ")}</s> → ` : ""}${[x.raum, x.lehrer].filter(Boolean).join(" · ")}</span>` : (f.raum || f.lehrer) ? `<span class="sp-lraum">${[f.raum ? "Raum " + f.raum : "", f.lehrer].filter(Boolean).join(" · ")}</span>` : ""}
+        ${x && !entf && (x.raum || x.lehrer) ? `<span class="sp-lraum">🔁 ${(f.raum || f.lehrer) ? `<s class="sp-orig-inline">${[f.raum, f.lehrer].filter(Boolean).join(" · ")}</s> → ` : ""}${[x.raum, x.lehrer].filter(Boolean).join(" · ")}</span>` : (f.raum || f.lehrer) ? `<span class="sp-lraum">${[f.raum ? "Raum " + f.raum : "", f.lehrer ? this._lehrerHTML(a, f.lehrer, "liste") : ""].filter(Boolean).join(" · ")}</span>` : ""}
       </li>`;
     });
     html += `</ul>`;
@@ -656,4 +685,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.17.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.18.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");

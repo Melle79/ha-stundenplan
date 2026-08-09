@@ -385,6 +385,24 @@ def migriere_ferien_optionen():
     save_data(data)
 
 
+def migriere_lehrer_namen():
+    """Legt fuer jedes Kind ein Lehrerverzeichnis (Kuerzel -> Klarname) an und
+    fuellt die Kuerzel aus den bereits gelernten Raum/Lehrer-Details, damit die
+    Web-UI sie sofort zum Befuellen zeigt - auch vor dem naechsten Import."""
+    data = load_data()
+    geaendert = False
+    for kind in data.get("kinder", []):
+        verz = kind.setdefault("lehrer_namen", {})
+        for d in (kind.get("fach_details") or {}).values():
+            kz = (d.get("lehrer") or "").strip()
+            if kz and not any(k.lower() == kz.lower() for k in verz):
+                verz[kz] = ""
+                geaendert = True
+    if geaendert:
+        save_data(data)
+        log.info("Lehrerverzeichnis initialisiert (Kuerzel aus Fach-Details)")
+
+
 @app.route("/api/standard-faecher")
 def standard_faecher():
     return jsonify(STANDARD_FAECHER)
@@ -410,6 +428,7 @@ if __name__ == "__main__":
     migriere_auf_kalender()
     migriere_sm_marker()
     migriere_fach_details_pro_kind()
+    migriere_lehrer_namen()
     PUBLISHER.start()
     BackupScheduler().start()
     PushScheduler(lambda: load_data()).start()

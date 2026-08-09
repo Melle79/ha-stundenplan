@@ -234,7 +234,9 @@ def hole_fach_details(basis: str) -> dict:
     """Raum, Lehrer und voller Fachname je Kuerzel aus den
     Stundenplan-heute/morgen-Sensoren (raw.lessons).
 
-    Rueckgabe: {KUERZEL_UPPER: {"raum", "lehrer", "name"}}
+    Rueckgabe: {KUERZEL_UPPER: {"raum", "lehrer", "name", "lehrer_name"}}
+    lehrer_name (Klarname) bleibt hier leer - der Schulmanager-Sensor liefert
+    nur das Lehrer-Kuerzel; der Klarname wird in der Web-UI von Hand gepflegt.
     """
     details = {}
     for suffix in ("_stundenplan_heute", "_stundenplan_morgen"):
@@ -253,7 +255,9 @@ def hole_fach_details(basis: str) -> dict:
             kz = (l.get("subject") or "").strip()
             if not kz:
                 continue
-            eintrag = details.setdefault(kz.upper(), {"raum": "", "lehrer": "", "name": ""})
+            eintrag = details.setdefault(kz.upper(),
+                                         {"raum": "", "lehrer": "", "name": "",
+                                          "lehrer_name": ""})
             if not eintrag["raum"] and l.get("room"):
                 eintrag["raum"] = str(l["room"]).strip()
             if not eintrag["lehrer"] and l.get("teacher"):

@@ -65,6 +65,7 @@ Mit der HACS-Integration [Schulmanager-homeassistant](https://github.com/MrIcema
 
 - **Plan-Import**: Wochenplan samt Stundenraster per Knopfdruck uebernehmen, Faecher werden automatisch angelegt. Es werden nur befuellte Tage ersetzt (inkrementeller Import moeglich); vor jedem Import entsteht ein Snapshot, der Import laesst sich per Knopfdruck rueckgaengig machen. Taegliche Backups nach /data/backups (Optionen backup_zeit/backup_anzahl). Optional laesst sich pro Kind ein taeglicher Auto-Import aktivieren (Default 06:30, 07:00 und 07:15 Uhr, Liste via auto_import_zeiten)
 - **Vertretungs-Overlay**: Entfall und Vertretungen (heute/morgen) werden in der Karte markiert und im Morgen-Push gewarnt. Entfallene Rand­stunden verschieben Schulbeginn und Schulschluss - Sensoren, Karte und Push zeigen das echte Ende ("noch bis 11:20 · statt 15:00")
+- **Lehrer-Klarnamen**: Pro Kind lassen sich unter „👩‍🏫 Lehrernamen" die Kürzel zu vollen Namen auflösen (von Hand pflegbar). Das Eltern-Portal füllt sie automatisch, Schulmanager liefert nur Kürzel. Die Karte zeigt den Klarnamen, sobald genug Platz ist, sonst das Kürzel
 - **Hausaufgaben & Klassenarbeiten**: Offene Hausaufgaben (Todo-Liste) und die naechste Arbeit erscheinen in Heute-/Schulschluss-Ansicht und im Morgen-Push
 
 ## Morgen-Push & Materialliste (optional)

@@ -361,6 +361,7 @@ class SensorPublisher:
                 "plan": kind.get("plan", {}),
                 "plaene": kind.get("plaene", []),
                 "faecher": {kz: f for kz, f in kind_faecher.items() if kz in genutzt},
+                "lehrer_namen": {k: v for k, v in (kind.get("lehrer_namen") or {}).items() if v},
                 "bloecke": kind.get("bloecke", []),
             }, ensure_ascii=False)
             if self._letzter_plan.get(kid) != plan_payload:
