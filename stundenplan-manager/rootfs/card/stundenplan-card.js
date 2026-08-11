@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.20.0 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.20.1 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -167,9 +167,10 @@ class StundenplanCard extends HTMLElement {
         (`Stundenplan ${(this._hass.states[id]?.attributes?.kind) || ""}` + (kl ? ` · ${kl}` : ""));
       inhalt = this._inhaltFuer(id);
       if (ids.length > 1) {
-        chips = `<div class="sp-chips">` + ids.map((eid, i) =>
-          `<button class="sp-chip ${i === this._aktivIdx ? "sp-chip-aktiv" : ""}" data-idx="${i}">${this._kindName(eid)}</button>`
-        ).join("") + `</div>`;
+        chips = `<div class="sp-chips">` + ids.map((eid, i) => {
+          const kl = this._klasse(eid);
+          return `<button class="sp-chip ${i === this._aktivIdx ? "sp-chip-aktiv" : ""}" data-idx="${i}">${this._kindName(eid)}${kl ? ` <span class="sp-chip-klasse">${kl}</span>` : ""}</button>`;
+        }).join("") + `</div>`;
       }
     }
     this.innerHTML = `
@@ -182,6 +183,7 @@ class StundenplanCard extends HTMLElement {
             font-size: .92rem; cursor: pointer; font-family: inherit; }
           .sp-chip-aktiv { background: var(--primary-color); border-color: var(--primary-color);
             color: var(--text-primary-color, #fff); font-weight: 600; }
+          .sp-chip-klasse { opacity: .72; font-weight: 400; margin-left: 5px; font-size: .85em; }
           .sp-gross .sp-chip { font-size: 1.08rem; padding: 9px 22px; }
           .sp-gross .sp-tabelle th { font-size: .95rem; }
           .sp-gross .sp-zeit { font-size: .8rem; }
@@ -724,4 +726,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.20.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.20.1", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");

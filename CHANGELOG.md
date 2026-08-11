@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.27.1 - August 2026 (Card 1.20.1)
+
+### Verbessert
+- Die Klasse erscheint jetzt auch auf den Umschalt-Chips („Luna 8b", „Nele 6E") - so ist sie bei mehreren Kindern sichtbar, selbst wenn per `titel:` ein eigener Karten-Titel gesetzt ist (der den „· Klasse"-Zusatz im Titel überschreibt)
+
 ## 1.27.0 - August 2026 (Card 1.20.0)
 
 ### Neu
