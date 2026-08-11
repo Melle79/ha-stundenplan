@@ -25,6 +25,22 @@ log = logging.getLogger("stundenplan")
 DATA_DIR = Path(os.environ.get("DATA_DIR", "/data"))
 DATA_FILE = DATA_DIR / "stundenplan.json"
 
+
+def _lies_version() -> str:
+    """Add-on-Version aus der ins Image kopierten config.yaml lesen -
+    so bleibt die Anzeige bei jedem Release automatisch aktuell."""
+    try:
+        for line in (Path(__file__).parent / "config.yaml").read_text().splitlines():
+            m = re.match(r"""\s*version:\s*['"]?([^'"\s]+)""", line)
+            if m:
+                return m.group(1)
+    except Exception:
+        pass
+    return "dev"
+
+
+VERSION = _lies_version()
+
 app = Flask(__name__)
 
 # ---------------------------------------------------------------------------
@@ -129,7 +145,7 @@ def save_data(data: dict) -> None:
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("index.html", version=VERSION)
 
 
 @app.route("/api/health")
@@ -137,7 +153,7 @@ def health():
     data = load_data()
     return jsonify({
         "status": "ok",
-        "version": "1.0.0",
+        "version": VERSION,
         "kinder": len(data.get("kinder", [])),
         "mqtt": bool(os.environ.get("MQTT_HOST")),
     })

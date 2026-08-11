@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.26.0 - August 2026 (Card 1.19.0)
+
+### Neu
+- **Endzeiten im Wochenraster**: Die Zeit-Spalte zeigt unter der Startzeit dezent auch das Stundenende (z. B. „08:00 / –08:45"). Die Heute-Ansicht zeigte den Zeitraum bereits
+
+### Behoben
+- **Versionsanzeige stimmt jetzt**: Header und Health-Endpoint zeigten fest „v1.0.0". Die Version wird nun zur Laufzeit aus der (ins Image kopierten) config.yaml gelesen und bleibt damit bei jedem Release automatisch korrekt
+
 ## 1.25.2 - August 2026 (Card 1.18.3)
 
 ### Behoben

@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.18.3 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.19.0 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -198,6 +198,8 @@ class StundenplanCard extends HTMLElement {
             white-space: nowrap; padding-right: 6px !important; text-align: right !important;
             vertical-align: middle; }
           .sp-zeit b { display: block; font-size: .82rem; color: var(--primary-text-color); }
+          .sp-zeit .sp-bis { display: block; font-size: .62rem; opacity: .7; margin-top: 1px; }
+          .sp-gross .sp-zeit .sp-bis { font-size: .72rem; }
           .sp-fach { border-radius: 8px; padding: 8px 4px; font-weight: 600;
             font-size: .8rem; color: #fff; line-height: 1.25;
             text-shadow: 0 1px 1px rgba(0,0,0,.25);
@@ -396,7 +398,7 @@ class StundenplanCard extends HTMLElement {
       }
       const stundeJetzt = aktuelleWoche && heute >= 0 && !tage[heute].frei &&
         st.von <= zeit && zeit < st.bis;
-      html += `<tr><td class="sp-zeit ${stundeJetzt ? "sp-zeit-aktiv" : ""}"><b>${st.nr}.</b>${st.von}</td>`;
+      html += `<tr><td class="sp-zeit ${stundeJetzt ? "sp-zeit-aktiv" : ""}"><b>${st.nr}.</b>${st.von}<small class="sp-bis">–${st.bis}</small></td>`;
       for (const t of tage) {
         const kz = (t.plan[t.tag] || [])[si] || null;
         const f = kz ? (a.faecher || {})[kz] : null;
@@ -686,4 +688,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.18.3", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.19.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
