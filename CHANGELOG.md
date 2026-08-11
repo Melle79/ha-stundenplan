@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.25.2 - August 2026 (Card 1.18.3)
+
+### Behoben
+- Gleiche Blockhöhe pro Reihe jetzt wirklich in allen Browsern: Zusätzlich zu `td { height: 100% }` trägt die Tabelle nun `height: 1px` - der dokumentierte Trick, damit strenge Engines (Firefox/Safari) die Prozent-Höhe der Zellen überhaupt auflösen. In Chrome griff der Fix schon, in anderen Browsern füllten Fächer ohne Raum/Lehrer die Zeile weiterhin nicht. Die neue Karten-Version (Ressource `?v=1.18.3`) erzwingt zudem ein frisches Laden im Browser
+
 ## 1.25.1 - August 2026 (Card 1.18.2)
 
 ### Behoben
