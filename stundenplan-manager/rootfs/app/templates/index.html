@@ -165,6 +165,7 @@
         <button class="btn ghost" onclick="standardFaecherLaden()">📥 Standard-Fächer hinzufügen</button>
       </div>
       <p class="hint">Das Kürzel erscheint im Plan-Raster. Fächer werden von allen Kindern gemeinsam genutzt.</p>
+      <p class="hint" id="fachInaktivHinweis" style="color:#e0a400"></p>
     </div>
   </section>
 
@@ -878,16 +879,31 @@ function closePicker() { document.getElementById("pickerOverlay").classList.remo
 function renderFaecher() {
   const tb = document.querySelector("#fachTable tbody");
   tb.innerHTML = "";
-  for (const [kz, f] of Object.entries(DATA.faecher)) {
+  // Kürzel, die in irgendeinem aktuell gültigen Plan (inkl. Blöcke) eines Kindes vorkommen
+  const benutzt = new Set((DATA.kinder || []).flatMap(k =>
+    [aktiverPlan(k), ...(k.bloecke || []).map(b => b.plan || {})]
+      .flatMap(p => Object.values(p || {}).flat())).filter(Boolean));
+  const eintraege = Object.entries(DATA.faecher);
+  // aktive zuerst, inaktive ans Ende (stabile Sortierung erhält die Reihenfolge)
+  eintraege.sort((a, b) => (benutzt.has(a[0]) ? 0 : 1) - (benutzt.has(b[0]) ? 0 : 1));
+  let inaktivN = 0;
+  for (const [kz, f] of eintraege) {
+    const aktiv = benutzt.has(kz);
+    if (!aktiv) inaktivN++;
     const tr = document.createElement("tr");
+    if (!aktiv) tr.style.opacity = ".6";
     tr.innerHTML = `<td><input class="kurz" value="${esc(kz)}" maxlength="4" style="font-weight:600"
-        onchange="fachUmbenennen('${esc(kz)}', this)"></td>
+        onchange="fachUmbenennen('${esc(kz)}', this)">${aktiv ? "" : `<small style="display:block;color:#e0a400;font-size:.6rem;margin-top:2px">nicht mehr im Plan</small>`}</td>
       <td><input value="${esc(f.name)}" onchange="DATA.faecher['${esc(kz)}'].name=this.value;setDirty(true)"></td>
       <td><input type="color" value="${f.farbe}" onchange="DATA.faecher['${esc(kz)}'].farbe=this.value;setDirty(true);renderKid()"></td>
       <td><input value="${esc(f.material||"")}" placeholder="z.B. Sportbeutel" style="width:160px" onchange="DATA.faecher['${esc(kz)}'].material=this.value;setDirty(true)"></td>
       <td><button class="icon" onclick="fachLoeschen('${esc(kz)}')">✕</button></td>`;
     tb.appendChild(tr);
   }
+  const hinweis = document.getElementById("fachInaktivHinweis");
+  if (hinweis) hinweis.textContent = inaktivN
+    ? `${inaktivN} Fach/Fächer kommen in keinem aktuellen Plan mehr vor (unten, abgeblendet) – mit ✕ löschbar.`
+    : "";
 }
 
 function fachHinzufuegen() {

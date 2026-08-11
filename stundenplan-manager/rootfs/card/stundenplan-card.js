@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.18.0 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.18.1 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -200,7 +200,8 @@ class StundenplanCard extends HTMLElement {
           .sp-zeit b { display: block; font-size: .82rem; color: var(--primary-text-color); }
           .sp-fach { border-radius: 8px; padding: 8px 4px; font-weight: 600;
             font-size: .8rem; color: #fff; line-height: 1.25;
-            text-shadow: 0 1px 1px rgba(0,0,0,.25); }
+            text-shadow: 0 1px 1px rgba(0,0,0,.25);
+            height: 100%; box-sizing: border-box; }
           .sp-fach small { display: block; font-weight: 400; font-size: .62rem; opacity: .92; }
           .sp-fach .sp-name { display: none; }
           .sp-gedimmt { opacity: .35; filter: saturate(.5); }
@@ -356,7 +357,7 @@ class StundenplanCard extends HTMLElement {
 
     let html = `<div class="sp-wochenkopf">
       <button class="sp-nav" data-nav="-1">◀</button>
-      <span class="sp-kw">KW ${kw} · ${fmt(montag)}–${fmt(freitag)}.${freitag.getFullYear()}</span>
+      <span class="sp-kw">KW ${kw} · ${fmt(montag)}–${fmt(freitag)}${freitag.getFullYear()}</span>
       ${aktuelleWoche ? "" : `<button class="sp-nav sp-heute-btn" data-nav="0">Heute</button>`}
       <button class="sp-nav" data-nav="1">▶</button>
     </div>`;
@@ -685,4 +686,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.18.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.18.1", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.25.0 - August 2026 (Card 1.18.1)
+
+### Neu
+- **Inaktive Fächer kennzeichnen**: Im Tab „Fächer" werden Fächer, die in keinem aktuell gültigen Plan (inkl. Blöcke) eines Kindes mehr vorkommen, abgeblendet, ans Ende sortiert und mit „nicht mehr im Plan" markiert (analog zu den Lehrer-Kürzeln) - so lassen sich Altlasten nach einem Schulwechsel gezielt aufräumen
+- **Dokumentation**: Neues ausführliches [HANDBUCH.md](HANDBUCH.md); README mit generierten Karten-Beispielbildern (Wochen-, Heute- und Schulschluss-Ansicht)
+
+### Behoben (Card 1.18.1)
+- Stundenblöcke einer Zeile sind jetzt immer gleich hoch (`.sp-fach` füllt die Zellenhöhe) - Zellen mit Vertretung/Entfall zogen die Reihe zuvor optisch auseinander
+- Doppelter Punkt in der KW-Datumszeile behoben (`14.08..2026` → `14.08.2026`)
+
 ## 1.24.0 - August 2026
 
 ### Neu
