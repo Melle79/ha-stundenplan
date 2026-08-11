@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.24.0 - August 2026
+
+### Neu
+- **Lehrernamen aufräumbar**: In der Tabelle „👩‍🏫 Lehrernamen" hat jede Zeile jetzt einen ✕-Button zum Löschen eines Kürzels von Hand (z. B. Altlasten nach einem Schulwechsel)
+- **Inaktiv-Kennzeichnung**: Kürzel, die in keinem Fach des aktuell gültigen Plans (inkl. Blöcke) mehr vorkommen, werden automatisch als „· nicht mehr im Plan" markiert, abgeblendet und ans Ende sortiert - die Summary nennt ihre Anzahl. So sieht man auf einen Blick, welche alten Kürzel man wegräumen kann. Rein abgeleitet aus dem Plan, kein Datenverlust; ein gelöschtes Kürzel taucht bei Bedarf durch den nächsten Import wieder auf, wenn es noch unterrichtet wird
+
 ## 1.23.0 - August 2026 (Card 1.18.0)
 
 ### Neu

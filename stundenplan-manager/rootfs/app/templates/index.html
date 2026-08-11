@@ -578,30 +578,53 @@ function lnSet(kuerzel, wert) {
   setDirty(true);
 }
 
+function lnDel(kuerzel) {
+  const k = kind();
+  if (k.lehrer_namen) delete k.lehrer_namen[kuerzel];
+  if (k.lehrer_namen_quelle) delete k.lehrer_namen_quelle[kuerzel];
+  setDirty(true);
+  renderKid();
+}
+
 function lehrerNamenTabelleHTML(k) {
-  // Lehrer-Kürzel -> genutzte Fächer (aus den kindspezifischen Fach-Details)
-  const map = {};
   const fd = k.fach_details || {};
+  // Fächer, die im aktuell gültigen Plan (inkl. Blöcke) wirklich vorkommen
+  const genutzt = new Set([aktiverPlan(k), ...(k.bloecke || []).map(b => b.plan || {})]
+    .flatMap(p => Object.values(p || {}).flat()).filter(Boolean));
+  // Lehrer-Kürzel -> Liste seiner Fächer (aus den kindspezifischen Details)
+  const map = {};
   for (const kz in fd) {
     const tk = (fd[kz].lehrer || "").trim();
     if (tk) (map[tk] = map[tk] || []).push(kz);
   }
   // von Hand angelegte oder früher entdeckte Kürzel mit aufnehmen
   for (const tk in (k.lehrer_namen || {})) if (!(tk in map)) map[tk] = [];
-  const kuerzel = Object.keys(map).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+  const kuerzel = Object.keys(map);
   if (!kuerzel.length) return "";
-  let zeilen = "";
+  // aktiv = unterrichtet noch ein Fach des aktuellen Plans
+  const aktiv = tk => (map[tk] || []).some(kz => genutzt.has(kz));
+  kuerzel.sort((a, b) => (aktiv(b) - aktiv(a)) || a.toLowerCase().localeCompare(b.toLowerCase()));
+  let zeilen = "", inaktivN = 0;
   for (const tk of kuerzel) {
     const name = (k.lehrer_namen || {})[tk] || "";
-    const faecher = map[tk].sort().join(", ");
-    zeilen += `<tr><td><b>${esc(tk)}</b>${faecher ? ` <small style="color:var(--text-sec)">${esc(faecher)}</small>` : ""}</td>
-      <td><input value="${esc(name)}" placeholder="z. B. Herr Maier" onchange="lnSet('${esc(tk)}',this.value)"></td></tr>`;
+    const ist = aktiv(tk);
+    if (!ist) inaktivN++;
+    const info = ist
+      ? (() => { const f = (map[tk] || []).filter(kz => genutzt.has(kz)).sort();
+                 return f.length ? ` <small style="color:var(--muted)">${esc(f.join(", "))}</small>` : ""; })()
+      : ` <small style="color:#e0b34c">· nicht mehr im Plan</small>`;
+    zeilen += `<tr${ist ? "" : ' style="opacity:.55"'}><td><b>${esc(tk)}</b>${info}</td>
+      <td><input value="${esc(name)}" placeholder="z. B. Herr Maier" onchange="lnSet('${esc(tk)}',this.value)"></td>
+      <td><button class="icon" title="Kürzel löschen" onclick="lnDel('${esc(tk)}')">✕</button></td></tr>`;
   }
   const auto = k.quelle === "elternportal"
     ? "das Eltern-Portal füllt die Namen automatisch, "
     : "";
-  return `<details class="card" style="margin:10px 0 0"><summary style="cursor:pointer"><b>👩‍🏫 Lehrernamen (${esc(k.name)})</b> <small style="color:var(--text-sec)">– Kürzel → Klarname; ${auto}Handeinträge gewinnen. Erscheinen im Dashboard, wenn genug Platz ist</small></summary>
-    <table class="fd-tab"><thead><tr><th>Kürzel</th><th>Name</th></tr></thead><tbody>${zeilen}</tbody></table></details>`;
+  const hinweis = inaktivN
+    ? ` <small style="color:#e0b34c">· ${inaktivN} nicht mehr im Plan, mit ✕ löschbar</small>`
+    : "";
+  return `<details class="card" style="margin:10px 0 0"><summary style="cursor:pointer"><b>👩‍🏫 Lehrernamen (${esc(k.name)})</b> <small style="color:var(--muted)">– Kürzel → Klarname; ${auto}Handeinträge gewinnen. Erscheinen im Dashboard, wenn genug Platz ist</small>${hinweis}</summary>
+    <table class="fd-tab"><thead><tr><th>Kürzel</th><th>Name</th><th></th></tr></thead><tbody>${zeilen}</tbody></table></details>`;
 }
 
 async function renderSchulmanagerStatus() {
