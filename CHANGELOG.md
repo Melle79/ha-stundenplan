@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.25.1 - August 2026 (Card 1.18.2)
+
+### Behoben
+- Gleiche Blockhöhe pro Reihe jetzt auch bei voller Dashboard-Breite und in Safari/Firefox: Zusätzlich zur Kachel (`.sp-fach`) trägt nun die Tabellenzelle selbst `height: 100%`. Zuvor füllten Fächer ohne Raum/Lehrer die Zeilenhöhe nicht, sobald der ausgeschriebene Fachname erschien - die Zeile wirkte uneben (in Chrom-basierten Browsern fiel es nicht auf)
+
 ## 1.25.0 - August 2026 (Card 1.18.1)
 
 ### Neu
