@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.27.0 - August 2026 (Card 1.20.0)
+
+### Neu
+- **Schultermine auf der Karte**: Kommende schulweite Termine (Exkursionen, Elternsprechtag, Projekttage …) aus dem Schulmanager-Kalender erscheinen als „📌 Schultermine"-Liste unter der Wochen- und Heute-Ansicht (nächste ~3 Wochen, mit Datum und – falls vorhanden – Kurzinfo). Neues Attribut `schultermine` je Kind; robust über den Karenz-Cache. Hinweis: Schulmanager liefert keine Kategorien, daher ohne Farbgruppen
+- **Klasse pro Kind**: Optionales Feld „Klasse" im Kind-Panel (z. B. „6E"), das im Karten-Titel bzw. Kind-Header erscheint („Stundenplan Nele · 6E"). Von Hand pflegbar – Schulmanager liefert keinen lesbaren Klassennamen. Neues Attribut `klasse`
+
 ## 1.26.0 - August 2026 (Card 1.19.0)
 
 ### Neu

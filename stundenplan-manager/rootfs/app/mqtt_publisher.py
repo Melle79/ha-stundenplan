@@ -300,6 +300,7 @@ class SensorPublisher:
             zusatz = {"hausaufgaben_offen": None, "naechste_arbeit": None}
             ha_faellig = []
             arbeiten = []
+            schultermine = []
             if kind.get("schulmanager"):
                 try:
                     aenderungen = quellen.hole_aenderungen(kind, jetzt.date())
@@ -309,9 +310,11 @@ class SensorPublisher:
                     ha_faellig = [h for h in quellen.hole_hausaufgaben_items(kind)
                                   if h["due"] and ab <= h["due"] <= bis][:8]
                     arbeiten = quellen.hole_arbeiten(kind)
+                    schultermine = quellen.hole_schultermine(kind)
                     self._live_cache[kind["id"]] = {
                         "ts": jetzt, "aenderungen": aenderungen, "zusatz": zusatz,
-                        "ha_faellig": ha_faellig, "arbeiten": arbeiten}
+                        "ha_faellig": ha_faellig, "arbeiten": arbeiten,
+                        "schultermine": schultermine}
                 except Exception as exc:
                     # Quelle gestoert (z.B. Schulmanager-API down): letzten
                     # bekannten Stand bis zu 6h weiterzeigen statt die Karte
@@ -322,6 +325,7 @@ class SensorPublisher:
                         zusatz = cache["zusatz"]
                         ha_faellig = cache["ha_faellig"]
                         arbeiten = cache["arbeiten"]
+                        schultermine = cache.get("schultermine", [])
                         log.warning("Quelle fuer %s nicht verfuegbar (%s) - zeige Stand von %s weiter",
                                     kind["name"], exc.__class__.__name__,
                                     cache["ts"].strftime("%H:%M"))
@@ -349,11 +353,13 @@ class SensorPublisher:
 
             plan_payload = json.dumps({
                 "kind": kind["name"],
+                "klasse": (kind.get("klasse") or "").strip(),
                 "modus": kind.get("modus", "wochenplan"),
                 "aenderungen": aenderungen,
                 "hausaufgaben_offen": zusatz["hausaufgaben_offen"],
                 "hausaufgaben_faellig": ha_faellig,
                 "arbeiten": arbeiten,
+                "schultermine": schultermine,
                 "daten_stand": quellen.hole_datenstand(kind) if kind.get("schulmanager") else None,
                 "naechste_arbeit": zusatz["naechste_arbeit"],
                 "schulfrei_zeitraeume": zeitraeume if kind.get("modus", "wochenplan") == "wochenplan" else [],

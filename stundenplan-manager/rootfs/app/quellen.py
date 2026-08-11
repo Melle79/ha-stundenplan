@@ -65,6 +65,13 @@ def hole_arbeiten(kind: dict) -> list:
     return _adapter(kind).hole_arbeiten(kind["schulmanager"])
 
 
+def hole_schultermine(kind: dict) -> list:
+    """Schulweite Termine, sofern die Quelle sie anbietet (nur Schulmanager);
+    andere Adapter liefern nichts."""
+    fn = getattr(_adapter(kind), "hole_schultermine", None)
+    return fn(kind["schulmanager"]) if fn else []
+
+
 def hole_zusatzinfos(kind: dict) -> dict:
     return _adapter(kind).hole_zusatzinfos(kind["schulmanager"])
 

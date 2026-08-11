@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.19.0 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.20.0 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -125,6 +125,11 @@ class StundenplanCard extends HTMLElement {
       id.replace(/^sensor\.stundenplan_|_wochenplan$/g, "");
   }
 
+  _klasse(id) {
+    const a = this._hass.states[id] && this._hass.states[id].attributes;
+    return (a && a.klasse) ? String(a.klasse).trim() : "";
+  }
+
   // Lehrer-Kürzel -> Klarname aus dem Verzeichnis (case-insensitiv), "" wenn keiner
   _lehrerName(a, kuerzel) {
     const dir = (a && a.lehrer_namen) || {};
@@ -151,13 +156,15 @@ class StundenplanCard extends HTMLElement {
       inhalt = this._renderSchulschluss(ids);
     } else if (gestapelt) {
       titel = this._config.titel || "Stundenplan";
-      inhalt = ids.map(id =>
-        `<div class="sp-abschnitt"><h3 class="sp-kindname">${this._kindName(id)}</h3>${this._inhaltFuer(id)}</div>`
-      ).join("");
+      inhalt = ids.map(id => {
+        const kl = this._klasse(id);
+        return `<div class="sp-abschnitt"><h3 class="sp-kindname">${this._kindName(id)}${kl ? ` <span class="sp-klasse">${kl}</span>` : ""}</h3>${this._inhaltFuer(id)}</div>`;
+      }).join("");
     } else {
       const id = ids[this._aktivIdx];
+      const kl = this._klasse(id);
       titel = this._config.titel ||
-        `Stundenplan ${(this._hass.states[id]?.attributes?.kind) || ""}`;
+        (`Stundenplan ${(this._hass.states[id]?.attributes?.kind) || ""}` + (kl ? ` · ${kl}` : ""));
       inhalt = this._inhaltFuer(id);
       if (ids.length > 1) {
         chips = `<div class="sp-chips">` + ids.map((eid, i) =>
@@ -297,6 +304,21 @@ class StundenplanCard extends HTMLElement {
             font-size: .8rem; color: var(--secondary-text-color);
             border: 1px solid var(--divider-color); }
           .sp-gross .sp-info { font-size: .92rem; }
+          .sp-klasse { font-size: .7em; font-weight: 600; padding: 1px 8px; border-radius: 10px;
+            background: var(--primary-color); color: var(--text-primary-color, #fff);
+            vertical-align: 2px; margin-left: 6px; }
+          .sp-termine-kopf { margin-top: 10px; font-size: .78rem; font-weight: 600;
+            color: var(--secondary-text-color); }
+          .sp-gross .sp-termine-kopf { font-size: .9rem; }
+          .sp-termine { list-style: none; margin: 4px 0 0; padding: 0; }
+          .sp-termine li { display: flex; gap: 8px; align-items: baseline;
+            font-size: .8rem; color: var(--primary-text-color); padding: 3px 2px;
+            border-bottom: 1px dashed var(--divider-color); }
+          .sp-termine li:last-child { border-bottom: none; }
+          .sp-termin-datum { flex: 0 0 auto; min-width: 76px; font-weight: 600;
+            font-size: .72rem; color: var(--primary-color); }
+          .sp-termin-info { color: var(--secondary-text-color); font-size: .92em; }
+          .sp-gross .sp-termine li { font-size: .95rem; }
           .sp-ha-liste { list-style: none; margin: 6px 0 0; padding: 0; }
           .sp-ha-liste li { display: flex; gap: 8px; align-items: baseline;
             font-size: .8rem; color: var(--primary-text-color); padding: 3px 2px;
@@ -440,7 +462,7 @@ class StundenplanCard extends HTMLElement {
       }
       html += `</tr>`;
     });
-    return html + `</tbody></table>` + this._standHTML(a);
+    return html + `</tbody></table>` + this._termineHTML(a) + this._standHTML(a);
   }
 
   _renderSchulschluss(ids) {
@@ -540,7 +562,21 @@ class StundenplanCard extends HTMLElement {
       html += `<ul class="sp-ha-liste">` + faellig.map(h =>
         `<li><span class="sp-ha-due ${h.due < heute ? "sp-ha-spaet" : ""}">${label(h.due)}</span>${h.titel}</li>`).join("") + `</ul>`;
     }
-    return html;
+    return html + this._termineHTML(a);
+  }
+
+  // Kommende schulweite Termine (nur Schulmanager liefert sie)
+  _termineHTML(a) {
+    const termine = a.schultermine || [];
+    if (!termine.length) return "";
+    const heute = this._iso(new Date());
+    const grenze = this._iso(new Date(Date.now() + 21 * 864e5));
+    const kommend = termine.filter(t => t.datum >= heute && t.datum <= grenze).slice(0, 6);
+    if (!kommend.length) return "";
+    const fmt = d => new Date(d + "T00:00").toLocaleDateString("de-DE",
+      { weekday: "short", day: "2-digit", month: "2-digit" });
+    return `<div class="sp-termine-kopf">📌 Schultermine</div><ul class="sp-termine">` + kommend.map(t =>
+      `<li><span class="sp-termin-datum">${fmt(t.datum)}</span><span class="sp-termin-titel">${t.titel}${t.info ? ` <span class="sp-termin-info">${t.info}</span>` : ""}</span></li>`).join("") + `</ul>`;
   }
 
   _renderHeute(a) {
@@ -688,4 +724,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.19.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.20.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");

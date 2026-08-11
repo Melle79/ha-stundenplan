@@ -230,6 +230,38 @@ def hole_arbeiten(basis: str) -> list:
     return arbeiten
 
 
+def hole_schultermine(basis: str, tage: int = 28) -> list:
+    """Kommende schulweite Termine aus dem Schultermine-Kalender der
+    Integration. Rueckgabe: [{"datum","titel","info"}], nach Datum sortiert.
+    Kategorien liefert die Integration nicht - nur Titel und Beschreibung."""
+    token = os.environ.get("SUPERVISOR_TOKEN")
+    if not token or "." not in basis:
+        return []
+    cal = f"calendar.{basis.split('.', 1)[1]}_schultermine"
+    von = date.today()
+    bis = von + timedelta(days=tage)
+    url = (f"{API_URL}/calendars/{cal}"
+           f"?start={von.isoformat()}T00:00:00&end={bis.isoformat()}T00:00:00")
+    req = urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"})
+    try:
+        with urllib.request.urlopen(req, timeout=10) as r:
+            events = json.load(r)
+    except Exception as exc:
+        log.debug("Schultermine fuer %s nicht abrufbar: %s", basis, exc)
+        return []
+    termine = []
+    for e in events or []:
+        s = e.get("start")
+        datum = (s.get("date") or s.get("dateTime")) if isinstance(s, dict) else s
+        if not datum:
+            continue
+        termine.append({"datum": str(datum)[:10],
+                        "titel": (e.get("summary") or "Termin").strip(),
+                        "info": (e.get("description") or "").strip()})
+    termine.sort(key=lambda x: x["datum"])
+    return termine
+
+
 def hole_fach_details(basis: str) -> dict:
     """Raum, Lehrer und voller Fachname je Kuerzel aus den
     Stundenplan-heute/morgen-Sensoren (raw.lessons).

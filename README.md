@@ -15,6 +15,8 @@ Home Assistant Add-on zur Verwaltung der Stundenpläne mehrerer Kinder – inklu
 - Konfigurierbares Stundenraster (Standard + pro Kind überschreibbar), Pausen automatisch aus Rasterlücken
 - **Datenquellen** (optional, pro Kind): **Schulmanager Online** und **Eltern-Portal** – Plan-Import per Knopfdruck oder täglicher Auto-Import
 - **Vertretungen & Entfall** (Schulmanager): Overlay auf der Karte; entfallene Randstunden verschieben Schulbeginn/-schluss
+- **Schultermine** (Schulmanager): kommende schulweite Termine (Exkursionen, Elternsprechtag …) als Liste auf der Karte
+- **Klasse** pro Kind (z. B. „6E") im Karten-Titel
 - **Lehrer-Klarnamen**: Kürzel zu vollen Namen auflösen (von Hand oder automatisch vom Eltern-Portal), Anzeige auf der Karte nach Platz
 - **Blockunterricht-Modus**: Blockzeiträume pflegen, außerhalb zeigen Sensoren und Karte „Betrieb"
 - Druckansicht (A4 quer) mit vollen Fachnamen, Räumen und Pausen

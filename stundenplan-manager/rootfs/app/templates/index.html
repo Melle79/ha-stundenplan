@@ -479,6 +479,7 @@ function renderKid() {
   let html = `<div class="card">
     <div class="row">
       <input value="${esc(k.name)}" onchange="kind().name=this.value;setDirty(true);renderChips()" style="font-weight:600">
+      <input value="${esc(k.klasse||"")}" placeholder="Klasse" title="z. B. 6E – erscheint auf der Karte" style="width:80px" onchange="kind().klasse=this.value;setDirty(true)">
       <label>Modus:</label>
       <select onchange="kind().modus=this.value;setDirty(true);renderKid()">
         <option value="wochenplan" ${k.modus==="wochenplan"?"selected":""}>Wochenplan (Schule)</option>

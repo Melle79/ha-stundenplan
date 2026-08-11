@@ -132,6 +132,12 @@ Räume und Lehrer sind **kindspezifisch** (Geschwister an verschiedenen Schulen 
 
 ![Heute-Ansicht mit Lehrer-Klarnamen](docs/img/heute.png)
 
+## Schultermine & Klasse
+
+**Schultermine** (nur Schulmanager): Kommende schulweite Termine (Exkursionen, Elternsprechtag, Projekttage …) zieht das Add-on aus dem Schulmanager-Kalender und zeigt sie als „📌 Schultermine"-Liste unter der Wochen- und Heute-Ansicht (nächste ~3 Wochen, mit Datum und Kurzinfo). Schulmanager liefert dabei **keine Kategorien** (die farbigen Gruppen aus dem Web-Kalender), daher erscheinen die Termine ohne Farbgruppierung. Das Eltern-Portal liefert keine Schultermine.
+
+**Klasse**: Im Kind-Panel lässt sich pro Kind optional eine Klasse eintragen (z. B. „6E"). Sie erscheint im Karten-Titel bzw. Kind-Header („Stundenplan Nele · 6E"). Das Feld wird von Hand gepflegt – Schulmanager liefert nur eine numerische Klassen-ID, keinen lesbaren Namen.
+
 ## Hausaufgaben & Klassenarbeiten
 
 Bei Schulmanager erscheinen offene **Hausaufgaben** (aus der Todo-Liste) und die **nächste Arbeit** in der Heute- und Schulschluss-Ansicht sowie im Morgen-Push. Fällige Hausaufgaben werden mit Datum (heute/morgen/überfällig) gelistet.
