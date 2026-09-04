@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.27.2 - September 2026
+
+### Neu
+- **Eigenes App-Icon & Logo**: Das Add-on hat jetzt ein `icon.png` (im Add-on-Store/Panel sichtbar) und ein `logo.png` (Kopf der Add-on-Seite und README) - ein farbiger Mini-Stundenplan im Design der Karte
+
 ## 1.27.1 - August 2026 (Card 1.20.1)
 
 ### Verbessert

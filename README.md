@@ -1,3 +1,5 @@
+<img src="stundenplan-manager/logo.png" alt="Stundenplan Manager" height="90">
+
 # Stundenplan Manager
 
 Home Assistant Add-on zur Verwaltung der Stundenpläne mehrerer Kinder – inklusive Blockunterricht-Unterstützung für Berufsschüler, MQTT-Discovery-Sensoren und Lovelace-Karte.
