@@ -51,11 +51,11 @@ def _parse_zeitraeume(state_obj: dict) -> list:
         for e in a.get("schulferien") or []:
             if e.get("beginn") and e.get("ende"):
                 z.append({"von": e["beginn"], "bis": e["ende"],
-                          "grund": e.get("name") or "Ferien"})
+                          "grund": e.get("name") or "Ferien", "typ": "ferien"})
         for e in a.get("feiertage") or []:
             if e.get("datum"):
                 z.append({"von": e["datum"], "bis": e["datum"],
-                          "grund": e.get("name") or "Feiertag"})
+                          "grund": e.get("name") or "Feiertag", "typ": "feiertag"})
         return z
 
     if a.get("beginn") and a.get("ende"):
@@ -63,23 +63,25 @@ def _parse_zeitraeume(state_obj: dict) -> list:
                 and a.get("aktuell_ferien_ende"):
             z.append({"von": a["aktuell_ferien_beginn"],
                       "bis": a["aktuell_ferien_ende"],
-                      "grund": a["aktuell_ferien"]})
+                      "grund": a["aktuell_ferien"], "typ": "ferien"})
         z.append({"von": a["beginn"], "bis": a["ende"],
-                  "grund": state_obj.get("state") or "Ferien"})
+                  "grund": state_obj.get("state") or "Ferien", "typ": "ferien"})
         return z
 
     if a.get("datum") or a.get("vorschau"):
         if a.get("datum"):
             z.append({"von": a["datum"], "bis": a["datum"],
-                      "grund": state_obj.get("state") or "Feiertag"})
+                      "grund": state_obj.get("state") or "Feiertag", "typ": "feiertag"})
         for tag in a.get("vorschau") or []:
             status = (tag.get("status") or "").lower()
             if status in ("", "normal", "wochenende") or not tag.get("date"):
                 continue
-            grund = "Feiertag" if status == "feiertag" else status.capitalize()
-            if status == "feiertag" and tag["date"] == a.get("datum"):
+            feiertag = status == "feiertag"
+            grund = "Feiertag" if feiertag else status.capitalize()
+            if feiertag and tag["date"] == a.get("datum"):
                 grund = state_obj.get("state") or grund
-            z.append({"von": tag["date"], "bis": tag["date"], "grund": grund})
+            z.append({"von": tag["date"], "bis": tag["date"], "grund": grund,
+                      "typ": "feiertag" if feiertag else "ferien"})
     return z
 
 

@@ -283,6 +283,8 @@ class SensorPublisher:
         einst = data.get("einstellungen", {})
         zeitraeume = hole_schulfrei_zeitraeume(
             einst.get("ferien_sensor", ""), einst.get("feiertag_sensor", ""))
+        # Feiertage getrennt: gelten auch fuer Azubis im Blockmodus (Schulferien nicht)
+        feiertage = [z for z in zeitraeume if z.get("typ") == "feiertag"]
         aktuelle_ids = set()
 
         for kind in data.get("kinder", []):
@@ -363,6 +365,7 @@ class SensorPublisher:
                 "daten_stand": quellen.hole_datenstand(kind) if kind.get("schulmanager") else None,
                 "naechste_arbeit": zusatz["naechste_arbeit"],
                 "schulfrei_zeitraeume": zeitraeume if kind.get("modus", "wochenplan") == "wochenplan" else [],
+                "feiertage": feiertage,
                 "raster": raster,
                 "plan": kind.get("plan", {}),
                 "plaene": kind.get("plaene", []),

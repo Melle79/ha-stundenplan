@@ -88,6 +88,8 @@ Für Berufsschüler gibt es den **Blockmodus**: Statt eines durchgehenden Wochen
 
 **Ohne Stundenplan**: Solange (noch) kein Plan hinterlegt ist, zeigt die Wochenansicht kein leeres Raster, sondern pro Wochentag eine klare Kachel **🏭 Betrieb** oder **🏫 Schule (Blockname)** – rein aus den Blockzeiten abgeleitet. Trägst du später einen Stundenplan ein, erscheint für die Blockwochen automatisch das normale Raster.
 
+**Feiertage**: Gesetzliche Feiertage werden in der Block-Übersicht als **🎉 Feiertag (Name)** angezeigt und haben Vorrang vor Betrieb/Schule – denn auch Azubis haben am Feiertag frei. **Schulferien** dagegen bleiben im Blockmodus bewusst „Betrieb". Voraussetzung ist die [Schulferien-Integration](#schulferien-integration) (der Kalender-Sensor liefert die Feiertage samt Namen).
+
 ## Datenquellen
 
 Optional lässt sich pro Kind eine Schulplattform verknüpfen (Dropdown im Kind-Panel). Import, täglicher Auto-Import, Statusbox und Push funktionieren für beide Quellen gleich.

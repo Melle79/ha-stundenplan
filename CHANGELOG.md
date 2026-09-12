@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.29.0 - September 2026 (Card 1.22.0)
+
+### Neu
+- **Feiertage im Blockmodus**: In der Block-Wochenübersicht erscheinen gesetzliche Feiertage jetzt als eigene Kachel **🎉 Feiertag (Name)** und haben Vorrang vor Betrieb/Schule – denn auch Azubis haben am Feiertag frei (Schulferien dagegen bleiben Betrieb, wie bisher). Die Heute-Ansicht meldet an Feiertagen „🎉 Heute Feiertag – …". Voraussetzung ist die konfigurierte Schulferien-Integration (Kalender-Sensor mit Feiertagen). Neues Attribut `feiertage` je Kind
+- Intern: Ferien-/Feiertag-Zeiträume tragen jetzt einen `typ` (`ferien`/`feiertag`), damit Feiertage getrennt behandelt werden können
+
 ## 1.28.0 - September 2026 (Card 1.21.0)
 
 ### Neu

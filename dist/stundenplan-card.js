@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.21.0 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.22.0 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -112,19 +112,29 @@ class StundenplanCard extends HTMLElement {
     return b ? { typ: "block", label: (b.label || "").trim() } : { typ: "betrieb" };
   }
 
+  // Feiertagsname für ein Datum (gilt auch im Blockmodus), sonst ""
+  _feiertag(a, iso) {
+    const f = (a.feiertage || []).find(z => (z.von || "") <= iso && iso <= (z.bis || z.von || ""));
+    return f ? (f.grund || "Feiertag") : "";
+  }
+
   // Wochenübersicht für Block-Kinder ohne Stundenplan: je Tag Betrieb/Schule
   _blockWocheHTML(a, tage, aktuelleWoche, heute) {
     const fmt = d => d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
     const zellen = tage.map(t => {
-      const bi = this._blockInfo(a, t.iso);
       const heuteC = aktuelleWoche && t.i === heute ? "sp-bw-heute" : "";
+      const kopf = `<div class="sp-bw-kopf">${t.l} <small>${fmt(t.datum)}</small></div>`;
+      const ft = this._feiertag(a, t.iso);
+      if (ft)  // Feiertag geht vor: auch Azubis haben frei
+        return `<div class="sp-bw-tag sp-bw-feiertag ${heuteC}">${kopf}
+          <div class="sp-bw-status">🎉 Feiertag</div>
+          <div class="sp-bw-sub">${ft}</div></div>`;
+      const bi = this._blockInfo(a, t.iso);
       if (bi.typ === "block")
-        return `<div class="sp-bw-tag sp-bw-schule ${heuteC}">
-          <div class="sp-bw-kopf">${t.l} <small>${fmt(t.datum)}</small></div>
+        return `<div class="sp-bw-tag sp-bw-schule ${heuteC}">${kopf}
           <div class="sp-bw-status">🏫 Schule</div>
           <div class="sp-bw-sub">${bi.label || "Blockunterricht"}</div></div>`;
-      return `<div class="sp-bw-tag sp-bw-betrieb ${heuteC}">
-        <div class="sp-bw-kopf">${t.l} <small>${fmt(t.datum)}</small></div>
+      return `<div class="sp-bw-tag sp-bw-betrieb ${heuteC}">${kopf}
         <div class="sp-bw-status">🏭 Betrieb</div>
         <div class="sp-bw-sub">kein Blockunterricht</div></div>`;
     }).join("");
@@ -343,6 +353,9 @@ class StundenplanCard extends HTMLElement {
           .sp-bw-schule .sp-bw-status { color: #2e8b57; }
           .sp-bw-betrieb { background: color-mix(in srgb, var(--divider-color) 22%, transparent); }
           .sp-bw-betrieb .sp-bw-status { color: var(--secondary-text-color); }
+          .sp-bw-feiertag { background: color-mix(in srgb, #e0a400 16%, transparent);
+            border-color: color-mix(in srgb, #e0a400 50%, transparent); }
+          .sp-bw-feiertag .sp-bw-status { color: #b07d00; }
           .sp-bw-heute { outline: 2px solid var(--primary-color); outline-offset: 1px; }
           .sp-gross .sp-bw-status { font-size: 1.08rem; }
           .sp-gross .sp-bw-tag { min-height: 108px; }
@@ -638,6 +651,10 @@ class StundenplanCard extends HTMLElement {
     }
     const heute = this._heuteIdx();
     if (heute < 0) return `<div class="sp-leer">🎉 Wochenende – schulfrei!</div>` + this._schuleInfoZeile(a) + this._standHTML(a);
+    if (a.modus === "block") {
+      const ft = this._feiertag(a, isoHeute);
+      if (ft) return `<div class="sp-leer">🎉 Heute Feiertag – ${ft}</div>` + this._standHTML(a);
+    }
     if (!this._imBlock(a, new Date()))
       return `<div class="sp-leer">🏭 Betriebsphase – kein Blockunterricht heute</div>` + this._standHTML(a);
     const tag = StundenplanCard.TAGE[heute][0];
@@ -779,4 +796,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.21.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.22.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
