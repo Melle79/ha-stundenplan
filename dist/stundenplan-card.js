@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.22.0 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.22.1 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -135,8 +135,7 @@ class StundenplanCard extends HTMLElement {
           <div class="sp-bw-status">🏫 Schule</div>
           <div class="sp-bw-sub">${bi.label || "Blockunterricht"}</div></div>`;
       return `<div class="sp-bw-tag sp-bw-betrieb ${heuteC}">${kopf}
-        <div class="sp-bw-status">🏭 Betrieb</div>
-        <div class="sp-bw-sub">kein Blockunterricht</div></div>`;
+        <div class="sp-bw-status">🏭 Betrieb</div></div>`;
     }).join("");
     return `<div class="sp-blockhinweis">Kein Stundenplan hinterlegt – Anzeige nach den Blockzeiten</div>
       <div class="sp-blockwoche">${zellen}</div>`;
@@ -796,4 +795,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.22.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.22.1", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");

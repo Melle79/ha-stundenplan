@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.29.1 - September 2026 (Card 1.22.1)
+
+### Verbessert
+- Block-Wochenübersicht: Die redundante Unterzeile „kein Blockunterricht" unter „🏭 Betrieb" entfällt – ergibt sich schon aus „Betrieb". Die Kacheln bleiben durch die Mindesthöhe gleich hoch
+
 ## 1.29.0 - September 2026 (Card 1.22.0)
 
 ### Neu
