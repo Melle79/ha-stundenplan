@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.28.0 - September 2026 (Card 1.21.0)
+
+### Neu
+- **Block-Wochenübersicht ohne Stundenplan**: Hat ein Kind im Blockmodus (noch) keinen Stundenplan, zeigt die Karte statt eines leeren Rasters jetzt pro Wochentag klar **🏭 Betrieb** oder **🏫 Schule (Blockname)** – abgeleitet aus den hinterlegten Blockzeiten. So sieht man auf einen Blick, wann Betrieb und wann Berufsschule ist; sobald ein Stundenplan eingetragen wird, erscheint automatisch wieder das normale Raster
+- Die Heute-Ansicht meldet im Blockmodus ohne Plan entsprechend „🏫 Heute Schule – Blockunterricht (Blockname)" bzw. „🏭 Betriebsphase"
+
 ## 1.27.2 - September 2026
 
 ### Neu

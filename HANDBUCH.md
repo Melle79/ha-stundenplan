@@ -86,6 +86,8 @@ Beim Import aus einer Schulplattform mit abweichenden Zeiten wird automatisch ei
 
 Für Berufsschüler gibt es den **Blockmodus**: Statt eines durchgehenden Wochenplans pflegst du **Blockzeiträume** (von–bis). Außerhalb der Blöcke zeigen Sensoren und Karte **„Betrieb"**. Kinder im Blockmodus sind von der Schulferien-Logik bewusst ausgenommen (in den Ferien ist Betrieb, nicht schulfrei).
 
+**Ohne Stundenplan**: Solange (noch) kein Plan hinterlegt ist, zeigt die Wochenansicht kein leeres Raster, sondern pro Wochentag eine klare Kachel **🏭 Betrieb** oder **🏫 Schule (Blockname)** – rein aus den Blockzeiten abgeleitet. Trägst du später einen Stundenplan ein, erscheint für die Blockwochen automatisch das normale Raster.
+
 ## Datenquellen
 
 Optional lässt sich pro Kind eine Schulplattform verknüpfen (Dropdown im Kind-Panel). Import, täglicher Auto-Import, Statusbox und Push funktionieren für beide Quellen gleich.

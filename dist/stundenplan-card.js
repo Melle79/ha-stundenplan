@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.20.1 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.21.0 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -104,6 +104,32 @@ class StundenplanCard extends HTMLElement {
     if (!z.length) return null;
     const mehr = z.filter(x => x.von !== x.bis);
     return "🏖 " + (mehr.length ? mehr[0] : z[0]).grund;
+  }
+
+  // Blockmodus: Status eines Tages – Schule (im Block) oder Betrieb
+  _blockInfo(a, iso) {
+    const b = (a.bloecke || []).find(b => b.von <= iso && iso <= b.bis);
+    return b ? { typ: "block", label: (b.label || "").trim() } : { typ: "betrieb" };
+  }
+
+  // Wochenübersicht für Block-Kinder ohne Stundenplan: je Tag Betrieb/Schule
+  _blockWocheHTML(a, tage, aktuelleWoche, heute) {
+    const fmt = d => d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+    const zellen = tage.map(t => {
+      const bi = this._blockInfo(a, t.iso);
+      const heuteC = aktuelleWoche && t.i === heute ? "sp-bw-heute" : "";
+      if (bi.typ === "block")
+        return `<div class="sp-bw-tag sp-bw-schule ${heuteC}">
+          <div class="sp-bw-kopf">${t.l} <small>${fmt(t.datum)}</small></div>
+          <div class="sp-bw-status">🏫 Schule</div>
+          <div class="sp-bw-sub">${bi.label || "Blockunterricht"}</div></div>`;
+      return `<div class="sp-bw-tag sp-bw-betrieb ${heuteC}">
+        <div class="sp-bw-kopf">${t.l} <small>${fmt(t.datum)}</small></div>
+        <div class="sp-bw-status">🏭 Betrieb</div>
+        <div class="sp-bw-sub">kein Blockunterricht</div></div>`;
+    }).join("");
+    return `<div class="sp-blockhinweis">Kein Stundenplan hinterlegt – Anzeige nach den Blockzeiten</div>
+      <div class="sp-blockwoche">${zellen}</div>`;
   }
 
   _jetztZeit() {
@@ -302,6 +328,24 @@ class StundenplanCard extends HTMLElement {
           .sp-stand { text-align: right; font-size: .65rem; color: var(--secondary-text-color, #9ab);
             opacity: .75; margin-top: 4px; }
           .sp-leer { color: var(--secondary-text-color); font-size: .88rem; padding: 4px 0; }
+          .sp-blockhinweis { font-size: .72rem; color: var(--secondary-text-color); margin: 6px 0 4px; }
+          .sp-gross .sp-blockhinweis { font-size: .85rem; }
+          .sp-blockwoche { display: flex; gap: 6px; }
+          .sp-bw-tag { flex: 1; min-width: 0; border-radius: 10px; padding: 10px 6px;
+            border: 1px solid var(--divider-color); text-align: center;
+            display: flex; flex-direction: column; gap: 5px; min-height: 92px; justify-content: center; }
+          .sp-bw-kopf { font-weight: 600; font-size: .78rem; color: var(--secondary-text-color); }
+          .sp-bw-kopf small { display: block; font-weight: 400; font-size: .7rem; }
+          .sp-bw-status { font-weight: 700; font-size: .92rem; }
+          .sp-bw-sub { font-size: .66rem; color: var(--secondary-text-color); line-height: 1.2; }
+          .sp-bw-schule { background: color-mix(in srgb, #4caf7d 15%, transparent);
+            border-color: color-mix(in srgb, #4caf7d 45%, transparent); }
+          .sp-bw-schule .sp-bw-status { color: #2e8b57; }
+          .sp-bw-betrieb { background: color-mix(in srgb, var(--divider-color) 22%, transparent); }
+          .sp-bw-betrieb .sp-bw-status { color: var(--secondary-text-color); }
+          .sp-bw-heute { outline: 2px solid var(--primary-color); outline-offset: 1px; }
+          .sp-gross .sp-bw-status { font-size: 1.08rem; }
+          .sp-gross .sp-bw-tag { min-height: 108px; }
           .sp-info { margin-top: 8px; padding: 6px 12px; border-radius: 8px;
             font-size: .8rem; color: var(--secondary-text-color);
             border: 1px solid var(--divider-color); }
@@ -394,6 +438,11 @@ class StundenplanCard extends HTMLElement {
       return { tag, l, i, iso, datum, frei: this._freiGrund(a, iso),
                plan: this._planFuerDatum(a, iso) };
     });
+    // Block-Kind ohne Stundenplan in dieser Woche: klare Betrieb/Schule-Übersicht
+    if (a.modus === "block" && !tage.some(t => (t.plan[t.tag] || []).some(Boolean)))
+      return html + this._blockWocheHTML(a, tage, aktuelleWoche, heute)
+        + this._termineHTML(a) + this._standHTML(a);
+
     const aend = {};
     for (const x of a.aenderungen || [])
       if (x.stunde != null) aend[`${x.datum}|${x.stunde}`] = x;
@@ -593,6 +642,10 @@ class StundenplanCard extends HTMLElement {
       return `<div class="sp-leer">🏭 Betriebsphase – kein Blockunterricht heute</div>` + this._standHTML(a);
     const tag = StundenplanCard.TAGE[heute][0];
     const plan = this._planFuerDatum(a, isoHeute)[tag] || [];
+    if (a.modus === "block" && !plan.some(Boolean)) {
+      const bi = this._blockInfo(a, isoHeute);
+      return `<div class="sp-leer">🏫 Heute Schule – Blockunterricht${bi.label ? ` (${bi.label})` : ""}<br><small>Kein Stundenplan hinterlegt</small></div>` + this._standHTML(a);
+    }
     const zeit = this._jetztZeit();
     const r = a.raster;
     const aendH = {};
@@ -726,4 +779,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.20.1", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.21.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
