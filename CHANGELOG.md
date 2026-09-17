@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.30.3 - September 2026
+
+### Behoben
+- **Lehrer-Kürzel „nicht mehr im Plan" ließen sich nicht löschen**: Der ✕-Button entfernte das Kürzel nur aus dem Namensverzeichnis, nicht aus den Fach-Details des alten Fachs – beim Neu-Rendern kam es sofort zurück. Jetzt wird das Kürzel auch aus den Fach-Details (Lehrer-Feld) entfernt und verschwindet endgültig
+
+
 ## 1.30.2 - September 2026
 
 ### Dokumentation

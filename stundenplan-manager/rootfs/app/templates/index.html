@@ -588,6 +588,16 @@ function lnDel(kuerzel) {
   const k = kind();
   if (k.lehrer_namen) delete k.lehrer_namen[kuerzel];
   if (k.lehrer_namen_quelle) delete k.lehrer_namen_quelle[kuerzel];
+  // Kürzel auch aus den Fach-Details entfernen – sonst käme es beim Neu-Rendern
+  // sofort wieder aus einem (alten) Fach zurück und ließe sich nie löschen.
+  const lk = String(kuerzel).toLowerCase();
+  const fd = k.fach_details || {};
+  for (const kz in fd) {
+    if ((fd[kz].lehrer || "").toLowerCase() === lk) {
+      fd[kz].lehrer = "";
+      if ("sm_lehrer" in fd[kz]) fd[kz].sm_lehrer = "";
+    }
+  }
   setDirty(true);
   renderKid();
 }
