@@ -114,7 +114,7 @@ Optional lässt sich pro Kind eine Schulplattform verknüpfen (Dropdown im Kind-
 
 ### WebUntis
 
-Über die HACS-Integration „WebUntis" (Domain `webuntis`):
+Über die HACS-Integration [homeassistant-WebUntis](https://github.com/JonasJoKuJonas/homeassistant-WebUntis) (Domain `webuntis`):
 
 - WebUntis stellt den Stundenplan als **HA-Kalender** bereit (`calendar.<schüler>`) – Termine mit Fach (Titel), Raum (Ort) und echten Uhrzeiten. Das Add-on leitet daraus **Stundenraster und Wochenplan** ab und übernimmt sie wie bei den anderen Quellen. **Hausaufgaben** und **Prüfungen** kommen aus den Kalendern `…_hausaufgaben` bzw. `…_prufungen`.
 - WebUntis liefert im Kalender **keine Lehrkraft** – die Lehrer-Klarnamen lassen sich von Hand pflegen (Räume kommen automatisch).

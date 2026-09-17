@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.30.5 - September 2026
+
+### Dokumentation
+- README und Handbuch verlinken die WebUntis-HACS-Integration ([JonasJoKuJonas/homeassistant-WebUntis](https://github.com/JonasJoKuJonas/homeassistant-WebUntis)) direkt – analog zu Schulmanager und Eltern-Portal
+
+
 ## 1.30.4 - September 2026
 
 ### Behoben
