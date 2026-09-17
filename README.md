@@ -17,7 +17,7 @@ Home Assistant Add-on zur Verwaltung der Stundenpläne mehrerer Kinder – inklu
 - Beliebig viele Kinder mit eigenem Wochenplan (Mo–Fr), Web-UI mit Auto-Save
 - 21 vordefinierte Standard-Schulfächer, eigene Fächer mit Farben, Kürzeln und Räumen
 - Konfigurierbares Stundenraster (Standard + pro Kind überschreibbar), Pausen automatisch aus Rasterlücken
-- **Datenquellen** (optional, pro Kind): **Schulmanager Online** und **Eltern-Portal** – Plan-Import per Knopfdruck oder täglicher Auto-Import
+- **Datenquellen** (optional, pro Kind): **Schulmanager Online**, **Eltern-Portal** und **WebUntis** – Plan-Import per Knopfdruck oder täglicher Auto-Import
 - **Vertretungen & Entfall** (Schulmanager): Overlay auf der Karte; entfallene Randstunden verschieben Schulbeginn/-schluss
 - **Schultermine** (Schulmanager): kommende schulweite Termine (Exkursionen, Elternsprechtag …) als Liste auf der Karte
 - **Klasse** pro Kind (z. B. „6E") im Karten-Titel
@@ -88,6 +88,10 @@ Mit der HACS-Integration [Schulmanager-homeassistant](https://github.com/MrIcema
 - **Vertretungs-Overlay**: Entfall und Vertretungen (heute/morgen) werden in der Karte markiert und im Morgen-Push gewarnt. Entfallene Rand­stunden verschieben Schulbeginn und Schulschluss - Sensoren, Karte und Push zeigen das echte Ende ("noch bis 11:20 · statt 15:00")
 - **Lehrer-Klarnamen**: Pro Kind lassen sich unter „👩‍🏫 Lehrernamen" die Kürzel zu vollen Namen auflösen (von Hand pflegbar). Das Eltern-Portal füllt sie automatisch, Schulmanager liefert nur Kürzel. Die Karte zeigt den Klarnamen, sobald genug Platz ist, sonst das Kürzel. Kürzel, die im aktuellen Plan nicht mehr vorkommen, werden als „nicht mehr im Plan" markiert und sind per ✕ von Hand löschbar
 - **Hausaufgaben & Klassenarbeiten**: Offene Hausaufgaben (Todo-Liste) und die naechste Arbeit erscheinen in Heute-/Schulschluss-Ansicht und im Morgen-Push
+
+## WebUntis (optional)
+
+Alternativ lässt sich pro Kind ein WebUntis-Schüler verknüpfen (HACS-Integration „WebUntis", Domain `webuntis`). WebUntis stellt den Stundenplan als HA-Kalender bereit (Termine mit Fach und Raum); das Add-on leitet daraus Stundenraster und Wochenplan ab, Hausaufgaben und Prüfungen kommen aus den zugehörigen Kalendern. Da WebUntis im Kalender keine Lehrkraft mitliefert, bleiben Lehrer leer (Klarnamen von Hand pflegbar); Vertretungen liefert WebUntis nur als Event und werden vorerst nicht als Overlay angezeigt. Details siehe [HANDBUCH.md](HANDBUCH.md#datenquellen).
 
 ## Eltern-Portal (optional)
 

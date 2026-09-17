@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.30.0 - September 2026
+
+### Neu
+- **WebUntis als dritte Datenquelle** (neben Schulmanager und Eltern-Portal): Nutzt die HACS-Integration „WebUntis" (Domain `webuntis`). Pro Kind im Verknüpfungs-Dropdown auswählbar; Import, Auto-Import und Statusbox funktionieren wie gehabt
+- WebUntis liefert den Stundenplan als HA-Kalender (Termine mit Fach und Raum, echten Uhrzeiten); der Adapter leitet daraus Stundenraster und Wochenplan ab. Hausaufgaben und Prüfungen kommen aus den zugehörigen Kalendern
+- Hinweis: WebUntis liefert im Kalender **keine Lehrer** (Klarnamen von Hand pflegbar) und Vertretungen nur als HA-Event – daher werden Vertretungen aus WebUntis vorerst nicht als Overlay angezeigt
+
 ## 1.29.1 - September 2026 (Card 1.22.1)
 
 ### Verbessert

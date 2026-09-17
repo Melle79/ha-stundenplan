@@ -110,6 +110,15 @@ Optional lässt sich pro Kind eine Schulplattform verknüpfen (Dropdown im Kind-
 - **Keine** Vertretungen und **keine** Hausaufgaben.
 - Die Integration lädt Daten nur per Service `elternportal.fetch_data`. Das Add-on stößt diesen selbst an (vor Auto-Import, manuellem Import und Abend-Push) und wartet auf Bestätigung – eine eigene HA-Automation ist nicht nötig.
 
+### WebUntis
+
+Über die HACS-Integration „WebUntis" (Domain `webuntis`):
+
+- WebUntis stellt den Stundenplan als **HA-Kalender** bereit (`calendar.<schüler>`) – Termine mit Fach (Titel), Raum (Ort) und echten Uhrzeiten. Das Add-on leitet daraus **Stundenraster und Wochenplan** ab und übernimmt sie wie bei den anderen Quellen. **Hausaufgaben** und **Prüfungen** kommen aus den Kalendern `…_hausaufgaben` bzw. `…_prufungen`.
+- WebUntis liefert im Kalender **keine Lehrkraft** – die Lehrer-Klarnamen lassen sich von Hand pflegen (Räume kommen automatisch).
+- **Vertretungen** meldet WebUntis nur als HA-Event (nicht als abfragbare Liste) und werden daher vorerst **nicht** als Overlay angezeigt.
+- Da WebUntis keine festen Stundennummern hat, entsteht das Raster aus den vorkommenden Zeitfenstern der Woche. Bei unregelmäßigen Einführungs-/Blocktagen kann das Raster dadurch verschachtelt wirken; eine reguläre Woche mit festen Stundenzeiten ergibt ein sauberes Raster.
+
 ### Auto-Import
 
 Pro Kind aktivierbar (opt-in). Standardmäßig läuft der Import zu drei Zeitpunkten vor Schulbeginn (**06:30, 07:00, 07:15**), einstellbar über `auto_import_zeiten`. So sind morgendliche Vertretungen rechtzeitig auf der Karte.

@@ -9,9 +9,12 @@ from datetime import date
 
 import elternportal
 import schulmanager
+import untis
 
-_ADAPTER = {"schulmanager": schulmanager, "elternportal": elternportal}
-QUELLEN_LABEL = {"schulmanager": "Schulmanager", "elternportal": "Eltern-Portal"}
+_ADAPTER = {"schulmanager": schulmanager, "elternportal": elternportal,
+            "untis": untis}
+QUELLEN_LABEL = {"schulmanager": "Schulmanager", "elternportal": "Eltern-Portal",
+                 "untis": "WebUntis"}
 
 
 def _adapter(kind: dict):
