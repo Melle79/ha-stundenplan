@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.30.2 - September 2026
+
+### Dokumentation
+- README und Handbuch: WebUntis-Datenquelle vollständig beschrieben; klargestellt, dass die **echten Stundenzeiten automatisch** aus dem Kalender als Raster übernommen werden (auch beim ersten Import) und ein **von Hand geändertes Raster gesperrt** bleibt – wichtig, wenn die reguläre Schulzeit (z. B. 07:30) erst später im Kalender auftaucht
+
+
 ## 1.30.1 - September 2026
 
 ### Behoben

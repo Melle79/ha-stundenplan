@@ -91,7 +91,7 @@ Mit der HACS-Integration [Schulmanager-homeassistant](https://github.com/MrIcema
 
 ## WebUntis (optional)
 
-Alternativ lässt sich pro Kind ein WebUntis-Schüler verknüpfen (HACS-Integration „WebUntis", Domain `webuntis`). WebUntis stellt den Stundenplan als HA-Kalender bereit (Termine mit Fach und Raum); das Add-on leitet daraus Stundenraster und Wochenplan ab, Hausaufgaben und Prüfungen kommen aus den zugehörigen Kalendern. Da WebUntis im Kalender keine Lehrkraft mitliefert, bleiben Lehrer leer (Klarnamen von Hand pflegbar); Vertretungen liefert WebUntis nur als Event und werden vorerst nicht als Overlay angezeigt. Details siehe [HANDBUCH.md](HANDBUCH.md#datenquellen).
+Alternativ lässt sich pro Kind ein WebUntis-Schüler verknüpfen (HACS-Integration „WebUntis", Domain `webuntis`). WebUntis stellt den Stundenplan als HA-Kalender bereit (Termine mit Fach und Raum); das Add-on leitet daraus Stundenraster und Wochenplan ab – die **echten Uhrzeiten** werden automatisch als Raster übernommen (bei aktivem Auto-Import ohne Zutun). Hausaufgaben und Prüfungen kommen aus den zugehörigen Kalendern. Da WebUntis im Kalender keine Lehrkraft mitliefert, bleiben Lehrer leer (Klarnamen von Hand pflegbar); Vertretungen liefert WebUntis nur als Event und werden vorerst nicht als Overlay angezeigt. Details siehe [HANDBUCH.md](HANDBUCH.md#datenquellen).
 
 ## Eltern-Portal (optional)
 

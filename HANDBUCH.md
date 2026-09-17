@@ -76,7 +76,9 @@ Im Kind-Panel steht das Raster Mo–Fr. Eine Zelle anklicken öffnet die Fachaus
 
 Das **Standard-Stundenraster** (Zeiten je Stunde) gilt für alle Kinder und ist im Tab **Einstellungen** pflegbar. Pro Kind lässt sich ein **eigenes Raster** hinterlegen, das das Standardraster überschreibt (nützlich bei abweichenden Anfangszeiten). **Pausen** entstehen automatisch aus Lücken zwischen zwei Stunden (z. B. 09:30 → 09:50) und lassen sich auf der Karte ein-/ausblenden.
 
-Beim Import aus einer Schulplattform mit abweichenden Zeiten wird automatisch ein kindspezifisches Raster angelegt (Merker-Prinzip: ein importiertes Raster folgt späteren Änderungen der Schule, ein von Hand gepflegtes bleibt unangetastet).
+Beim Import aus einer Schulplattform werden die **echten Stundenzeiten der Schule als Raster übernommen** – auch beim allerersten Import, selbst wenn das Kind schon ein Raster hatte. Danach gilt das **Merker-Prinzip**: Ein vom Import gesetztes Raster folgt automatisch späteren Änderungen der Schule (bei aktivem Auto-Import ganz ohne Zutun), ein **von Hand geändertes Raster bleibt dagegen gesperrt** und wird nicht mehr überschrieben.
+
+> Tipp: Wenn das Raster automatisch der Schule folgen soll (z. B. wenn die reguläre Schulzeit erst später im Kalender auftaucht), das Raster **nicht von Hand bearbeiten** – sonst gilt es als handgepflegt und der Import lässt es unangetastet.
 
 ## Planversionen (Schuljahreswechsel)
 
@@ -117,7 +119,7 @@ Optional lässt sich pro Kind eine Schulplattform verknüpfen (Dropdown im Kind-
 - WebUntis stellt den Stundenplan als **HA-Kalender** bereit (`calendar.<schüler>`) – Termine mit Fach (Titel), Raum (Ort) und echten Uhrzeiten. Das Add-on leitet daraus **Stundenraster und Wochenplan** ab und übernimmt sie wie bei den anderen Quellen. **Hausaufgaben** und **Prüfungen** kommen aus den Kalendern `…_hausaufgaben` bzw. `…_prufungen`.
 - WebUntis liefert im Kalender **keine Lehrkraft** – die Lehrer-Klarnamen lassen sich von Hand pflegen (Räume kommen automatisch).
 - **Vertretungen** meldet WebUntis nur als HA-Event (nicht als abfragbare Liste) und werden daher vorerst **nicht** als Overlay angezeigt.
-- Da WebUntis keine festen Stundennummern hat, entsteht das Raster aus den vorkommenden Zeitfenstern der Woche. Bei unregelmäßigen Einführungs-/Blocktagen kann das Raster dadurch verschachtelt wirken; eine reguläre Woche mit festen Stundenzeiten ergibt ein sauberes Raster.
+- Da WebUntis keine festen Stundennummern hat, entsteht das Raster aus den **tatsächlichen Uhrzeiten** der Kalender-Termine. Beginnt der reguläre Unterricht z. B. um 07:30, zeigt das Raster nach dem nächsten (Auto-)Import automatisch 07:30 – ohne manuelles Einstellen. Bei unregelmäßigen Einführungs-/Blocktagen (etwa ein langer Block neben kurzen Einheiten zur selben Startzeit) kann das Raster verschachtelt wirken; eine reguläre Woche mit festen Stundenzeiten ergibt ein sauberes Raster.
 
 ### Auto-Import
 
