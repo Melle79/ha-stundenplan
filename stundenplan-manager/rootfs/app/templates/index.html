@@ -354,6 +354,69 @@ async function pushTest(btn) {
   btn.disabled = false; btn.textContent = "Test senden";
 }
 
+/* ---------- Pro-Kind-Push ---------- */
+function pushKindCfg(k) {
+  if (!k.push) k.push = { aktiv: false, zeit: "19:00", service: "" };
+  return k.push;
+}
+
+function pushKindSetzen(key, wert) {
+  pushKindCfg(kind())[key] = wert;
+  setDirty(true);
+}
+
+function pushKindHTML(k) {
+  return `<details class="card" style="margin:10px 0 0"><summary style="cursor:pointer"><b>🔔 Push an ${esc(k.name)}s Handy</b> <small style="color:var(--muted)">– eigener Morgen-Push nur mit ${esc(k.name)}s Plan</small></summary>
+    <div class="row" style="margin-top:10px;align-items:center">
+      <label><input type="checkbox" id="kindPushAktiv" onchange="pushKindSetzen('aktiv',this.checked)"> Aktiviert</label>
+      <label>Uhrzeit</label>
+      <input type="time" id="kindPushZeit" onchange="pushKindSetzen('zeit',this.value)">
+      <label>Gerät</label>
+      <select id="kindPushService" onchange="pushKindSetzen('service',this.value)"></select>
+      <button class="btn ghost" onclick="pushKindTest(this)">Test senden</button>
+    </div>
+    <p class="hint" style="margin:6px 0 0">Wird abends (Standard 19:00) an das gewählte Gerät gesendet, wenn ${esc(k.name)} morgen Schule hat. An freien Tagen kommt nichts.</p></details>`;
+}
+
+async function renderKindPushSelect() {
+  const k = kind();
+  if (!k) return;
+  const p = pushKindCfg(k);
+  const a = document.getElementById("kindPushAktiv");
+  if (!a) return;
+  a.checked = !!p.aktiv;
+  document.getElementById("kindPushZeit").value = p.zeit || "19:00";
+  let services = [];
+  try { services = await (await fetch("api/notify-services")).json(); } catch (e) {}
+  if (kind() !== k) return;
+  const sel = document.getElementById("kindPushService");
+  if (!sel) return;
+  let opts = `<option value="">– Gerät wählen –</option>`;
+  let gefunden = false;
+  for (const s of services) {
+    if (s === p.service) gefunden = true;
+    opts += `<option value="${esc(s)}" ${s === p.service ? "selected" : ""}>${esc(s)}</option>`;
+  }
+  if (p.service && !gefunden) opts += `<option value="${esc(p.service)}" selected>${esc(p.service)}</option>`;
+  sel.innerHTML = opts;
+}
+
+async function pushKindTest(btn) {
+  const k = kind();
+  if (!k) return;
+  if (dirty) await speichern();
+  btn.disabled = true; btn.textContent = "Sende…";
+  try {
+    const res = await fetch("api/push-test", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kind_id: k.id })
+    });
+    const d = await res.json();
+    alert(res.ok ? "Gesendet:\n" + (d.nachricht || "") : "Fehler: " + d.error);
+  } catch (e) { alert("Fehler: " + e); }
+  btn.disabled = false; btn.textContent = "Test senden";
+}
+
 async function speichern() {
   clearTimeout(saveTimer);
   if (!DATA) return;
@@ -539,12 +602,13 @@ function renderKid() {
     ${aktivPlanIdx >= 0 ? `<button class="btn danger" onclick="planVersionLoeschen()">Version löschen</button>` : ""}
   </div>
   <p class="hint" style="margin:4px 0 8px">Sensoren und Karte wechseln am Stichtag automatisch auf die neue Version - praktisch für den Schuljahreswechsel.</p>`;
-  html += versionen + `${k.schulmanager ? `<div id="smStatus" class="card" style="margin:0 0 10px"><h2 style="margin-top:0">🏫 ${qLabel(k.quelle)}${(k.quelle || "schulmanager") === "schulmanager" ? " heute/morgen" : ""}</h2><p class="hint" style="margin:0">Lade…</p></div>` : ""}<div id="planWrap">${planTabelleHTML(k, r)}</div>${fachDetailsTabelleHTML(k)}${lehrerNamenTabelleHTML(k)}
+  html += versionen + `${k.schulmanager ? `<div id="smStatus" class="card" style="margin:0 0 10px"><h2 style="margin-top:0">🏫 ${qLabel(k.quelle)}${(k.quelle || "schulmanager") === "schulmanager" ? " heute/morgen" : ""}</h2><p class="hint" style="margin:0">Lade…</p></div>` : ""}<div id="planWrap">${planTabelleHTML(k, r)}</div>${fachDetailsTabelleHTML(k)}${lehrerNamenTabelleHTML(k)}${pushKindHTML(k)}
     <p class="hint">Auf eine Zelle klicken, um ein Fach zuzuweisen.</p></div>`;
   box.innerHTML = html;
   if (k.stundenraster) renderRasterEditor(document.getElementById("rasterKid"), k.stundenraster);
   renderSchulmanagerSelect();
   renderSchulmanagerStatus();
+  renderKindPushSelect();
 }
 
 function fdet(k, kz) {

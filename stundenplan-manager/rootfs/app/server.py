@@ -11,7 +11,8 @@ from flask import Flask, jsonify, render_template, request
 from mqtt_publisher import SensorPublisher, ist_im_block  # noqa: F401
 from resource_registrar import registriere_ressource_async
 from ferien import liste_ferien_entities
-from push import PushScheduler, baue_nachricht, liste_notify_services, sende_push
+from push import (PushScheduler, baue_nachricht, baue_nachricht_kind,
+                  liste_notify_services, sende_push)
 import quellen
 from schulmanager import hole_fach_details, hole_wochenplan
 from sync import AutoImportScheduler, fuehre_import_aus
@@ -273,10 +274,31 @@ def notify_services():
 @app.route("/api/push-test", methods=["POST"])
 def push_test():
     data = load_data()
+    kind_id = (request.get_json(silent=True) or {}).get("kind_id") \
+        or request.args.get("kind_id")
+    if kind_id:
+        # Pro-Kind-Test an das Geraet des Kindes
+        kind = next((k for k in data.get("kinder", [])
+                     if k.get("id") == kind_id), None)
+        if not kind:
+            return jsonify({"error": "Kind nicht gefunden"}), 400
+        kp = kind.get("push") or {}
+        if not kp.get("service"):
+            return jsonify({"error": "Kein Gerät für dieses Kind gewählt"}), 400
+        nachricht = baue_nachricht_kind(data, kind, datetime.now()) \
+            or "Testnachricht: morgen schulfrei 🎉"
+        try:
+            sende_push(kp["service"], nachricht,
+                       titel=f"🎒 {kind.get('name', 'Schule')} – Schule morgen")
+            return jsonify({"status": "gesendet", "nachricht": nachricht})
+        except Exception as exc:
+            return jsonify({"error": str(exc)}), 502
+
     push = (data.get("einstellungen", {}) or {}).get("push", {}) or {}
     if not push.get("service"):
         return jsonify({"error": "Kein Notify-Service gewählt"}), 400
-    nachricht = baue_nachricht(data, datetime.now()) or         "Testnachricht: morgen haben alle frei 🎉"
+    nachricht = baue_nachricht(data, datetime.now()) or \
+        "Testnachricht: morgen haben alle frei 🎉"
     try:
         sende_push(push["service"], nachricht)
         return jsonify({"status": "gesendet", "nachricht": nachricht})

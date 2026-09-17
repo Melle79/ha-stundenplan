@@ -99,4 +99,6 @@ Alternativ zu Schulmanager lässt sich pro Kind ein Kind aus dem [Eltern-Portal]
 
 ## Morgen-Push & Materialliste (optional)
 
-In den Einstellungen laesst sich ein taeglicher Push aktivieren (Uhrzeit + Geraet waehlbar, Test-Button): "Luna: Sport um 08:00, Schluss 13:10 - Sportbeutel". An freien Tagen wird nichts gesendet. Im Faecher-Tab kann pro Fach optional Material hinterlegt werden - es erscheint im Push, am Sensor 'Erste Stunde morgen' (Attribut material_morgen) und in der Heute-Ansicht der Karte.
+In den Einstellungen laesst sich ein taeglicher **Sammel-Push** aktivieren (Uhrzeit + Geraet waehlbar, Test-Button): "Luna: Sport um 08:00, Schluss 13:10 - Sportbeutel". An freien Tagen wird nichts gesendet. Im Faecher-Tab kann pro Fach optional Material hinterlegt werden - es erscheint im Push, am Sensor 'Erste Stunde morgen' (Attribut material_morgen) und in der Heute-Ansicht der Karte.
+
+**Push pro Kind**: Zusaetzlich laesst sich im Kind-Panel unter „🔔 Push an … Handy" ein eigener Morgen-Push je Kind einrichten – eigenes Geraet, eigene Uhrzeit, nur der Plan dieses Kindes. So bekommt jedes Kind seinen Stundenplan aufs eigene Handy.

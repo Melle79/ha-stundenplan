@@ -167,11 +167,22 @@ An schulfreien Tagen zeigen die Sensoren „Schulfrei (Grund)" und die Karte ein
 
 ## Morgen-Push & Materialliste
 
-Im Tab **Einstellungen** lässt sich ein täglicher Push aktivieren (Uhrzeit + Notify-Gerät wählbar, Test-Button):
+Im Tab **Einstellungen** lässt sich ein täglicher **Sammel-Push** aktivieren (Uhrzeit + Notify-Gerät wählbar, Test-Button) – eine Nachricht mit allen Kindern, typischerweise an ein Elterngerät:
 
 > „Luna: Sport um 08:00, Schluss 13:10 – Sportbeutel"
 
 An freien Tagen wird nichts gesendet. Der Push berücksichtigt Entfälle des Folgetags (verschobener Beginn/Schluss) und listet fällige Hausaufgaben und anstehende Arbeiten. **Material** je Fach erscheint im Push, am Sensor „Erste Stunde morgen" (Attribut `material_morgen`) und in der Heute-Ansicht.
+
+### Push pro Kind (aufs eigene Handy)
+
+Zusätzlich lässt sich **pro Kind** ein eigener Morgen-Push einrichten – im Kind-Panel unter **„🔔 Push an … Handy"**:
+
+- **Eigenes Gerät** (Notify-Service) und **eigene Uhrzeit** je Kind.
+- Die Nachricht enthält **nur den Plan dieses Kindes** (ohne Namensprefix – der Name steht im Titel „🎒 Finn – Schule morgen"), inklusive Material, fälliger Hausaufgaben, anstehender Arbeit und morgiger Vertretungen.
+- An freien Tagen (Wochenende, Ferien, außerhalb der Blockwochen) wird für dieses Kind nichts gesendet.
+- Mit **Test-Button** sofort ausprobieren.
+
+Voraussetzung ist ein Notify-Ziel für das Handy des Kindes (z. B. die Home-Assistant-App auf dem Kind-Handy oder ein anderer Notify-Dienst). Sammel-Push und Pro-Kind-Push sind unabhängig und können beide aktiv sein.
 
 ## Die Lovelace-Karte
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.31.0 - September 2026
+
+### Neu
+- **Push pro Kind aufs eigene Handy**: Zusätzlich zum bisherigen Sammel-Push (alle Kinder an ein Elterngerät) lässt sich jetzt im Kind-Panel unter „🔔 Push an … Handy" pro Kind ein eigener Morgen-Push einrichten – **eigenes Gerät, eigene Uhrzeit**, nur der Plan dieses Kindes (ohne Namensprefix, der Name steht im Titel). Mit Test-Button. An freien Tagen wird nichts gesendet
+
+
 ## 1.30.5 - September 2026
 
 ### Dokumentation
