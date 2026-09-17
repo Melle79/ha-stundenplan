@@ -599,10 +599,16 @@ function lnDel(kuerzel) {
     }
   }
   setDirty(true);
-  renderKid();
+  // Nur die Lehrernamen-Box neu zeichnen und offen halten – ein volles
+  // renderKid() würde die aufgeklappte Box wieder zuklappen.
+  const box = document.getElementById("lnBox");
+  const neu = lehrerNamenTabelleHTML(k, true);
+  if (box && neu) box.outerHTML = neu;
+  else if (box) box.remove();           // letztes Kürzel gelöscht
+  else renderKid();
 }
 
-function lehrerNamenTabelleHTML(k) {
+function lehrerNamenTabelleHTML(k, offen) {
   const fd = k.fach_details || {};
   // Fächer, die im aktuell gültigen Plan (inkl. Blöcke) wirklich vorkommen
   const genutzt = new Set([aktiverPlan(k), ...(k.bloecke || []).map(b => b.plan || {})]
@@ -639,7 +645,7 @@ function lehrerNamenTabelleHTML(k) {
   const hinweis = inaktivN
     ? ` <small style="color:#e0b34c">· ${inaktivN} nicht mehr im Plan, mit ✕ löschbar</small>`
     : "";
-  return `<details class="card" style="margin:10px 0 0"><summary style="cursor:pointer"><b>👩‍🏫 Lehrernamen (${esc(k.name)})</b> <small style="color:var(--muted)">– Kürzel → Klarname; ${auto}Handeinträge gewinnen. Erscheinen im Dashboard, wenn genug Platz ist</small>${hinweis}</summary>
+  return `<details id="lnBox" class="card" style="margin:10px 0 0"${offen ? " open" : ""}><summary style="cursor:pointer"><b>👩‍🏫 Lehrernamen (${esc(k.name)})</b> <small style="color:var(--muted)">– Kürzel → Klarname; ${auto}Handeinträge gewinnen. Erscheinen im Dashboard, wenn genug Platz ist</small>${hinweis}</summary>
     <table class="fd-tab"><thead><tr><th>Kürzel</th><th>Name</th><th></th></tr></thead><tbody>${zeilen}</tbody></table></details>`;
 }
 

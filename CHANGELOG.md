@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.30.4 - September 2026
+
+### Behoben
+- **Lehrernamen-Box klappte beim Löschen zu**: Nach dem Entfernen eines Kürzels wurde das ganze Kind-Panel neu gezeichnet, wodurch die aufgeklappte „👩‍🏫 Lehrernamen"-Box wieder zuklappte. Jetzt wird beim Löschen nur die Tabelle an Ort und Stelle aktualisiert und bleibt offen
+
+
 ## 1.30.3 - September 2026
 
 ### Behoben
