@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.30.1 - September 2026
+
+### Behoben
+- **Stundenzeiten beim ersten Import**: Beim erstmaligen Import von einer Quelle (z. B. WebUntis) werden jetzt die echten Schulzeiten als Raster übernommen – zuvor blieb ein vorhandenes Raster (z. B. das Standard-6-Stunden-Raster) stehen, sodass die Stunden auf falschen Uhrzeiten lagen. Ein *nach* dem Import von Hand geändertes Raster bleibt weiterhin geschützt
+
+
 ## 1.30.0 - September 2026
 
 ### Neu

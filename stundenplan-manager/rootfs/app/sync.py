@@ -178,20 +178,24 @@ def fuehre_import_aus(data: dict, kind: dict, heute: date = None) -> dict:
     if sm_raster:
         std = (data.get("einstellungen", {}) or {}).get("stundenraster_standard") or []
         eigenes = kind.get("stundenraster")
+        erst_import = kind.get("sm_raster") is None
         if eigenes is None:
             if sm_raster != std:
                 kind["stundenraster"] = sm_raster
                 kind["sm_raster"] = sm_raster
                 stats["raster_gesetzt"] = True
                 stats["geaendert"] = True
-        elif eigenes == kind.get("sm_raster") and sm_raster != eigenes:
-            kind["stundenraster"] = sm_raster
-            kind["sm_raster"] = sm_raster
-            stats["raster_gesetzt"] = True
-            stats["geaendert"] = True
-        elif eigenes == sm_raster and kind.get("sm_raster") != sm_raster:
-            kind["sm_raster"] = sm_raster
-            stats["geaendert"] = True
+        elif erst_import or eigenes == kind.get("sm_raster"):
+            # Erstimport von dieser Quelle (oder ein vom Import gesetztes Raster):
+            # die echten Schulzeiten uebernehmen. Ein *nach* dem Import von Hand
+            # geaendertes Raster (eigenes != sm_raster) bleibt dagegen geschuetzt.
+            if sm_raster != eigenes:
+                kind["stundenraster"] = sm_raster
+                stats["raster_gesetzt"] = True
+                stats["geaendert"] = True
+            if kind.get("sm_raster") != sm_raster:
+                kind["sm_raster"] = sm_raster
+                stats["geaendert"] = True
     return stats
 
 
