@@ -1,6 +1,6 @@
-# Handbuch – Stundenplan Manager
+# Handbuch – Stundenplan Manager 2
 
-Ausführliche Anleitung zum Home-Assistant-Add-on **Stundenplan Manager** und zur zugehörigen **Stundenplan Card**. Für einen schnellen Überblick siehe [README.md](README.md).
+Ausführliche Anleitung zum Home-Assistant-Add-on **Stundenplan Manager 2** und zur zugehörigen **Stundenplan Card**. Für einen schnellen Überblick siehe [README.md](README.md).
 
 ## Inhalt
 
@@ -28,7 +28,7 @@ Ausführliche Anleitung zum Home-Assistant-Add-on **Stundenplan Manager** und zu
 
 ## Überblick
 
-Der Stundenplan Manager verwaltet die Wochenpläne mehrerer Kinder in Home Assistant. Die Pflege geschieht in einer Web-Oberfläche (Add-on-Panel „Stundenplan"), die Anzeige über eine Lovelace-Karte und fünf MQTT-Sensoren pro Kind. Optional lässt sich pro Kind eine Schulplattform (**Schulmanager Online** oder **Eltern-Portal**) verknüpfen, aus der Plan, Räume, Lehrer, Vertretungen, Hausaufgaben und Arbeiten übernommen werden.
+Der Stundenplan Manager 2 verwaltet die Wochenpläne mehrerer Kinder in Home Assistant. Alles ist **kindbezogen**: jedes Kind hat seinen eigenen Fächer-Katalog sowie eigene Listen für Räume und Lehrer, und Raum/Lehrer werden **pro Stunde** gepflegt. Die Pflege geschieht in einer Web-Oberfläche (Add-on-Panel „Stundenplan") – per Klick-Editor oder **Drag & Drop** –, die Anzeige über eine Lovelace-Karte und fünf MQTT-Sensoren pro Kind. Optional lässt sich pro Kind eine Schulplattform (**Schulmanager Online**, **Eltern-Portal** oder **WebUntis**) verknüpfen, aus der Plan, Räume, Lehrer, Vertretungen, Hausaufgaben und Arbeiten übernommen werden.
 
 Alle Daten liegen lokal im Add-on; es werden keine Cloud-Dienste außer den von dir verknüpften Schulplattformen kontaktiert.
 
@@ -38,7 +38,7 @@ Alle Daten liegen lokal im Add-on; es werden keine Cloud-Dienste außer den von 
 
 1. In Home Assistant: **Einstellungen → Add-ons → Add-on Store → ⋮ → Repositories**
 2. `https://github.com/Melle79/ha-stundenplan` hinzufügen
-3. „Stundenplan Manager" installieren und starten
+3. „Stundenplan Manager 2" installieren und starten
 4. Das Add-on erscheint als Panel **„Stundenplan"** in der Seitenleiste (Ingress, kein Port nötig)
 
 Voraussetzung ist ein **MQTT-Broker** (z. B. das Mosquitto-Add-on) – darüber werden die Sensoren per Discovery angelegt.
@@ -103,7 +103,7 @@ Für Berufsschüler gibt es den **Blockmodus**: Statt eines durchgehenden Wochen
 
 ## Datenquellen
 
-Optional lässt sich pro Kind eine Schulplattform verknüpfen (Dropdown im Kind-Panel). Import, täglicher Auto-Import, Statusbox und Push funktionieren für beide Quellen gleich.
+Optional lässt sich pro Kind eine Schulplattform verknüpfen (Dropdown im Kind-Panel): **Schulmanager Online**, **Eltern-Portal** oder **WebUntis**. Import, täglicher Auto-Import, Statusbox und Push funktionieren für alle Quellen gleich; der Import schreibt Raum und Lehrer je Stunde und legt fehlende Fächer im Katalog des Kindes an.
 
 ### Schulmanager Online
 
@@ -147,7 +147,7 @@ Bei verknüpftem **Schulmanager** markiert die Karte für heute und morgen:
 
 Jedes Kind hat im Kind-Panel **drei getrennte Listen**, alle kindspezifisch (Geschwister an verschiedenen Schulen teilen dieselben Kürzel mit unterschiedlichen Fächern/Räumen/Lehrern):
 
-- **📚 Fächer** – Kürzel → Name & Farbe (Überschreibung des globalen Standards je Kind; leeres Feld = globaler Standard).
+- **📚 Fächer** – der eigene Fächer-Katalog des Kindes: Kürzel → Name, Farbe und Material. Anlegen, umbenennen, löschen, Standard-Fächer laden.
 - **🚪 Räume** – die Raumliste des Kindes. Sie speist die Auswahl im Stunden-Editor und wächst beim Import automatisch mit; Räume lassen sich hier umbenennen (wirkt in allen Stunden) oder löschen.
 - **👩‍🏫 Lehrernamen** – Kürzel → Klarname (siehe unten).
 
