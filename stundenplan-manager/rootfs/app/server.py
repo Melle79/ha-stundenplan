@@ -8,7 +8,7 @@ from pathlib import Path
 
 from flask import Flask, jsonify, render_template, request
 
-from mqtt_publisher import SensorPublisher, ist_im_block  # noqa: F401
+from mqtt_publisher import SensorPublisher, ist_im_block, TAGE  # noqa: F401
 from resource_registrar import registriere_ressource_async
 from ferien import liste_ferien_entities
 from push import (PushScheduler, baue_nachricht, baue_nachricht_kind,
@@ -441,6 +441,54 @@ def migriere_lehrer_namen():
         log.info("Lehrerverzeichnis initialisiert (Kuerzel aus Fach-Details)")
 
 
+def migriere_freie_stunden():
+    """Einmalig: Raum und Lehrer werden pro Stunde speicherbar ("freie Stunden").
+
+    Bisher hingen Raum/Lehrer fest am Fach (kind["fach_details"][kz]). Kuenftig
+    traegt jede Zelle ihr eigenes Overlay plan["details"][tag][i] = {raum,lehrer};
+    fehlt es, gilt weiter der Fach-Standard. Diese Migration
+      - legt die kindbezogene Raumliste kind["raeume"] aus den bekannten
+        Fach-Raeumen an (Basis fuer Pflege und spaeteres Drag&Drop),
+      - seedet jede belegte Zelle mit dem bisherigen Fach-Standard, sodass der
+        Plan identisch aussieht, aber jede Stunde ab jetzt einzeln Raum/Lehrer
+        bekommen kann.
+    Nicht-destruktiv: fach_details bleibt als Standard/Fallback erhalten."""
+    data = load_data()
+    einst = data.setdefault("einstellungen", {})
+    if einst.get("freie_stunden_migriert"):
+        return
+    for kind in data.get("kinder", []):
+        fd = kind.get("fach_details") or {}
+        raeume = kind.setdefault("raeume", [])
+        for r in sorted({(v.get("raum") or "").strip()
+                         for v in fd.values() if (v.get("raum") or "").strip()}):
+            if r not in raeume:
+                raeume.append(r)
+        for planobj in [kind.get("plan") or {}] \
+                + [v.get("plan") or {} for v in kind.get("plaene", [])]:
+            details = planobj.setdefault("details", {})
+            for tag in TAGE:
+                zellen = planobj.get(tag) or []
+                dl = details.setdefault(tag, [])
+                while len(dl) < len(zellen):
+                    dl.append(None)
+                for i, kz in enumerate(zellen):
+                    if not kz:
+                        dl[i] = None
+                        continue
+                    vorhanden = dl[i] if isinstance(dl[i], dict) else {}
+                    if vorhanden.get("raum") or vorhanden.get("lehrer"):
+                        continue
+                    f = fd.get(kz) or {}
+                    raum = (f.get("raum") or "").strip()
+                    lehrer = (f.get("lehrer") or "").strip()
+                    if raum or lehrer:
+                        dl[i] = {"raum": raum, "lehrer": lehrer}
+    einst["freie_stunden_migriert"] = True
+    save_data(data)
+    log.info("Migration: Raum/Lehrer sind jetzt pro Stunde speicherbar (freie Stunden)")
+
+
 @app.route("/api/standard-faecher")
 def standard_faecher():
     return jsonify(STANDARD_FAECHER)
@@ -467,6 +515,7 @@ if __name__ == "__main__":
     migriere_sm_marker()
     migriere_fach_details_pro_kind()
     migriere_lehrer_namen()
+    migriere_freie_stunden()
     PUBLISHER.start()
     BackupScheduler().start()
     PushScheduler(lambda: load_data()).start()

@@ -49,6 +49,32 @@ def plan_fuer_datum(kind: dict, datum) -> dict:
     return passend[-1]["plan"] if passend else kind.get("plan", {})
 
 
+def tages_details(planobj: dict, tag: str) -> list:
+    """Overlay-Liste [{raum,lehrer}|None, ...] eines Tages, parallel zu
+    planobj[tag]. Neues Datenmodell "freie Stunden": jede Zelle kann einen
+    eigenen Raum/Lehrer tragen. Fehlt das Overlay (Altbestand), ist die Liste
+    leer und der Fach-Standard aus faecher[kz] gilt."""
+    if not isinstance(planobj, dict):
+        return []
+    return (planobj.get("details") or {}).get(tag) or []
+
+
+def zellen_detail(det_list: list, i: int) -> dict:
+    o = det_list[i] if 0 <= i < len(det_list) else None
+    return o if isinstance(o, dict) else {}
+
+
+def raum_lehrer(kz, faecher: dict, det_list: list, i: int):
+    """Effektiver (Raum, Lehrer) einer Stunde. Traegt die Zelle ein Overlay
+    (freie Stunde), ist dieses massgeblich - auch ein bewusst leeres Feld bleibt
+    leer. Nur ohne Overlay (Altbestand) gilt der Fach-Standard aus faecher[kz]."""
+    o = zellen_detail(det_list, i)
+    if o:
+        return o.get("raum", ""), o.get("lehrer", "")
+    f = faecher.get(kz) or {}
+    return f.get("raum", ""), f.get("lehrer", "")
+
+
 def slugify(name: str) -> str:
     s = name.lower()
     for a, b in (("ä", "ae"), ("ö", "oe"), ("ü", "ue"), ("ß", "ss")):
@@ -119,18 +145,20 @@ def berechne_sensoren(kind: dict, faecher: dict, raster: list, jetzt: datetime,
         if kind.get("modus", "wochenplan") == "wochenplan":
             grund = schulfrei_grund(d.date(), zeitraeume)
             if grund:
-                return None, f"Schulfrei ({grund})"
+                return None, f"Schulfrei ({grund})", []
         if d.weekday() > 4:
-            return None, "Schulfrei"
+            return None, "Schulfrei", []
         if not ist_im_block(kind, d):
-            return None, "Betrieb"
-        plan = plan_fuer_datum(kind, d.date()).get(TAGE[d.weekday()], [])
+            return None, "Betrieb", []
+        planobj = plan_fuer_datum(kind, d.date())
+        tag = TAGE[d.weekday()]
+        plan = planobj.get(tag, [])
         if not any(plan):
-            return None, "Schulfrei"
-        return plan, None
+            return None, "Schulfrei", []
+        return plan, None, tages_details(planobj, tag)
 
-    heute, heute_status = tagesinfo(0)
-    morgen, morgen_status = tagesinfo(1)
+    heute, heute_status, det_heute = tagesinfo(0)
+    morgen, morgen_status, det_morgen = tagesinfo(1)
 
     res = {s[0]: "–" for s in SENSOREN}
     attrs = {"kind": kind["name"], "modus": kind.get("modus", "wochenplan")}
@@ -198,8 +226,8 @@ def berechne_sensoren(kind: dict, faecher: dict, raster: list, jetzt: datetime,
             if raster[i]["von"] <= zeit < raster[i]["bis"]:
                 kz = heute[i]
                 res["aktuelle_stunde"] = _fach_label(kz, faecher)
-                f = faecher.get(kz, {})
-                attrs.update({"aktuell_kuerzel": kz, "aktuell_raum": f.get("raum", ""),
+                raum, _lehrer = raum_lehrer(kz, faecher, det_heute, i)
+                attrs.update({"aktuell_kuerzel": kz, "aktuell_raum": raum,
                               "aktuell_bis": raster[i]["bis"], "aktuell_nr": raster[i]["nr"]})
                 break
         else:

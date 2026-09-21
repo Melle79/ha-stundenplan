@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.33.0 - September 2026
+
+### Neu
+- **Raum & Lehrer pro Stunde („freie Stunden")**: Raum und Lehrer hingen bisher fest am Fach – dasselbe Fach hatte überall denselben Raum und denselben Lehrer. Jetzt trägt **jede einzelne Stunde** ihren eigenen Raum und Lehrer. Deutsch kann montags in 130 bei einer Lehrkraft und donnerstags in 205 bei einer Lehrkraft sein. Ein Klick auf eine Zelle öffnet den **Stunden-Editor**: Fach wählen, dann Raum und Lehrer aus Auswahllisten (oder „＋ neu" anlegen)
+- **Drei getrennte Listen pro Kind** – **📚 Fächer** (Name & Farbe), **👩‍🏫 Lehrernamen** (Kürzel → Klarname) und **🚪 Räume**. Die Listen speisen die Auswahl im Stunden-Editor und wachsen beim Import automatisch mit
+- **Migration bestehender Pläne**: Alle vorhandenen Stundenpläne werden automatisch übernommen – jede Stunde erhält den bisher am Fach hinterlegten Raum/Lehrer als Startwert und ist ab sofort einzeln änderbar. Nicht-destruktiv, nichts geht verloren; die Ansicht bleibt zunächst unverändert
+- **Import schreibt pro Stunde**: Schulmanager-/Eltern-Portal-/WebUntis-Import setzt Raum und Lehrer jetzt je Stunde und ersetzt beim Fachwechsel auch den alten Raum. Neue Räume landen automatisch in der Räume-Liste. Der Auto-Import funktioniert unverändert weiter
+- Karte (Woche & Heute) und Druckansicht zeigen den stundenweisen Raum/Lehrer
+
+### Karte
+- Companion-Karte **v1.23.0**: liest Raum/Lehrer pro Stunde aus dem Plan-Overlay, Fallback auf den Fach-Standard bei Altbeständen
+
+
 ## 1.32.0 - September 2026
 
 ### Neu

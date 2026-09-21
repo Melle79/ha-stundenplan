@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.22.1 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.23.0 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -173,6 +173,17 @@ class StundenplanCard extends HTMLElement {
     const lk = String(kuerzel).toLowerCase();
     for (const k in dir) if (k.toLowerCase() === lk && dir[k]) return dir[k];
     return "";
+  }
+
+  // Raum/Lehrer einer einzelnen Stunde (Modell "freie Stunden"): das Zellen-
+  // Overlay plan.details[tag][i] ist maßgeblich - auch ein bewusst leeres Feld
+  // bleibt leer. Fehlt das Overlay (Altbestand), gilt der Fach-Standard.
+  _stundeRaumLehrer(planObj, tag, i, f) {
+    const dl = (planObj && planObj.details && planObj.details[tag]) || [];
+    const o = dl[i];
+    if (o && typeof o === "object")
+      return { raum: o.raum || "", lehrer: o.lehrer || "" };
+    return { raum: (f && f.raum) || "", lehrer: (f && f.lehrer) || "" };
   }
 
   // Anzeige: nur Kürzel, oder Kürzel+Klarname (per Container-Query umschaltbar)
@@ -504,7 +515,8 @@ class StundenplanCard extends HTMLElement {
           // Schulmanager-Optik: Originaldaten rot durchgestrichen, neue Angaben hervorgehoben
           const fNeu = x.fach && f && x.fach.toUpperCase() !== kz.toUpperCase()
             && x.fach.toUpperCase() !== f.name.toUpperCase() ? x.fach : "";
-          const altDetail = f ? [fNeu ? kz : "", f.raum, f.lehrer].filter(Boolean).join(" · ") : "";
+          const _rl = this._stundeRaumLehrer(t.plan, t.tag, si, f);
+          const altDetail = f ? [fNeu ? kz : "", _rl.raum, _rl.lehrer].filter(Boolean).join(" · ") : "";
           const neuDetail = [fNeu, x.raum, x.lehrer].filter(Boolean).join(" · ");
           badge = (altDetail ? `<small class="sp-orig">${altDetail}</small>` : "")
             + (neuDetail ? `<small class="sp-neu">🔁 ${neuDetail}</small>`
@@ -512,11 +524,12 @@ class StundenplanCard extends HTMLElement {
         }
         const aCls = (entfall ? "sp-entfall" : vertretung ? "sp-vertretung" : "") + (arbeit ? " sp-arbeit" : "");
         if (f) {
-          const lehrerVoll = this._lehrerName(a, f.lehrer);
+          const rl = this._stundeRaumLehrer(t.plan, t.tag, si, f);
+          const lehrerVoll = this._lehrerName(a, rl.lehrer);
           const tip = `${f.name}${lehrerVoll ? " · " + lehrerVoll : ""}${x ? " – " + x.label + (details ? " (" + details + ")" : "") + (x.grund ? ": " + x.grund : "") : ""}${arbeit ? " – " + arbeit.typ : ""}`;
-          const raumLehrer = [f.raum || "", f.lehrer ? this._lehrerHTML(a, f.lehrer, "grid") : ""].filter(Boolean).join(" · ");
+          const raumLehrer = [rl.raum || "", rl.lehrer ? this._lehrerHTML(a, rl.lehrer, "grid") : ""].filter(Boolean).join(" · ");
           html += `<td class="${spalte}"><div class="sp-fach ${istJetzt ? "sp-aktuell" : ""} ${t.frei ? "sp-gedimmt" : ""} ${aCls}"
-            style="background:${f.farbe}" title="${tip}">${kz}${arbeit ? " 📝" : ""}<small class="sp-name">${f.name}</small>${(f.raum || f.lehrer) && !vertretung ? `<small>${raumLehrer}</small>` : ""}${badge}</div></td>`;
+            style="background:${f.farbe}" title="${tip}">${kz}${arbeit ? " 📝" : ""}<small class="sp-name">${f.name}</small>${(rl.raum || rl.lehrer) && !vertretung ? `<small>${raumLehrer}</small>` : ""}${badge}</div></td>`;
         } else if (x) {
           html += `<td class="${spalte}"><div class="sp-fach ${aCls}" style="background:var(--secondary-background-color,#444)">${badge}</div></td>`;
         } else {
@@ -657,7 +670,8 @@ class StundenplanCard extends HTMLElement {
     if (!this._imBlock(a, new Date()))
       return `<div class="sp-leer">🏭 Betriebsphase – kein Blockunterricht heute</div>` + this._standHTML(a);
     const tag = StundenplanCard.TAGE[heute][0];
-    const plan = this._planFuerDatum(a, isoHeute)[tag] || [];
+    const planObj = this._planFuerDatum(a, isoHeute);
+    const plan = planObj[tag] || [];
     if (a.modus === "block" && !plan.some(Boolean)) {
       const bi = this._blockInfo(a, isoHeute);
       return `<div class="sp-leer">🏫 Heute Schule – Blockunterricht${bi.label ? ` (${bi.label})` : ""}<br><small>Kein Stundenplan hinterlegt</small></div>` + this._standHTML(a);
@@ -680,7 +694,7 @@ class StundenplanCard extends HTMLElement {
         <span class="sp-punkt" style="background:${f.farbe}"></span>
         <span class="sp-lzeit">${st.von}–${st.bis}</span>
         <span class="sp-lname">${entf ? `<s>${f.name}</s> ✕ ${x.label || "Entfall"}` : f.name}${x && x.grund ? ` <span class="sp-notiz-inline">ℹ️ ${x.grund}</span>` : ""}${x && !entf && x.fach && x.fach.toUpperCase() !== (kz || "").toUpperCase() ? ` <span class="sp-laend">🔁 ${x.fach}</span>` : ""}</span>
-        ${x && !entf && (x.raum || x.lehrer) ? `<span class="sp-lraum">🔁 ${(f.raum || f.lehrer) ? `<s class="sp-orig-inline">${[f.raum, f.lehrer].filter(Boolean).join(" · ")}</s> → ` : ""}${[x.raum, x.lehrer].filter(Boolean).join(" · ")}</span>` : (f.raum || f.lehrer) ? `<span class="sp-lraum">${[f.raum ? "Raum " + f.raum : "", f.lehrer ? this._lehrerHTML(a, f.lehrer, "liste") : ""].filter(Boolean).join(" · ")}</span>` : ""}
+        ${(() => { const rl = this._stundeRaumLehrer(planObj, tag, si, f); return x && !entf && (x.raum || x.lehrer) ? `<span class="sp-lraum">🔁 ${(rl.raum || rl.lehrer) ? `<s class="sp-orig-inline">${[rl.raum, rl.lehrer].filter(Boolean).join(" · ")}</s> → ` : ""}${[x.raum, x.lehrer].filter(Boolean).join(" · ")}</span>` : (rl.raum || rl.lehrer) ? `<span class="sp-lraum">${[rl.raum ? "Raum " + rl.raum : "", rl.lehrer ? this._lehrerHTML(a, rl.lehrer, "liste") : ""].filter(Boolean).join(" · ")}</span>` : ""; })()}
       </li>`;
     });
     html += `</ul>`;

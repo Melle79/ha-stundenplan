@@ -14,7 +14,7 @@ Ausführliche Anleitung zum Home-Assistant-Add-on **Stundenplan Manager** und zu
 8. [Blockunterricht (Azubis)](#blockunterricht-azubis)
 9. [Datenquellen: Schulmanager & Eltern-Portal](#datenquellen)
 10. [Vertretungen & Entfall](#vertretungen--entfall)
-11. [Räume, Lehrer & Lehrer-Klarnamen](#räume-lehrer--lehrer-klarnamen)
+11. [Fächer, Räume & Lehrer](#fächer-räume--lehrer)
 12. [Hausaufgaben & Klassenarbeiten](#hausaufgaben--klassenarbeiten)
 13. [Schulferien-Integration](#schulferien-integration)
 14. [Morgen-Push & Materialliste](#morgen-push--materialliste)
@@ -52,7 +52,7 @@ Das Add-on kopiert die Karte beim Start automatisch nach `/config/www/stundenpla
 1. Panel **Stundenplan** öffnen.
 2. Tab **Fächer**: Über **📥 Standard-Fächer hinzufügen** die 21 gängigen Fächer laden oder eigene anlegen.
 3. Oben ein **Kind hinzufügen** (Chip „+"). Name vergeben.
-4. Im Kind-Panel den **Wochenplan** füllen (Zelle anklicken → Fach wählen).
+4. Im Kind-Panel den **Wochenplan** füllen (Zelle anklicken → Fach, Raum und Lehrer wählen).
 5. Speichern erfolgt automatisch (Auto-Save); die Sensoren aktualisieren sich sofort.
 6. Optional die **Karte** aufs Dashboard legen (siehe [unten](#die-lovelace-karte)).
 
@@ -64,11 +64,13 @@ Im Tab **Fächer** liegt der **gemeinsame Standard** für alle Kinder: **Kürzel
 - **Material** (z. B. „Sportbeutel"): erscheint im Morgen-Push, in der Heute-Ansicht und am Sensor „Erste Stunde morgen".
 - **Nicht mehr im Plan**: Fächer, die in keinem aktuellen Plan (inkl. Blöcken) eines Kindes mehr vorkommen, werden abgeblendet, ans Ende sortiert und mit „nicht mehr im Plan" markiert – so lassen sich Altlasten (z. B. nach einem Schulwechsel) mit **✕** aufräumen.
 
-> **Kindbezogene Fächer**: Name, Farbe, Raum und Lehrer lassen sich **pro Kind** überschreiben – im Kind-Panel unter **📚 Fächer & Räume**. Das ist wichtig, weil **dasselbe Kürzel bei verschiedenen Kindern ein anderes Fach sein kann** (z. B. „Sw" = Schwimmen beim einen, Sport weiblich beim anderen). Ein leeres Feld nutzt den globalen Standard; der Import füllt Name/Raum/Lehrer je Kind automatisch (Merker-Prinzip: Handeinträge gewinnen).
+> **Kindbezogene Fächer**: Name und Farbe eines Fachs lassen sich **pro Kind** überschreiben – im Kind-Panel unter **📚 Fächer**. Das ist wichtig, weil **dasselbe Kürzel bei verschiedenen Kindern ein anderes Fach sein kann** (z. B. „Sw" = Schwimmen beim einen, Sport weiblich beim anderen). Ein leeres Feld nutzt den globalen Standard. **Raum und Lehrer gehören nicht mehr zum Fach, sondern zur einzelnen Stunde** (siehe unten).
 
 ## Wochenplan pflegen
 
-Im Kind-Panel steht das Raster Mo–Fr. Eine Zelle anklicken öffnet die Fachauswahl; erneut die aktuelle Auswahl anklicken leert die Zelle. Änderungen werden automatisch gespeichert.
+Im Kind-Panel steht das Raster Mo–Fr. Eine Zelle anklicken öffnet den **Stunden-Editor**: zuerst das **Fach** wählen, dann **Raum** und **Lehrer** aus den Auswahllisten (oder über **＋ neu** direkt anlegen). „✕ Stunde leeren" leert die Zelle. Änderungen werden automatisch gespeichert.
+
+**Raum und Lehrer je Stunde („freie Stunden")**: Anders als früher hängen Raum und Lehrer nicht am Fach, sondern an der **einzelnen Stunde**. Dasselbe Fach kann also je Tag/Stunde in einem anderen Raum und bei einer anderen Lehrkraft stattfinden (z. B. Deutsch montags in 130 bei Jov, donnerstags in 205 bei Sil). Bestehende Pläne werden automatisch übernommen: jede Stunde startet mit dem bisher am Fach hinterlegten Raum/Lehrer und ist ab sofort einzeln änderbar.
 
 ![Wochenansicht der Karte](docs/img/woche.png)
 
@@ -134,9 +136,15 @@ Bei verknüpftem **Schulmanager** markiert die Karte für heute und morgen:
 
 **Entfallene Randstunden verschieben die Zeiten**: Fällt die erste oder letzte Stunde aus, zeigen Sensor, Karte und Push den echten Schulbeginn bzw. -schluss („noch bis 11:20 · statt 15:00 (Entfall)"). Fällt der ganze Tag aus, melden die Sensoren „Schulfrei (Entfall)". Reine Fach-/Raum-/Lehrertausche (Vertretung) ändern die Zeiten nicht.
 
-## Räume, Lehrer & Lehrer-Klarnamen
+## Fächer, Räume & Lehrer
 
-Name, Farbe, Raum und Lehrer sind **kindspezifisch** (Geschwister an verschiedenen Schulen teilen dieselben Kürzel mit unterschiedlichen Fächern/Räumen/Lehrern). Sie stehen im Kind-Panel unter **📚 Fächer & Räume**; der Import füllt und pflegt sie, Handeinträge gewinnen. Ein leeres Feld nutzt den globalen Standard aus dem Fächer-Tab.
+Jedes Kind hat im Kind-Panel **drei getrennte Listen**, alle kindspezifisch (Geschwister an verschiedenen Schulen teilen dieselben Kürzel mit unterschiedlichen Fächern/Räumen/Lehrern):
+
+- **📚 Fächer** – Kürzel → Name & Farbe (Überschreibung des globalen Standards je Kind; leeres Feld = globaler Standard).
+- **🚪 Räume** – die Raumliste des Kindes. Sie speist die Auswahl im Stunden-Editor und wächst beim Import automatisch mit; Räume lassen sich hier umbenennen (wirkt in allen Stunden) oder löschen.
+- **👩‍🏫 Lehrernamen** – Kürzel → Klarname (siehe unten).
+
+**Raum und Lehrer werden pro Stunde** im Stunden-Editor gesetzt (Zelle anklicken), nicht mehr pauschal am Fach. Der Import trägt beide je Stunde ein und pflegt die Listen; Handeinträge auf nicht importierten Tagen bleiben erhalten.
 
 **Lehrer-Klarnamen** (Tabelle **👩‍🏫 Lehrernamen** im Kind-Panel):
 

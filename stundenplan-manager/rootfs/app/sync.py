@@ -140,6 +140,14 @@ def fuehre_import_aus(data: dict, kind: dict, heute: date = None) -> dict:
         if teacher_kz:
             lehrer_verzeichnis_pflegen(kind, teacher_kz,
                                        det.get("lehrer_name") or "", stats)
+        # Raumliste des Kindes pflegen (Auswahl im Stunden-Editor, Drag&Drop)
+        raum = (eintrag.get("raum") or "").strip()
+        if raum:
+            rl = kind.setdefault("raeume", [])
+            if raum not in rl:
+                rl.append(raum)
+                rl.sort(key=lambda s: s.lower())
+                stats["geaendert"] = True
         return match
 
     # Finalen Plan je Tag bestimmen: Tagesplan schlaegt Wochen-JSON
@@ -162,13 +170,32 @@ def fuehre_import_aus(data: dict, kind: dict, heute: date = None) -> dict:
             final[tag] = list(stunden)
 
     ziel = _zielplan(kind, heute)
+    # Overlay "freie Stunden" mitschreiben: jede importierte Zelle bekommt Raum
+    # und Lehrer aus dem (kindspezifischen) Fach-Standard. So ersetzt ein Import,
+    # der eine Stunde auf ein anderes Fach aendert, auch den alten Raum/Lehrer -
+    # sonst bliebe ein veraltetes Overlay massgeblich stehen.
+    ziel_det = ziel.setdefault("details", {})
     for tag in tage_namen:
         if tag not in final:
             stats["uebersprungen"].append(TAG_NAMEN[tag])
             continue
-        neu_tag = [fach_sicherstellen(kz) if kz else None for kz in final[tag]]
+        neu_tag, neu_det = [], []
+        for kz in final[tag]:
+            if not kz:
+                neu_tag.append(None)
+                neu_det.append(None)
+                continue
+            match = fach_sicherstellen(kz)
+            neu_tag.append(match)
+            eintrag = (kind.get("fach_details") or {}).get(match, {})
+            raum = (eintrag.get("raum") or "").strip()
+            lehrer = (eintrag.get("lehrer") or "").strip()
+            neu_det.append({"raum": raum, "lehrer": lehrer} if (raum or lehrer) else None)
         if ziel.get(tag) != neu_tag:
             ziel[tag] = neu_tag
+            stats["geaendert"] = True
+        if ziel_det.get(tag) != neu_det:
+            ziel_det[tag] = neu_det
             stats["geaendert"] = True
         stats["importiert"].append(TAG_NAMEN[tag])
 

@@ -90,11 +90,16 @@
     align-items: center; justify-content: center; z-index: 50; }
   .overlay.open { display: flex; }
   .picker { background: var(--card2); border: 1px solid var(--border); border-radius: 14px;
-    padding: 18px; max-width: 420px; width: 92%; }
+    padding: 18px; max-width: 460px; width: 92%; max-height: 88vh; overflow-y: auto; }
   .picker h3 { margin: 0 0 12px; font-size: .95rem; }
   .picker .grid { display: flex; flex-wrap: wrap; gap: 8px; }
-  .picker .fbtn { border: none; border-radius: 8px; padding: 10px 14px; cursor: pointer;
+  .picker .fbtn { border: 2px solid transparent; border-radius: 8px; padding: 10px 14px; cursor: pointer;
     font-weight: 600; color: #fff; font-size: .9rem; }
+  .picker .fbtn.sel { border-color: #fff; box-shadow: 0 0 0 2px var(--accent, #4a90d9); }
+  .picker-sec { margin-top: 14px; }
+  .picker-lbl { display: block; font-size: .78rem; color: var(--muted); margin-bottom: 5px; font-weight: 600; }
+  .picker-sec select { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--card); color: var(--text); }
   .hint { color: var(--muted); font-size: .82rem; margin-top: 8px; }
   .blockrow { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
   .badge { font-size: .72rem; padding: 3px 8px; border-radius: 10px; background: var(--card2);
@@ -220,9 +225,12 @@
 
 <div class="overlay" id="pickerOverlay" onclick="if(event.target===this)closePicker()">
   <div class="picker">
-    <h3 id="pickerTitle">Fach wählen</h3>
-    <div class="grid" id="pickerGrid"></div>
-    <p class="hint">Tipp: Fächer legst du im Tab „Fächer" an.</p>
+    <h3 id="pickerTitle">Stunde bearbeiten</h3>
+    <div id="pickerBody"></div>
+    <div class="row" style="margin-top:12px;justify-content:flex-end">
+      <button class="btn ghost" onclick="setzeFach(null)">✕ Stunde leeren</button>
+      <button class="btn" onclick="closePicker()">Fertig</button>
+    </div>
   </div>
 </div>
 
@@ -621,8 +629,8 @@ function renderKid() {
     ${aktivPlanIdx >= 0 ? `<button class="btn danger" onclick="planVersionLoeschen()">Version löschen</button>` : ""}
   </div>
   <p class="hint" style="margin:4px 0 8px">Sensoren und Karte wechseln am Stichtag automatisch auf die neue Version - praktisch für den Schuljahreswechsel.</p>`;
-  html += versionen + `${k.schulmanager ? `<div id="smStatus" class="card" style="margin:0 0 10px"><h2 style="margin-top:0">🏫 ${qLabel(k.quelle)}${(k.quelle || "schulmanager") === "schulmanager" ? " heute/morgen" : ""}</h2><p class="hint" style="margin:0">Lade…</p></div>` : ""}<div id="planWrap">${planTabelleHTML(k, r)}</div>${fachDetailsTabelleHTML(k)}${lehrerNamenTabelleHTML(k)}${pushKindHTML(k)}
-    <p class="hint">Auf eine Zelle klicken, um ein Fach zuzuweisen.</p></div>`;
+  html += versionen + `${k.schulmanager ? `<div id="smStatus" class="card" style="margin:0 0 10px"><h2 style="margin-top:0">🏫 ${qLabel(k.quelle)}${(k.quelle || "schulmanager") === "schulmanager" ? " heute/morgen" : ""}</h2><p class="hint" style="margin:0">Lade…</p></div>` : ""}<div id="planWrap">${planTabelleHTML(k, r)}</div>${fachDetailsTabelleHTML(k)}${lehrerNamenTabelleHTML(k)}${raeumeTabelleHTML(k)}${pushKindHTML(k)}
+    <p class="hint">Auf eine Zelle klicken, um Fach, Raum und Lehrer festzulegen.</p></div>`;
   box.innerHTML = html;
   if (k.stundenraster) renderRasterEditor(document.getElementById("rasterKid"), k.stundenraster);
   renderSchulmanagerSelect();
@@ -655,10 +663,14 @@ function fachOf(k, kz) {
   return f;
 }
 
+// Alle Kürzel eines Plan-Objekts (nur die Wochentag-Spalten, nicht das
+// details-Overlay).
+function planKuerzel(p) {
+  return TAGE.flatMap(([t]) => (p && p[t]) || []).filter(Boolean);
+}
+
 function fachDetailsTabelleHTML(k) {
-  const genutzt = [...new Set(
-    [aktiverPlan(k), ...(k.bloecke || []).map(b => b.plan || {})]
-      .flatMap(p => Object.values(p || {}).flat()).filter(Boolean))];
+  const genutzt = [...new Set(planKuerzel(aktiverPlan(k)))];
   if (!genutzt.length) return "";
   let zeilen = "";
   for (const kz of genutzt.sort()) {
@@ -669,12 +681,49 @@ function fachDetailsTabelleHTML(k) {
     zeilen += `<tr>
       <td><span class="fx" style="background:${f.farbe}"></span><b>${esc(kz)}</b></td>
       <td><input value="${esc(d.name||"")}" placeholder="${esc(g.name||kz)}" onchange="fdSet('${esc(kz)}','name',this.value)"></td>
-      <td><input type="color" value="${f.farbe}" onchange="fdSet('${esc(kz)}','farbe',this.value)"></td>
-      <td><input value="${esc(d.raum||"")}" onchange="fdSet('${esc(kz)}','raum',this.value)"></td>
-      <td><input value="${esc(d.lehrer||"")}" onchange="fdSet('${esc(kz)}','lehrer',this.value)"></td></tr>`;
+      <td><input type="color" value="${f.farbe}" onchange="fdSet('${esc(kz)}','farbe',this.value)"></td></tr>`;
   }
-  return `<details class="card" style="margin:10px 0 0"><summary style="cursor:pointer"><b>📚 Fächer & Räume (${esc(k.name)})</b> <small style="color:var(--text-sec)">– Name, Farbe, Raum &amp; Lehrer gelten nur für dieses Kind; gleiche Kürzel können bei verschiedenen Kindern andere Fächer sein (z. B. „Sw"). Leeres Feld = globaler Standard; Änderungen wirken nach dem Neuladen im Raster</small></summary>
-    <table class="fd-tab"><thead><tr><th>Kürzel</th><th>Name</th><th>Farbe</th><th>Raum</th><th>Lehrer</th></tr></thead><tbody>${zeilen}</tbody></table></details>`;
+  return `<details class="card" style="margin:10px 0 0"><summary style="cursor:pointer"><b>📚 Fächer (${esc(k.name)})</b> <small style="color:var(--text-sec)">– Name &amp; Farbe gelten nur für dieses Kind; gleiche Kürzel können bei verschiedenen Kindern andere Fächer sein (z. B. „Sw"). Raum und Lehrer legst du pro Stunde direkt im Plan fest. Leeres Feld = globaler Standard</small></summary>
+    <table class="fd-tab"><thead><tr><th>Kürzel</th><th>Name</th><th>Farbe</th></tr></thead><tbody>${zeilen}</tbody></table></details>`;
+}
+
+// Räume-Liste eines Kindes (Basis für den Stunden-Editor und späteres Drag&Drop).
+function raeumeTabelleHTML(k) {
+  const raeume = k.raeume || [];
+  let zeilen = "";
+  raeume.forEach((r, i) => {
+    zeilen += `<tr><td><input value="${esc(r)}" onchange="raumUmbenennen(${i}, this.value)"></td>
+      <td><button class="icon" title="Raum löschen" onclick="raumLoeschen(${i})">✕</button></td></tr>`;
+  });
+  return `<details class="card" style="margin:10px 0 0"><summary style="cursor:pointer"><b>🚪 Räume (${esc(k.name)})</b> <small style="color:var(--text-sec)">– Auswahl für den Stunden-Editor; beim Import ergänzen sich neue Räume automatisch</small></summary>
+    <table class="fd-tab"><thead><tr><th>Raum</th><th></th></tr></thead><tbody>${zeilen}</tbody></table>
+    <button class="btn ghost" style="margin-top:8px" onclick="raumHinzufuegen()">+ Raum</button></details>`;
+}
+
+function raumHinzufuegen() {
+  const name = (prompt("Neuer Raum:") || "").trim();
+  if (!name) return;
+  const k = kind();
+  if (!k.raeume) k.raeume = [];
+  if (!k.raeume.includes(name)) { k.raeume.push(name); k.raeume.sort((a, b) => a.localeCompare(b, "de")); }
+  setDirty(true); renderKid();
+}
+
+function raumUmbenennen(i, wert) {
+  const k = kind(); const alt = (k.raeume || [])[i]; wert = (wert || "").trim();
+  if (!k.raeume || alt === undefined) return;
+  if (!wert) { raumLoeschen(i); return; }
+  k.raeume[i] = wert;
+  // In allen Stunden dieses Kindes den Raum mit umbenennen
+  for (const p of allePlaene(k)) for (const [t] of TAGE)
+    for (const o of ((p.details || {})[t] || [])) if (o && o.raum === alt) o.raum = wert;
+  setDirty(true); renderKid();
+}
+
+function raumLoeschen(i) {
+  const k = kind();
+  if (k.raeume) k.raeume.splice(i, 1);
+  setDirty(true); renderKid();
 }
 
 function lnSet(kuerzel, wert) {
@@ -710,21 +759,31 @@ function lnDel(kuerzel) {
 
 function lehrerNamenTabelleHTML(k, offen) {
   const fd = k.fach_details || {};
-  // Fächer, die im aktuell gültigen Plan (inkl. Blöcke) wirklich vorkommen
-  const genutzt = new Set([aktiverPlan(k), ...(k.bloecke || []).map(b => b.plan || {})]
-    .flatMap(p => Object.values(p || {}).flat()).filter(Boolean));
+  // Fächer, die im aktuell gültigen Plan wirklich vorkommen
+  const genutzt = new Set(planKuerzel(aktiverPlan(k)));
   // Lehrer-Kürzel -> Liste seiner Fächer (aus den kindspezifischen Details)
   const map = {};
   for (const kz in fd) {
     const tk = (fd[kz].lehrer || "").trim();
     if (tk) (map[tk] = map[tk] || []).push(kz);
   }
+  // Lehrer, die pro Stunde (Overlay) in irgendeiner Planversion vorkommen
+  for (const p of allePlaene(k)) for (const [t] of TAGE)
+    for (const o of ((p.details || {})[t] || [])) {
+      const tk = o && (o.lehrer || "").trim();
+      if (tk && !(tk in map)) map[tk] = [];
+    }
   // von Hand angelegte oder früher entdeckte Kürzel mit aufnehmen
   for (const tk in (k.lehrer_namen || {})) if (!(tk in map)) map[tk] = [];
   const kuerzel = Object.keys(map);
   if (!kuerzel.length) return "";
-  // aktiv = unterrichtet noch ein Fach des aktuellen Plans
-  const aktiv = tk => (map[tk] || []).some(kz => genutzt.has(kz));
+  // Lehrer, die im aktuellen Plan pro Stunde eingetragen sind
+  const aktivLehrer = new Set();
+  { const ap = aktiverPlan(k);
+    for (const [t] of TAGE) for (const o of ((ap.details || {})[t] || []))
+      if (o && (o.lehrer || "").trim()) aktivLehrer.add(o.lehrer.trim().toLowerCase()); }
+  // aktiv = kommt im aktuellen Plan vor (Overlay) oder unterrichtet dort ein Fach (Altbestand)
+  const aktiv = tk => aktivLehrer.has(tk.toLowerCase()) || (map[tk] || []).some(kz => genutzt.has(kz));
   kuerzel.sort((a, b) => (aktiv(b) - aktiv(a)) || a.toLowerCase().localeCompare(b.toLowerCase()));
   let zeilen = "", inaktivN = 0;
   for (const tk of kuerzel) {
@@ -884,8 +943,8 @@ function planTabelleHTML(k, r) {
       const f = kz ? fachOf(k, kz) : null;
       const style = f ? `background:${f.farbe}` : "";
       const cls = f ? "slot" : "slot frei";
-      const d = kz ? fdet(k, kz) : {};
-      const detail = f ? [d.raum, d.lehrer].filter(Boolean).join(" · ") : "";
+      const rl = f ? zellenRaumLehrer(k, aktiverPlan(k), tag, si, kz) : { raum: "", lehrer: "" };
+      const detail = f ? [rl.raum, rl.lehrer].filter(Boolean).join(" · ") : "";
       const txt = f ? `${kz}${detail ? `<small class="slot-detail">${esc(detail)}</small>` : ""}` : "–";
       const title = f ? `${f.name}${detail ? " ("+detail+")" : ""}` : "frei";
       html += `<td class="${cls}" style="${style}" title="${esc(title)}" data-tag="${tag}" data-nr="${st.nr}" onclick="openPicker('${tag}',${si})">${txt}</td>`;
@@ -943,8 +1002,9 @@ function drucken() {
       const kz = (aktiverPlan(k)[tag]||[])[si] || null;
       const f = kz ? fachOf(k, kz) : null;
       if (f) {
+        const rl = zellenRaumLehrer(k, aktiverPlan(k), tag, si, kz);
         html += `<td class="fach" style="background:color-mix(in srgb, ${f.farbe} 22%, white)">
-          <b>${esc(f.name)}</b><small>${esc(kz)}${fdet(k, kz).raum ? " · Raum " + esc(fdet(k, kz).raum) : ""}</small></td>`;
+          <b>${esc(f.name)}</b><small>${esc(kz)}${rl.raum ? " · Raum " + esc(rl.raum) : ""}${rl.lehrer ? " · " + esc(rl.lehrer) : ""}</small></td>`;
       } else {
         html += `<td></td>`;
       }
@@ -961,54 +1021,158 @@ function drucken() {
   window.print();
 }
 
-/* ---------- Fach-Picker ---------- */
+/* ---------- Stunden-Editor: Fach + Raum + Lehrer je Stunde ----------
+   Datenmodell "freie Stunden": jede Zelle traegt ihr eigenes Overlay
+   plan.details[tag][si] = {raum, lehrer}. Raum/Lehrer sind damit stundenweise
+   verschieden (z. B. Deutsch mo in 130 bei Mai, do in 205 bei Sil). */
+function zellenDetail(p, tag, si) {
+  const dl = ((p && p.details) || {})[tag] || [];
+  const o = dl[si];
+  return (o && typeof o === "object") ? o : null;
+}
+
+// Effektiver Raum/Lehrer einer Stunde: Overlay maßgeblich, sonst Fach-Standard.
+function zellenRaumLehrer(k, p, tag, si, kz) {
+  const o = zellenDetail(p, tag, si);
+  if (o) return { raum: o.raum || "", lehrer: o.lehrer || "" };
+  const d = fdet(k, kz);
+  return { raum: d.raum || "", lehrer: d.lehrer || "" };
+}
+
+function setzeZellenDetail(p, tag, si, kz, raum, lehrer) {
+  if (!p[tag]) p[tag] = [];
+  p[tag][si] = kz;
+  if (!p.details) p.details = {};
+  if (!p.details[tag]) p.details[tag] = [];
+  while (p.details[tag].length <= si) p.details[tag].push(null);
+  p.details[tag][si] = kz ? { raum: raum || "", lehrer: lehrer || "" } : null;
+}
+
 function openPicker(tag, si) {
   pickCtx = { tag, si };
-  const grid = document.getElementById("pickerGrid");
-  grid.innerHTML = "";
-  const k = kind();
-  // Auswahl: globale Fächer + kindeigene Kürzel, jeweils mit der Sicht dieses Kindes
-  const kuerzel = [...new Set([...Object.keys(DATA.faecher), ...Object.keys((k && k.fach_details) || {})])].sort();
-  for (const kz of kuerzel) {
-    const f = fachOf(k, kz);
-    if (!f) continue;
-    const b = document.createElement("button");
-    b.className = "fbtn"; b.style.background = f.farbe;
-    b.textContent = `${kz} · ${f.name}`;
-    b.onclick = () => setzeFach(kz);
-    grid.appendChild(b);
-  }
-  const frei = document.createElement("button");
-  frei.className = "fbtn"; frei.style.background = "#444";
-  frei.textContent = "✕ frei";
-  frei.onclick = () => setzeFach(null);
-  grid.appendChild(frei);
   document.getElementById("pickerTitle").textContent =
-    `${TAGE.find(t=>t[0]===pickCtx.tag)[1]}, ${raster(kind())[si].nr}. Stunde`;
+    `${TAGE.find(t => t[0] === tag)[1]}, ${raster(kind())[si].nr}. Stunde`;
+  pickerRender();
   document.getElementById("pickerOverlay").classList.add("open");
 }
 
+function pickerRender() {
+  const k = kind();
+  const p = aktiverPlan(k);
+  const { tag, si } = pickCtx;
+  const kz = (p[tag] || [])[si] || null;
+  const o = zellenDetail(p, tag, si) || {};
+  const f = kz ? fachOf(k, kz) : null;
+  // Overlay ist maßgeblich; fehlt es (Altbestand), zeigt der Editor den Fach-Standard
+  const raum = o.raum != null ? o.raum : (f ? (fdet(k, kz).raum || "") : "");
+  const lehrer = o.lehrer != null ? o.lehrer : (f ? (fdet(k, kz).lehrer || "") : "");
+
+  const kuerzel = [...new Set([...Object.keys(DATA.faecher), ...Object.keys((k && k.fach_details) || {})])].sort();
+  let grid = "";
+  for (const kzi of kuerzel) {
+    const fi = fachOf(k, kzi);
+    if (!fi) continue;
+    grid += `<button class="fbtn${kzi === kz ? " sel" : ""}" style="background:${fi.farbe}" onclick="pickFach('${esc(kzi)}')">${esc(kzi)} · ${esc(fi.name)}</button>`;
+  }
+  let html = `<div class="picker-sec"><label class="picker-lbl">Fach</label><div class="grid">${grid}</div></div>`;
+
+  if (kz) {
+    const raeume = k.raeume || [];
+    let rOpts = `<option value="">– kein Raum –</option>`, rGef = false;
+    for (const r of raeume) { if (r === raum) rGef = true;
+      rOpts += `<option value="${esc(r)}" ${r === raum ? "selected" : ""}>${esc(r)}</option>`; }
+    if (raum && !rGef) rOpts += `<option value="${esc(raum)}" selected>${esc(raum)}</option>`;
+    let lOpts = `<option value="">– kein Lehrer –</option>`, lGef = false;
+    for (const lk of Object.keys(k.lehrer_namen || {})) { if (lk === lehrer) lGef = true;
+      const nm = (k.lehrer_namen || {})[lk] || "";
+      lOpts += `<option value="${esc(lk)}" ${lk === lehrer ? "selected" : ""}>${esc(lk)}${nm ? " – " + esc(nm) : ""}</option>`; }
+    if (lehrer && !lGef) lOpts += `<option value="${esc(lehrer)}" selected>${esc(lehrer)}</option>`;
+    html += `<div class="picker-sec"><label class="picker-lbl">Raum</label>
+      <div class="row"><select onchange="pickRaum(this.value)" style="flex:1">${rOpts}</select>
+      <button class="btn ghost" onclick="pickNeuerRaum()" title="Neuen Raum anlegen">＋ neu</button></div></div>
+      <div class="picker-sec"><label class="picker-lbl">Lehrer</label>
+      <div class="row"><select onchange="pickLehrer(this.value)" style="flex:1">${lOpts}</select>
+      <button class="btn ghost" onclick="pickNeuerLehrer()" title="Neues Lehrer-Kürzel anlegen">＋ neu</button></div></div>`;
+  } else {
+    html += `<p class="hint">Fach wählen, um Raum und Lehrer festzulegen. Neue Fächer legst du im Tab „Fächer" an.</p>`;
+  }
+  document.getElementById("pickerBody").innerHTML = html;
+}
+
+function pickFach(kz) {
+  const p = aktiverPlan(kind());
+  const { tag, si } = pickCtx;
+  const alt = zellenDetail(p, tag, si) || {};
+  const fd = fdet(kind(), kz);
+  // Erstbelegung: Raum/Lehrer aus dem Fach-Standard vorbelegen; bestehende
+  // Zellen-Angaben bleiben erhalten.
+  const raum = alt.raum != null ? alt.raum : (fd.raum || "");
+  const lehrer = alt.lehrer != null ? alt.lehrer : (fd.lehrer || "");
+  setzeZellenDetail(p, tag, si, kz, raum, lehrer);
+  commitPicker();
+}
+
+function pickRaum(v) {
+  const p = aktiverPlan(kind()); const { tag, si } = pickCtx;
+  const o = zellenDetail(p, tag, si) || {};
+  setzeZellenDetail(p, tag, si, (p[tag] || [])[si], v, o.lehrer || "");
+  commitPicker();
+}
+
+function pickLehrer(v) {
+  const p = aktiverPlan(kind()); const { tag, si } = pickCtx;
+  const o = zellenDetail(p, tag, si) || {};
+  setzeZellenDetail(p, tag, si, (p[tag] || [])[si], o.raum || "", v);
+  commitPicker();
+}
+
+function pickNeuerRaum() {
+  const name = (prompt("Neuer Raum:") || "").trim();
+  if (!name) return;
+  const k = kind();
+  if (!k.raeume) k.raeume = [];
+  if (!k.raeume.includes(name)) { k.raeume.push(name); k.raeume.sort((a, b) => a.localeCompare(b, "de")); }
+  pickRaum(name);
+}
+
+function pickNeuerLehrer() {
+  const kzl = (prompt("Neues Lehrer-Kürzel (z. B. Mai):") || "").trim();
+  if (!kzl) return;
+  const k = kind();
+  if (!k.lehrer_namen) k.lehrer_namen = {};
+  if (!(kzl in k.lehrer_namen)) k.lehrer_namen[kzl] = (prompt(`Klarname für „${kzl}" (optional):`) || "").trim();
+  pickLehrer(kzl);
+}
+
+function commitPicker() {
+  setDirty(true);
+  planAktualisieren();   // Rasteransicht sofort aktualisieren, Overlay bleibt offen
+  pickerRender();
+}
+
+// "✕ Stunde leeren" aus dem Overlay
 function setzeFach(kz) {
   const p = aktiverPlan(kind());
-  if (!p[pickCtx.tag]) p[pickCtx.tag] = [];
-  p[pickCtx.tag][pickCtx.si] = kz;
-  setDirty(true); closePicker(); renderKid();
+  const { tag, si } = pickCtx;
+  if (kz === null) { setzeZellenDetail(p, tag, si, null); commitPicker(); return; }
+  pickFach(kz);
 }
 
 function allePlaene(k) {
   return [k.plan, ...(k.plaene || []).map(v => v.plan)];
 }
 
-function closePicker() { document.getElementById("pickerOverlay").classList.remove("open"); }
+function closePicker() {
+  document.getElementById("pickerOverlay").classList.remove("open");
+  renderKid();   // Listen (Räume/Lehrer) evtl. ergänzt -> Editor komplett neu zeichnen
+}
 
 /* ---------- Fächer ---------- */
 function renderFaecher() {
   const tb = document.querySelector("#fachTable tbody");
   tb.innerHTML = "";
-  // Kürzel, die in irgendeinem aktuell gültigen Plan (inkl. Blöcke) eines Kindes vorkommen
-  const benutzt = new Set((DATA.kinder || []).flatMap(k =>
-    [aktiverPlan(k), ...(k.bloecke || []).map(b => b.plan || {})]
-      .flatMap(p => Object.values(p || {}).flat())).filter(Boolean));
+  // Kürzel, die in irgendeinem aktuell gültigen Plan eines Kindes vorkommen
+  const benutzt = new Set((DATA.kinder || []).flatMap(k => planKuerzel(aktiverPlan(k))));
   const eintraege = Object.entries(DATA.faecher);
   // aktive zuerst, inaktive ans Ende (stabile Sortierung erhält die Reihenfolge)
   eintraege.sort((a, b) => (benutzt.has(a[0]) ? 0 : 1) - (benutzt.has(b[0]) ? 0 : 1));
