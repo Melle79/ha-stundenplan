@@ -60,9 +60,11 @@ def _raster(kind: dict, data: dict) -> list:
         or (data.get("einstellungen", {}) or {}).get("stundenraster_standard") or []
 
 
-def erfassen(data: dict, kind: dict, aenderungen: list, schultermine: list,
+def erfassen(data: dict, kind: dict, aenderungen: list, termin_tage: set,
              heute: date = None) -> bool:
-    """Traegt neue Aenderungen dedupliziert in kind['statistik'] ein.
+    """Schreibt die (finalen) Aenderungen eines Tages dedupliziert in
+    kind['statistik'] fort. termin_tage: Datums (ISO) mit schulweitem Termin an
+    dem Tag (dann zaehlt ein Entfall als geplant, nicht als Ausfall).
     Rueckgabe True, wenn sich etwas geaendert hat."""
     heute = heute or date.today()
     stat = kind.setdefault("statistik", {})
@@ -72,7 +74,7 @@ def erfassen(data: dict, kind: dict, aenderungen: list, schultermine: list,
         return False
     nr_index = {_nr(st): i for i, st in enumerate(raster)}
     faecher = quellen.faecher_fuer_kind(data.get("faecher", {}), kind)
-    termin_tage = _termin_daten(schultermine)
+    termin_tage = termin_tage or set()
     geaendert = False
 
     for a in aenderungen or []:
@@ -91,7 +93,7 @@ def erfassen(data: dict, kind: dict, aenderungen: list, schultermine: list,
         key = f"{datum_s}|{stunde}|{kat}"
 
         sj = schuljahr(d)
-        eintrag = jahre.setdefault(sj, {"seit": heute.isoformat(),
+        eintrag = jahre.setdefault(sj, {"seit": stat.get("seit") or datum_s,
                                         "keys": [], **{f: 0 for f in FELDER}})
         if key in eintrag["keys"]:
             continue  # schon gezaehlt
@@ -156,6 +158,7 @@ class StatistikCollector:
     def _tick(self):
         data = self._load()
         heute = date.today()
+        heute_s = heute.isoformat()
         kandidaten = [k for k in data.get("kinder", [])
                       if (k.get("statistik") or {}).get("aktiv")
                       and k.get("schulmanager")]
@@ -164,6 +167,10 @@ class StatistikCollector:
         quellen.aktualisiere_quellen(kandidaten)
         geaendert = False
         for kind in kandidaten:
+            stat = kind.setdefault("statistik", {})
+            pending = stat.setdefault("pending", {})
+            # 1) Heutigen Stand puffern (bei jedem Lauf mit dem aktuellen Stand
+            #    ueberschreiben - der Tag kann sich noch aendern).
             try:
                 aenderungen = quellen.hole_aenderungen(kind, heute)
                 schultermine = quellen.hole_schultermine(kind)
@@ -171,8 +178,19 @@ class StatistikCollector:
                 log.debug("Statistik: Quelle fuer %s nicht abrufbar (%s)",
                           kind.get("name"), exc)
                 continue
-            if erfassen(data, kind, aenderungen, schultermine, heute):
+            heute_aend = [a for a in aenderungen
+                          if str(a.get("datum", ""))[:10] == heute_s]
+            termin_tage = _termin_daten(schultermine)
+            neu = {"aend": heute_aend, "termin_tag": heute_s in termin_tage}
+            if pending.get(heute_s) != neu:
+                pending[heute_s] = neu
+                geaendert = True
+            # 2) Abgeschlossene Tage (vor heute) endgueltig festschreiben - genau
+            #    einmal, im Endzustand.
+            for datum_s in sorted([d for d in pending if d < heute_s]):
+                entry = pending.pop(datum_s)
+                tt = {datum_s} if entry.get("termin_tag") else set()
+                erfassen(data, kind, entry.get("aend", []), tt, heute)
                 geaendert = True
         if geaendert:
             self._save(data)
-            log.info("Statistik aktualisiert")

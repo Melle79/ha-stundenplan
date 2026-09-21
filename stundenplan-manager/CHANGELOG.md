@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.1 - September 2026
+
+### Verbessert
+- **Statistik schreibt einen Tag erst fest, wenn er vorbei ist**: Änderungen können sich im Laufe des Schultags noch ändern (aus einer Vertretung wird ein Entfall o. Ä.). Der Sammler puffert deshalb den Tagesstand nur zwischen und **verbucht einen Schultag erst am Folgetag im Endzustand** – genau einmal. So zählt jede Stunde nur einmal in ihrer endgültigen Kategorie. „Gezählt seit" zeigt jetzt das Aktivierungsdatum.
+
+
 ## 2.1.0 - September 2026
 
 ### Neu

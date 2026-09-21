@@ -829,8 +829,11 @@ function raumLoeschen(i) {
 function statistikToggle(on) {
   const k = kind();
   if (!k.statistik) k.statistik = {};
-  if (on) { k.statistik.aktiv = true; if (!k.statistik.jahre) k.statistik.jahre = {}; }
-  else delete k.statistik.aktiv;
+  if (on) {
+    k.statistik.aktiv = true;
+    if (!k.statistik.jahre) k.statistik.jahre = {};
+    if (!k.statistik.seit) k.statistik.seit = new Date().toISOString().slice(0, 10);
+  } else delete k.statistik.aktiv;
   setDirty(true); renderKid();
 }
 
@@ -850,7 +853,7 @@ function statistikTabelleHTML(k) {
     const jahre = stat.jahre || {};
     const namen = Object.keys(jahre).sort().reverse();
     if (!namen.length) {
-      inhalt = `<p class="hint" style="margin:8px 0">Noch nichts gezählt – der Sammler trägt Entfall und Vertretungen ab jetzt fortlaufend ein (stündlich).</p>`;
+      inhalt = `<p class="hint" style="margin:8px 0">Noch nichts gezählt – ein Schultag wird jeweils <b>nach seinem Ende</b> (am Folgetag) im Endzustand eingetragen. Die ersten Zahlen erscheinen also nach dem nächsten abgeschlossenen Schultag mit Änderungen.</p>`;
     } else {
       inhalt = namen.map(sj => {
         const e = jahre[sj] || {};
@@ -867,7 +870,7 @@ function statistikTabelleHTML(k) {
   }
   return `<details class="card" style="margin:10px 0 0" ${sektAttr("statistik")}><summary style="cursor:pointer"><b>📊 Statistik (${esc(k.name)})</b> <small style="color:var(--text-sec)">– optional: Entfall &amp; Vertretungen pro Schuljahr</small></summary>
     <label style="display:block;margin:8px 0"><input type="checkbox" ${aktiv?"checked":""} onchange="statistikToggle(this.checked)"> Statistik führen</label>
-    <p class="hint" style="margin:0 0 4px">Zählt <b>ab jetzt</b> fortlaufend (Schulmanager/Eltern-Portal liefern keine Historie). Geplante Termine wie Wandertag, Exkursion oder Projekttage zählen <b>nicht</b> als Ausfall.</p>
+    <p class="hint" style="margin:0 0 4px">Zählt <b>ab Aktivierung</b> (keine Historie verfügbar). Ein Tag wird erst <b>am Ende des Schultags</b> festgeschrieben, damit spätere Änderungen ihn nicht verfälschen. Geplante Termine wie Wandertag, Exkursion oder Projekttage zählen <b>nicht</b> als Ausfall.</p>
     ${inhalt}</details>`;
 }
 
