@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.31.1 - September 2026
+
+### Verbessert
+- **Planversion-Auswahl zeigt die heute gültige Version**: Im Kind-Panel war beim Öffnen immer der Basisplan vorgewählt, obwohl schon eine datierte Version (z. B. „ab 14.09.2026") gilt. Jetzt wird automatisch die **aktuell gültige Version** vorausgewählt und im Dropdown mit „· heute gültig" markiert; der frühere, irreführend „Aktueller Plan" genannte Basis-Eintrag heißt jetzt „Basisplan"
+
+
 ## 1.31.0 - September 2026
 
 ### Neu

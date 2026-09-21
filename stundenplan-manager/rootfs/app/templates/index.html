@@ -254,7 +254,10 @@ function setDirty(d) {
 async function laden() {
   const res = await fetch("api/data");
   DATA = await res.json();
-  if (DATA.kinder.length && !aktivKid) aktivKid = DATA.kinder[0].id;
+  if (DATA.kinder.length && !aktivKid) {
+    aktivKid = DATA.kinder[0].id;
+    aktivPlanIdx = aktuellePlanIdx(kind());
+  }
   renderAll();
   ladeFerienEntities();
   renderPush();
@@ -453,7 +456,7 @@ function renderChips() {
     const b = document.createElement("button");
     b.className = "chip" + (k.id === aktivKid ? " active" : "");
     b.textContent = k.name;
-    b.onclick = () => { aktivKid = k.id; aktivPlanIdx = -1; renderChips(); renderKid(); };
+    b.onclick = () => { aktivKid = k.id; aktivPlanIdx = aktuellePlanIdx(k); renderChips(); renderKid(); };
     c.appendChild(b);
   }
   const add = document.createElement("button");
@@ -486,6 +489,7 @@ function kindLoeschen() {
   if (!confirm(`„${k.name}" wirklich löschen?`)) return;
   DATA.kinder = DATA.kinder.filter(x => x.id !== k.id);
   aktivKid = DATA.kinder.length ? DATA.kinder[0].id : null;
+  aktivPlanIdx = aktuellePlanIdx(kind());
   setDirty(true); renderChips(); renderKid();
 }
 
@@ -494,6 +498,20 @@ function raster(k) { return k.stundenraster || DATA.einstellungen.stundenraster_
 function aktiverPlan(k) {
   const v = (k.plaene || [])[aktivPlanIdx];
   return aktivPlanIdx >= 0 && v ? v.plan : k.plan;
+}
+
+// Index der heute gültigen Planversion (neueste mit gueltig_ab <= heute),
+// -1 = der Basisplan gilt (keine passende Version).
+function aktuellePlanIdx(k) {
+  if (!k) return -1;
+  const heute = new Date().toISOString().slice(0, 10);
+  let idx = -1, best = "";
+  (k.plaene || []).forEach((p, i) => {
+    if (p.gueltig_ab && p.gueltig_ab <= heute && p.gueltig_ab >= best) {
+      best = p.gueltig_ab; idx = i;
+    }
+  });
+  return idx;
 }
 
 function planVersionWaehlen(idx) { aktivPlanIdx = +idx; renderKid(); }
@@ -527,7 +545,7 @@ function planVersionLoeschen() {
   const v = k.plaene[aktivPlanIdx];
   if (!v || !confirm(`Plan „ab ${fmtDatum(v.gueltig_ab)}" wirklich löschen?`)) return;
   k.plaene.splice(aktivPlanIdx, 1);
-  aktivPlanIdx = -1;
+  aktivPlanIdx = aktuellePlanIdx(k);
   setDirty(true); renderKid();
 }
 
@@ -590,12 +608,13 @@ function renderKid() {
     </details>`;
   }
 
+  const curIdx = aktuellePlanIdx(k);
   let versionen = `<div class="row" style="margin-top:16px">
     <h2 style="margin:0">📅 Wochenplan</h2>
     <select onchange="planVersionWaehlen(this.value)">
-      <option value="-1" ${aktivPlanIdx < 0 ? "selected" : ""}>Aktueller Plan</option>`;
+      <option value="-1" ${aktivPlanIdx < 0 ? "selected" : ""}>Basisplan${curIdx < 0 ? " · heute gültig" : ""}</option>`;
   (k.plaene || []).forEach((p, i) => {
-    versionen += `<option value="${i}" ${aktivPlanIdx === i ? "selected" : ""}>ab ${fmtDatum(p.gueltig_ab)}</option>`;
+    versionen += `<option value="${i}" ${aktivPlanIdx === i ? "selected" : ""}>ab ${fmtDatum(p.gueltig_ab)}${curIdx === i ? " · heute gültig" : ""}</option>`;
   });
   versionen += `</select>
     <button class="btn ghost" onclick="neuerPlanAb()">+ Neuer Plan ab…</button>
