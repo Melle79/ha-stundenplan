@@ -1,4 +1,4 @@
-<img src="stundenplan-manager/logo.png" alt="Stundenplan Manager" height="90">
+<img src="stundenplan-manager/logo.png" alt="Stundenplan Manager 2" height="90">
 
 # Stundenplan Manager 2
 
