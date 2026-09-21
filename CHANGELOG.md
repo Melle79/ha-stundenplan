@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.3 - September 2026
+
+### Neu
+- **Schutz vor versehentlichem Überschreiben** (Konflikterkennung): Ändert sich der gespeicherte Stand, während das Panel offen ist – etwa durch den Auto-Import, ein zweites Gerät oder eine parallele Bearbeitung –, überschreibt das Panel ihn nicht mehr still. Stattdessen erscheint ein Hinweis „Daten wurden anderweitig geändert – neu laden". Jede Speicherung erhält serverseitig eine Revision; passt sie beim Speichern nicht mehr, wird abgelehnt (HTTP 409) statt zu klobbern.
+
+
 ## 2.1.2 - September 2026
 
 ### Verbessert

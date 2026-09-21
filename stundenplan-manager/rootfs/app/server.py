@@ -131,8 +131,24 @@ def load_data() -> dict:
 PUBLISHER = SensorPublisher(lambda: load_data())
 
 
+import threading as _threading
+import time as _time
+_rev_lock = _threading.Lock()
+_letzte_rev = 0
+
+
+def _neue_rev() -> int:
+    """Streng steigende Revisionsnummer fuer die Konflikterkennung (ms-Zeit,
+    prozessweit monoton - alle Schreiber laufen im selben Prozess)."""
+    global _letzte_rev
+    with _rev_lock:
+        _letzte_rev = max(int(_time.time() * 1000), _letzte_rev + 1)
+        return _letzte_rev
+
+
 def save_data(data: dict) -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+    data["rev"] = _neue_rev()   # jede Speicherung bekommt eine neue Revision
     tmp = DATA_FILE.with_suffix(".tmp")
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
@@ -551,8 +567,17 @@ def post_data():
     payload = request.get_json(force=True, silent=True)
     if not isinstance(payload, dict) or "kinder" not in payload:
         return jsonify({"error": "Ungueltige Daten"}), 400
-    save_data(payload)
-    return jsonify({"status": "gespeichert"})
+    # Konflikterkennung: Hat sich der Serverstand seit dem Laden des Clients
+    # geaendert (Auto-Import, anderes Geraet, API), lehnen wir ab statt zu
+    # ueberschreiben. Clients ohne rev (Altbestand) speichern wie bisher.
+    klient_rev = payload.get("rev")
+    aktuell_rev = load_data().get("rev")
+    if klient_rev is not None and aktuell_rev is not None \
+            and klient_rev != aktuell_rev:
+        return jsonify({"error": "konflikt",
+                        "meldung": "Die Daten wurden zwischenzeitlich geaendert."}), 409
+    save_data(payload)   # setzt neue rev in payload
+    return jsonify({"status": "gespeichert", "rev": payload.get("rev")})
 
 
 if __name__ == "__main__":

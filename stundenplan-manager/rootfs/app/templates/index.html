@@ -446,14 +446,35 @@ async function speichern() {
     const res = await fetch("api/data", { method: "POST",
       headers: {"Content-Type":"application/json"}, body: JSON.stringify(DATA),
       keepalive: true });
-    if (res.ok) setDirty(false);
-    else throw new Error("HTTP " + res.status);
+    if (res.status === 409) { konfliktWarnung(); return; }
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const antwort = await res.json().catch(() => ({}));
+    if (antwort.rev != null) DATA.rev = antwort.rev;   // Stand-Stempel aktualisieren
+    setDirty(false);
   } catch (e) {
     const el = document.getElementById("saveStatus");
     el.textContent = "⚠ Speichern fehlgeschlagen - erneut versucht in 3s";
     el.className = "status dirty";
     saveTimer = setTimeout(speichern, 3000);
   }
+}
+
+// Serverstand hat sich seit dem Laden geändert (Auto-Import, anderes Gerät, API):
+// nicht überschreiben, sondern warnen und Neu-Laden anbieten.
+function konfliktWarnung() {
+  clearTimeout(saveTimer);
+  const el = document.getElementById("saveStatus");
+  el.innerHTML = '⚠ Daten wurden anderweitig geändert (Auto-Import oder anderes Gerät) – '
+    + '<a href="#" onclick="konfliktNeuLaden();return false" style="color:#e0b34c;text-decoration:underline">neu laden</a> '
+    + '(nicht gespeicherte Änderungen gehen dabei verloren).';
+  el.className = "status dirty";
+}
+
+async function konfliktNeuLaden() {
+  clearTimeout(saveTimer);
+  dirty = false;
+  await laden();   // frischen Stand holen; aktuelle Kind-Auswahl bleibt erhalten
+  setDirty(false);
 }
 
 function sofortSpeichern() {
