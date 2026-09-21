@@ -47,7 +47,7 @@ def _zeilen_fuer_kind(data: dict, kind: dict, jetzt: datetime,
     einst = data.get("einstellungen", {})
     zeitraeume = hole_schulfrei_zeitraeume(
         einst.get("ferien_sensor", ""), einst.get("feiertag_sensor", ""))
-    faecher = data.get("faecher", {})
+    faecher = quellen.faecher_fuer_kind(data.get("faecher", {}), kind)
     std_raster = einst.get("stundenraster_standard", [])
     morgen = jetzt + timedelta(days=1)
     zeilen = []

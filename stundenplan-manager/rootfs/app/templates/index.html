@@ -164,7 +164,7 @@
         <span style="flex:1"></span>
         <button class="btn ghost" onclick="standardFaecherLaden()">📥 Standard-Fächer hinzufügen</button>
       </div>
-      <p class="hint">Das Kürzel erscheint im Plan-Raster. Fächer werden von allen Kindern gemeinsam genutzt.</p>
+      <p class="hint">Das Kürzel erscheint im Plan-Raster. Diese Fächer sind der gemeinsame <b>Standard</b> für alle Kinder – Name, Farbe und Raum/Lehrer lassen sich pro Kind unter „📚 Fächer &amp; Räume" im Kind-Panel überschreiben (gleiches Kürzel kann bei verschiedenen Kindern ein anderes Fach sein).</p>
       <p class="hint" id="fachInaktivHinweis" style="color:#e0a400"></p>
     </div>
   </section>
@@ -642,6 +642,19 @@ function fdSet(kz, feld, wert) {
   setDirty(true);
 }
 
+// Effektives Fach eines Kindes: globaler Standard, überlagert von den
+// kindbezogenen Angaben aus fach_details (Name/Farbe/Material je Kind).
+function fachOf(k, kz) {
+  const g = DATA.faecher[kz];
+  const d = (k && k.fach_details && k.fach_details[kz]) || {};
+  if (!g && !d.name) return null;
+  const f = Object.assign({}, g);
+  for (const feld of ["name", "farbe", "material"]) if (d[feld]) f[feld] = d[feld];
+  if (!f.name) f.name = kz;
+  if (!f.farbe) f.farbe = "#888888";
+  return f;
+}
+
 function fachDetailsTabelleHTML(k) {
   const genutzt = [...new Set(
     [aktiverPlan(k), ...(k.bloecke || []).map(b => b.plan || {})]
@@ -649,15 +662,19 @@ function fachDetailsTabelleHTML(k) {
   if (!genutzt.length) return "";
   let zeilen = "";
   for (const kz of genutzt.sort()) {
-    const f = DATA.faecher[kz];
+    const f = fachOf(k, kz);
     if (!f) continue;
+    const g = DATA.faecher[kz] || {};
     const d = fdet(k, kz);
-    zeilen += `<tr><td><span class="fx" style="background:${f.farbe}"></span>${esc(kz)} <small style="color:var(--text-sec)">${esc(f.name)}</small></td>
+    zeilen += `<tr>
+      <td><span class="fx" style="background:${f.farbe}"></span><b>${esc(kz)}</b></td>
+      <td><input value="${esc(d.name||"")}" placeholder="${esc(g.name||kz)}" onchange="fdSet('${esc(kz)}','name',this.value)"></td>
+      <td><input type="color" value="${f.farbe}" onchange="fdSet('${esc(kz)}','farbe',this.value)"></td>
       <td><input value="${esc(d.raum||"")}" onchange="fdSet('${esc(kz)}','raum',this.value)"></td>
       <td><input value="${esc(d.lehrer||"")}" onchange="fdSet('${esc(kz)}','lehrer',this.value)"></td></tr>`;
   }
-  return `<details class="card" style="margin:10px 0 0"><summary style="cursor:pointer"><b>📍 Räume & Lehrer (${esc(k.name)})</b> <small style="color:var(--text-sec)">– gelten nur für dieses Kind; der Import füllt und pflegt sie, Handeinträge gewinnen</small></summary>
-    <table class="fd-tab"><thead><tr><th>Fach</th><th>Raum</th><th>Lehrer</th></tr></thead><tbody>${zeilen}</tbody></table></details>`;
+  return `<details class="card" style="margin:10px 0 0"><summary style="cursor:pointer"><b>📚 Fächer & Räume (${esc(k.name)})</b> <small style="color:var(--text-sec)">– Name, Farbe, Raum &amp; Lehrer gelten nur für dieses Kind; gleiche Kürzel können bei verschiedenen Kindern andere Fächer sein (z. B. „Sw"). Leeres Feld = globaler Standard; Änderungen wirken nach dem Neuladen im Raster</small></summary>
+    <table class="fd-tab"><thead><tr><th>Kürzel</th><th>Name</th><th>Farbe</th><th>Raum</th><th>Lehrer</th></tr></thead><tbody>${zeilen}</tbody></table></details>`;
 }
 
 function lnSet(kuerzel, wert) {
@@ -864,7 +881,7 @@ function planTabelleHTML(k, r) {
     html += `<tr><td class="zeitcell"><b>${st.nr}.</b>${st.von}–${st.bis}</td>`;
     for (const [tag] of TAGE) {
       const kz = (aktiverPlan(k)[tag]||[])[si] || null;
-      const f = kz ? DATA.faecher[kz] : null;
+      const f = kz ? fachOf(k, kz) : null;
       const style = f ? `background:${f.farbe}` : "";
       const cls = f ? "slot" : "slot frei";
       const d = kz ? fdet(k, kz) : {};
@@ -924,7 +941,7 @@ function drucken() {
     html += `<tr><td class="pz"><b>${st.nr}.</b>${st.von}–${st.bis}</td>`;
     for (const [tag] of TAGE) {
       const kz = (aktiverPlan(k)[tag]||[])[si] || null;
-      const f = kz ? DATA.faecher[kz] : null;
+      const f = kz ? fachOf(k, kz) : null;
       if (f) {
         html += `<td class="fach" style="background:color-mix(in srgb, ${f.farbe} 22%, white)">
           <b>${esc(f.name)}</b><small>${esc(kz)}${fdet(k, kz).raum ? " · Raum " + esc(fdet(k, kz).raum) : ""}</small></td>`;
@@ -949,7 +966,12 @@ function openPicker(tag, si) {
   pickCtx = { tag, si };
   const grid = document.getElementById("pickerGrid");
   grid.innerHTML = "";
-  for (const [kz, f] of Object.entries(DATA.faecher)) {
+  const k = kind();
+  // Auswahl: globale Fächer + kindeigene Kürzel, jeweils mit der Sicht dieses Kindes
+  const kuerzel = [...new Set([...Object.keys(DATA.faecher), ...Object.keys((k && k.fach_details) || {})])].sort();
+  for (const kz of kuerzel) {
+    const f = fachOf(k, kz);
+    if (!f) continue;
     const b = document.createElement("button");
     b.className = "fbtn"; b.style.background = f.farbe;
     b.textContent = `${kz} · ${f.name}`;

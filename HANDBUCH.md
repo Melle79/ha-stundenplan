@@ -58,13 +58,13 @@ Das Add-on kopiert die Karte beim Start automatisch nach `/config/www/stundenpla
 
 ## Fächer
 
-Fächer werden **global** angelegt (alle Kinder teilen sie) und tragen **Kürzel**, **Name**, **Farbe** und optional **Material**. Das Kürzel erscheint im Plan-Raster, Name und Farbe auf der Karte.
+Im Tab **Fächer** liegt der **gemeinsame Standard** für alle Kinder: **Kürzel**, **Name**, **Farbe** und optional **Material**. Das Kürzel erscheint im Plan-Raster, Name und Farbe auf der Karte.
 
 - **Kürzel umbenennen**: Ändert das Kürzel in allen Plänen mit.
 - **Material** (z. B. „Sportbeutel"): erscheint im Morgen-Push, in der Heute-Ansicht und am Sensor „Erste Stunde morgen".
 - **Nicht mehr im Plan**: Fächer, die in keinem aktuellen Plan (inkl. Blöcken) eines Kindes mehr vorkommen, werden abgeblendet, ans Ende sortiert und mit „nicht mehr im Plan" markiert – so lassen sich Altlasten (z. B. nach einem Schulwechsel) mit **✕** aufräumen.
 
-> Räume und Lehrer sind **nicht** global, sondern kindspezifisch – siehe [Räume, Lehrer & Lehrer-Klarnamen](#räume-lehrer--lehrer-klarnamen).
+> **Kindbezogene Fächer**: Name, Farbe, Raum und Lehrer lassen sich **pro Kind** überschreiben – im Kind-Panel unter **📚 Fächer & Räume**. Das ist wichtig, weil **dasselbe Kürzel bei verschiedenen Kindern ein anderes Fach sein kann** (z. B. „Sw" = Schwimmen beim einen, Sport weiblich beim anderen). Ein leeres Feld nutzt den globalen Standard; der Import füllt Name/Raum/Lehrer je Kind automatisch (Merker-Prinzip: Handeinträge gewinnen).
 
 ## Wochenplan pflegen
 
@@ -136,7 +136,7 @@ Bei verknüpftem **Schulmanager** markiert die Karte für heute und morgen:
 
 ## Räume, Lehrer & Lehrer-Klarnamen
 
-Räume und Lehrer sind **kindspezifisch** (Geschwister an verschiedenen Schulen teilen dieselben Kürzel mit unterschiedlichen Räumen/Lehrern). Sie stehen im Kind-Panel unter **📍 Räume & Lehrer**; der Import füllt und pflegt sie, Handeinträge gewinnen.
+Name, Farbe, Raum und Lehrer sind **kindspezifisch** (Geschwister an verschiedenen Schulen teilen dieselben Kürzel mit unterschiedlichen Fächern/Räumen/Lehrern). Sie stehen im Kind-Panel unter **📚 Fächer & Räume**; der Import füllt und pflegt sie, Handeinträge gewinnen. Ein leeres Feld nutzt den globalen Standard aus dem Fächer-Tab.
 
 **Lehrer-Klarnamen** (Tabelle **👩‍🏫 Lehrernamen** im Kind-Panel):
 

@@ -119,7 +119,9 @@ def fuehre_import_aus(data: dict, kind: dict, heute: date = None) -> dict:
             stats["neue_faecher"] += 1
             stats["geaendert"] = True
         eintrag = kind.setdefault("fach_details", {}).setdefault(match, {})
-        for feld in ("raum", "lehrer"):
+        # Name kindbezogen (gleiches Kuerzel kann je Kind ein anderes Fach sein),
+        # daneben Raum/Lehrer - alle mit Merker-Prinzip (Handeintrag gewinnt).
+        for feld in ("name", "raum", "lehrer"):
             neu_wert = det.get(feld)
             if not neu_wert:
                 continue

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.32.0 - September 2026
+
+### Neu
+- **Kindbezogene Fächer**: Name, Farbe, Raum und Lehrer eines Fachs lassen sich jetzt **pro Kind** überschreiben (im Kind-Panel unter „📚 Fächer & Räume", vormals „Räume & Lehrer"). Nötig, weil dasselbe **Kürzel bei verschiedenen Kindern ein anderes Fach** sein kann (z. B. „Sw" = Schwimmen vs. Sport weiblich). Der Import füllt den Fachnamen jetzt kindbezogen (Merker-Prinzip, Handeintrag gewinnt); ein leeres Feld nutzt den globalen Standard aus dem Fächer-Tab. Karte, Plan-Raster, Picker und Morgen-Push zeigen die kindbezogene Sicht
+- Nicht-destruktiv: Bestehende Fächer bleiben als gemeinsamer Standard erhalten; ohne Override ändert sich nichts
+
+
 ## 1.31.1 - September 2026
 
 ### Verbessert
