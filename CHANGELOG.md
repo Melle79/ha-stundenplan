@@ -4,6 +4,7 @@
 
 ### Verbessert
 - **Automatische Textfarbe je Fach**: Karte und Plan-Raster wählen die Schriftfarbe jetzt passend zur Fachfarbe (dunkler Text auf hellen Feldern, weißer auf dunklen). So bleiben auch helle Fachfarben – z. B. aus einem eigenen Schul-Farbschema – gut lesbar. Betrifft die Lovelace-Karte (**v1.24.0**), das Plan-Raster, die Drag-&-Drop-Chips und den Fach-Picker.
+- **Name durchgängig »Stundenplan Manager 2«**: alt-Text des Logos in der README, der Name des Add-on-Repositories und der Titel im Browserreiter trugen noch den alten Namen.
 
 
 ## 2.1.1 - September 2026
