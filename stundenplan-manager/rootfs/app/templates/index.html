@@ -1088,7 +1088,7 @@ function planTabelleHTML(k, r) {
     for (const [tag] of TAGE) {
       const kz = (aktiverPlan(k)[tag]||[])[si] || null;
       const f = kz ? fachOf(k, kz) : null;
-      const style = f ? `background:${f.farbe}` : "";
+      const style = f ? `background:${f.farbe};color:${textAuf(f.farbe)}` : "";
       const cls = f ? "slot" : "slot frei";
       const rl = f ? zellenRaumLehrer(k, aktiverPlan(k), tag, si, kz) : { raum: "", lehrer: "" };
       const detail = f ? [rl.raum, rl.lehrer].filter(Boolean).join(" · ") : "";
@@ -1285,7 +1285,7 @@ function zelleAusListe(tag, si) {
 
 // Ziehbarer Chip für die Palette (voller Chip ist der Griff).
 function dragChip(type, val, label, farbe) {
-  return `<span class="dchip" style="background:${farbe}" title="In eine Stunde ziehen" `
+  return `<span class="dchip" style="background:${farbe};color:${textAuf(farbe)}" title="In eine Stunde ziehen" `
     + `data-drag-type="${type}" data-drag-val="${esc(val)}" data-drag-label="${esc(label)}" `
     + `data-drag-farbe="${esc(farbe)}" onpointerdown="dragStart(event, this)">${esc(label)}</span>`;
 }
@@ -1335,7 +1335,7 @@ function pickerRender() {
   let grid = "";
   for (const kzi of kuerzel) {
     const fi = fachOf(k, kzi);
-    grid += `<button class="fbtn${kzi === kz ? " sel" : ""}" style="background:${fi.farbe}" onclick="pickFach('${esc(kzi)}')">${esc(kzi)} · ${esc(fi.name)}</button>`;
+    grid += `<button class="fbtn${kzi === kz ? " sel" : ""}" style="background:${fi.farbe};color:${textAuf(fi.farbe)}" onclick="pickFach('${esc(kzi)}')">${esc(kzi)} · ${esc(fi.name)}</button>`;
   }
   grid += `<button class="fbtn" style="background:#444" onclick="pickNeuesFach()">＋ neues Fach</button>`;
   let html = `<div class="picker-sec"><label class="picker-lbl">Fach</label><div class="grid">${grid}</div></div>`;
@@ -1501,6 +1501,14 @@ function rasterZeile(ziel) {
 /* ---------- Utils / Tabs ---------- */
 function esc(s) { return String(s ?? "").replace(/[&<>"']/g,
   c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+// Dunkler oder heller Text je nach Helligkeit der Hintergrundfarbe (YIQ).
+function textAuf(hex) {
+  const c = String(hex || "").replace("#", "");
+  if (c.length < 6) return "#fff";
+  const r = parseInt(c.slice(0, 2), 16), g = parseInt(c.slice(2, 4), 16), b = parseInt(c.slice(4, 6), 16);
+  return (r * 299 + g * 587 + b * 114) / 1000 > 150 ? "#1c1c1c" : "#fff";
+}
 
 function openSettings() { document.getElementById("settingsOverlay").classList.add("open"); }
 function closeSettings() {

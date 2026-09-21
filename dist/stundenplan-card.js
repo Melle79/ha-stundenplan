@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.23.0 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.24.0 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -163,6 +163,14 @@ class StundenplanCard extends HTMLElement {
   _klasse(id) {
     const a = this._hass.states[id] && this._hass.states[id].attributes;
     return (a && a.klasse) ? String(a.klasse).trim() : "";
+  }
+
+  // Dunkler oder heller Text je nach Helligkeit der Fachfarbe (YIQ).
+  _textFarbe(hex) {
+    const c = String(hex || "").replace("#", "");
+    if (c.length < 6) return "#fff";
+    const r = parseInt(c.slice(0, 2), 16), g = parseInt(c.slice(2, 4), 16), b = parseInt(c.slice(4, 6), 16);
+    return (r * 299 + g * 587 + b * 114) / 1000 > 150 ? "#1c1c1c" : "#fff";
   }
 
   // Lehrer-Kürzel -> Klarname aus dem Verzeichnis (case-insensitiv), "" wenn keiner
@@ -529,7 +537,7 @@ class StundenplanCard extends HTMLElement {
           const tip = `${f.name}${lehrerVoll ? " · " + lehrerVoll : ""}${x ? " – " + x.label + (details ? " (" + details + ")" : "") + (x.grund ? ": " + x.grund : "") : ""}${arbeit ? " – " + arbeit.typ : ""}`;
           const raumLehrer = [rl.raum || "", rl.lehrer ? this._lehrerHTML(a, rl.lehrer, "grid") : ""].filter(Boolean).join(" · ");
           html += `<td class="${spalte}"><div class="sp-fach ${istJetzt ? "sp-aktuell" : ""} ${t.frei ? "sp-gedimmt" : ""} ${aCls}"
-            style="background:${f.farbe}" title="${tip}">${kz}${arbeit ? " 📝" : ""}<small class="sp-name">${f.name}</small>${(rl.raum || rl.lehrer) && !vertretung ? `<small>${raumLehrer}</small>` : ""}${badge}</div></td>`;
+            style="background:${f.farbe};color:${this._textFarbe(f.farbe)}" title="${tip}">${kz}${arbeit ? " 📝" : ""}<small class="sp-name">${f.name}</small>${(rl.raum || rl.lehrer) && !vertretung ? `<small>${raumLehrer}</small>` : ""}${badge}</div></td>`;
         } else if (x) {
           html += `<td class="${spalte}"><div class="sp-fach ${aCls}" style="background:var(--secondary-background-color,#444)">${badge}</div></td>`;
         } else {

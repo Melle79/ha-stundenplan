@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.2 - September 2026
+
+### Verbessert
+- **Automatische Textfarbe je Fach**: Karte und Plan-Raster wählen die Schriftfarbe jetzt passend zur Fachfarbe (dunkler Text auf hellen Feldern, weißer auf dunklen). So bleiben auch helle Fachfarben – z. B. aus einem eigenen Schul-Farbschema – gut lesbar. Betrifft die Lovelace-Karte (**v1.24.0**), das Plan-Raster, die Drag-&-Drop-Chips und den Fach-Picker.
+
+
 ## 2.1.1 - September 2026
 
 ### Verbessert
