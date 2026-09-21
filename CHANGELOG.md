@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.33.1 - September 2026
+
+### Behoben
+- Die Karten-Datei fürs Add-on-Image (`rootfs/card`) war beim 1.33.0-Release nicht mitgezogen worden – das Add-on lieferte noch die alte Karte v1.22.1 aus. Jetzt enthält das Image die Karte **v1.23.0** mit der stundenweisen Raum/Lehrer-Anzeige (Ressource `?v=1.23.0`)
+
+
 ## 1.33.0 - September 2026
 
 ### Neu
