@@ -7,7 +7,7 @@ Ausführliche Anleitung zum Home-Assistant-Add-on **Stundenplan Manager** und zu
 1. [Überblick](#überblick)
 2. [Installation](#installation)
 3. [Erste Schritte](#erste-schritte)
-4. [Fächer](#fächer)
+4. [Fächer (pro Kind)](#fächer-pro-kind)
 5. [Wochenplan pflegen](#wochenplan-pflegen)
 6. [Stundenraster & Pausen](#stundenraster--pausen)
 7. [Planversionen (Schuljahreswechsel)](#planversionen-schuljahreswechsel)
@@ -50,25 +50,32 @@ Das Add-on kopiert die Karte beim Start automatisch nach `/config/www/stundenpla
 ## Erste Schritte
 
 1. Panel **Stundenplan** öffnen.
-2. Tab **Fächer**: Über **📥 Standard-Fächer hinzufügen** die 21 gängigen Fächer laden oder eigene anlegen.
-3. Oben ein **Kind hinzufügen** (Chip „+"). Name vergeben.
-4. Im Kind-Panel den **Wochenplan** füllen (Zelle anklicken → Fach, Raum und Lehrer wählen).
+2. Oben ein **Kind hinzufügen** (Chip „+"). Name vergeben.
+3. Im Kind-Panel unter **📚 Fächer** die Fächer anlegen (**📥 Standard-Fächer** lädt die 21 gängigen).
+4. Den **Wochenplan** füllen: Zelle anklicken → Fach, Raum und Lehrer wählen, oder per **Drag & Drop** (siehe unten).
 5. Speichern erfolgt automatisch (Auto-Save); die Sensoren aktualisieren sich sofort.
 6. Optional die **Karte** aufs Dashboard legen (siehe [unten](#die-lovelace-karte)).
 
-## Fächer
+Einstellungen (Stundenraster, Schulferien, Push, Auto-Import) liegen hinter dem **⚙️-Zahnrad oben rechts**.
 
-Im Tab **Fächer** liegt der **gemeinsame Standard** für alle Kinder: **Kürzel**, **Name**, **Farbe** und optional **Material**. Das Kürzel erscheint im Plan-Raster, Name und Farbe auf der Karte.
+## Fächer (pro Kind)
 
-- **Kürzel umbenennen**: Ändert das Kürzel in allen Plänen mit.
+Jedes Kind hat seinen **eigenen Fächer-Katalog** – im Kind-Panel unter **📚 Fächer**: **Kürzel**, **Name**, **Farbe** und optional **Material**. Das Kürzel erscheint im Plan-Raster, Name und Farbe auf der Karte. **Dasselbe Kürzel kann bei verschiedenen Kindern ein anderes Fach sein** (z. B. „Sw" = Schwimmen beim einen, Sport weiblich beim anderen).
+
+- **+ Fach** legt ein neues Fach an, **📥 Standard-Fächer** lädt die 21 gängigen (nur die fehlenden).
+- **Kürzel umbenennen**: Ändert das Kürzel in allen Plänen dieses Kindes mit.
 - **Material** (z. B. „Sportbeutel"): erscheint im Morgen-Push, in der Heute-Ansicht und am Sensor „Erste Stunde morgen".
-- **Nicht mehr im Plan**: Fächer, die in keinem aktuellen Plan (inkl. Blöcken) eines Kindes mehr vorkommen, werden abgeblendet, ans Ende sortiert und mit „nicht mehr im Plan" markiert – so lassen sich Altlasten (z. B. nach einem Schulwechsel) mit **✕** aufräumen.
-
-> **Kindbezogene Fächer**: Name und Farbe eines Fachs lassen sich **pro Kind** überschreiben – im Kind-Panel unter **📚 Fächer**. Das ist wichtig, weil **dasselbe Kürzel bei verschiedenen Kindern ein anderes Fach sein kann** (z. B. „Sw" = Schwimmen beim einen, Sport weiblich beim anderen). Ein leeres Feld nutzt den globalen Standard. **Raum und Lehrer gehören nicht mehr zum Fach, sondern zur einzelnen Stunde** (siehe unten).
+- **Nicht im Plan**: Fächer, die im aktuellen Plan nicht vorkommen, werden markiert und lassen sich mit **✕** aufräumen (z. B. nach einem Schulwechsel).
+- **Raum und Lehrer gehören nicht zum Fach, sondern zur einzelnen Stunde** (siehe unten).
 
 ## Wochenplan pflegen
 
-Im Kind-Panel steht das Raster Mo–Fr. Eine Zelle anklicken öffnet den **Stunden-Editor**: zuerst das **Fach** wählen, dann **Raum** und **Lehrer** aus den Auswahllisten (oder über **＋ neu** direkt anlegen). „✕ Stunde leeren" leert die Zelle. Änderungen werden automatisch gespeichert.
+Im Kind-Panel steht das Raster Mo–Fr. Zwei Wege, es zu füllen:
+
+- **Klick-Editor**: Eine Zelle anklicken öffnet den **Stunden-Editor** – zuerst das **Fach** wählen, dann **Raum** und **Lehrer** aus den Auswahllisten (oder **＋ neu** direkt anlegen). „✕ Stunde leeren" leert die Zelle.
+- **Drag & Drop**: Oben **„⇅ Drag & Drop"** einschalten – eine **Palette** mit den gepflegten Fächern, Räumen und Lehrern erscheint über dem Plan (bleibt beim Scrollen oben). Chips in die Stunden ziehen (**Maus und Touch**). Ein **Fach** ersetzt die Stunde (Standard-Raum/Lehrer kommen mit), ein **Raum** bzw. **Lehrer** ändert nur die getroffene Stunde. Alternativ die ⠿-Griffe in den Listen.
+
+Änderungen werden automatisch gespeichert.
 
 **Raum und Lehrer je Stunde („freie Stunden")**: Anders als früher hängen Raum und Lehrer nicht am Fach, sondern an der **einzelnen Stunde**. Dasselbe Fach kann also je Tag/Stunde in einem anderen Raum und bei einer anderen Lehrkraft stattfinden (z. B. Deutsch montags in 130 bei Jov, donnerstags in 205 bei Sil). Bestehende Pläne werden automatisch übernommen: jede Stunde startet mit dem bisher am Fach hinterlegten Raum/Lehrer und ist ab sofort einzeln änderbar.
 
@@ -76,7 +83,7 @@ Im Kind-Panel steht das Raster Mo–Fr. Eine Zelle anklicken öffnet den **Stund
 
 ## Stundenraster & Pausen
 
-Das **Standard-Stundenraster** (Zeiten je Stunde) gilt für alle Kinder und ist im Tab **Einstellungen** pflegbar. Pro Kind lässt sich ein **eigenes Raster** hinterlegen, das das Standardraster überschreibt (nützlich bei abweichenden Anfangszeiten). **Pausen** entstehen automatisch aus Lücken zwischen zwei Stunden (z. B. 09:30 → 09:50) und lassen sich auf der Karte ein-/ausblenden.
+Das **Standard-Stundenraster** (Zeiten je Stunde) gilt für alle Kinder und ist über das **⚙️-Zahnrad** (Einstellungen) pflegbar. Pro Kind lässt sich ein **eigenes Raster** hinterlegen, das das Standardraster überschreibt (nützlich bei abweichenden Anfangszeiten). **Pausen** entstehen automatisch aus Lücken zwischen zwei Stunden (z. B. 09:30 → 09:50) und lassen sich auf der Karte ein-/ausblenden.
 
 Beim Import aus einer Schulplattform werden die **echten Stundenzeiten der Schule als Raster übernommen** – auch beim allerersten Import, selbst wenn das Kind schon ein Raster hatte. Danach gilt das **Merker-Prinzip**: Ein vom Import gesetztes Raster folgt automatisch späteren Änderungen der Schule (bei aktivem Auto-Import ganz ohne Zutun), ein **von Hand geändertes Raster bleibt dagegen gesperrt** und wird nicht mehr überschrieben.
 
@@ -169,13 +176,13 @@ Bei Schulmanager erscheinen offene **Hausaufgaben** (aus der Todo-Liste) und die
 
 ## Schulferien-Integration
 
-Im Tab **Einstellungen → Schulferien-Integration** den Kalender-Sensor des [Schulferien & Feiertage Managers](https://github.com/Melle79) auswählen (alle Ferien und Feiertage in einer Entity – ein Feld genügt). Alternativ die Einzelsensoren „Nächste Schulferien" und „Nächster Feiertag".
+Über das **⚙️-Zahnrad → Schulferien-Integration** den Kalender-Sensor des [Schulferien & Feiertage Managers](https://github.com/Melle79) auswählen (alle Ferien und Feiertage in einer Entity – ein Feld genügt). Alternativ die Einzelsensoren „Nächste Schulferien" und „Nächster Feiertag".
 
 An schulfreien Tagen zeigen die Sensoren „Schulfrei (Grund)" und die Karte ein Ferien-Banner – auch beim Blättern weit in die Zukunft. Kinder im Blockmodus sind ausgenommen.
 
 ## Morgen-Push & Materialliste
 
-Im Tab **Einstellungen** lässt sich ein täglicher **Sammel-Push** aktivieren (Uhrzeit + Notify-Gerät wählbar, Test-Button) – eine Nachricht mit allen Kindern, typischerweise an ein Elterngerät:
+Über das **⚙️-Zahnrad** (Einstellungen) lässt sich ein täglicher **Sammel-Push** aktivieren (Uhrzeit + Notify-Gerät wählbar, Test-Button) – eine Nachricht mit allen Kindern, typischerweise an ein Elterngerät:
 
 > „Luna: Sport um 08:00, Schluss 13:10 – Sportbeutel"
 

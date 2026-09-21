@@ -80,26 +80,29 @@ def hole_zusatzinfos(kind: dict) -> dict:
 
 
 def faecher_fuer_kind(faecher: dict, kind: dict) -> dict:
-    """Effektive Faecher eines Kindes: globale Faecher als Standard, ueberlagert
-    von den kindspezifischen Angaben aus kind["fach_details"].
+    """Faecher eines Kindes - vollstaendig kindspezifisch aus kind["fach_details"].
 
-    Name/Farbe/Material sind kindbezogen ueberschreibbar (gleiches Kuerzel kann
-    bei verschiedenen Kindern ein anderes Fach sein, z.B. "Sw" = Schwimmen vs.
-    Sport weiblich); Raum/Lehrer sind ohnehin kindspezifisch. Kuerzel, die es
-    nur in fach_details gibt (z.B. aus WebUntis), werden mitgefuehrt."""
+    Jedes Kind hat seinen eigenen Faecher-Katalog (Name/Farbe/Material); gleiches
+    Kuerzel kann bei verschiedenen Kindern ein anderes Fach sein (z.B. "Sw" =
+    Schwimmen vs. Sport weiblich). Raum/Lehrer im Eintrag sind nur noch der
+    Alt-Standard/Fallback - massgeblich ist das Zellen-Overlay (freie Stunden).
+    `faecher` (frueher globaler Standard) dient nur noch als Fallback fuer
+    Name/Farbe, falls ein Kuerzel im Kind noch nicht materialisiert ist."""
     det = kind.get("fach_details") or {}
     ergebnis = {}
-    for kz in set(faecher) | set(det):
-        g = dict(faecher.get(kz) or {})
+    for kz in set(det) | set(faecher):
         d = det.get(kz) or {}
-        for feld in ("name", "farbe", "material"):
-            if d.get(feld):
-                g[feld] = d[feld]
-        g.setdefault("name", kz)
-        g.setdefault("farbe", "#888888")
-        g["raum"] = d.get("raum", "")
-        g["lehrer"] = d.get("lehrer", "")
-        ergebnis[kz] = g
+        g = faecher.get(kz) or {}
+        eintrag = {
+            "name": d.get("name") or g.get("name") or kz,
+            "farbe": d.get("farbe") or g.get("farbe") or "#888888",
+            "raum": d.get("raum", ""),
+            "lehrer": d.get("lehrer", ""),
+        }
+        material = d.get("material") or g.get("material")
+        if material:
+            eintrag["material"] = material
+        ergebnis[kz] = eintrag
     return ergebnis
 
 

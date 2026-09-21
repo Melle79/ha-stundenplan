@@ -15,8 +15,9 @@ Home Assistant Add-on zur Verwaltung der Stundenpläne mehrerer Kinder – inklu
 ## Features
 
 - Beliebig viele Kinder mit eigenem Wochenplan (Mo–Fr), Web-UI mit Auto-Save
-- 21 vordefinierte Standard-Schulfächer, eigene Fächer mit Farben und Kürzeln
-- **Raum & Lehrer pro Stunde** („freie Stunden"): jede Zelle trägt eigenen Raum und Lehrer – dasselbe Fach kann je Tag in anderem Raum/bei anderer Lehrkraft sein. Pflege pro Kind über drei getrennte Listen (📚 Fächer, 🚪 Räume, 👩‍🏫 Lehrernamen) und einen Stunden-Editor pro Zelle
+- **Alles kindbezogen**: jedes Kind hat seinen eigenen Fächer-Katalog (Kürzel, Name, Farbe, Material) sowie eigene Listen für **🚪 Räume** und **👩‍🏫 Lehrernamen**
+- **Raum & Lehrer pro Stunde** („freie Stunden"): jede Zelle trägt eigenen Raum und Lehrer – dasselbe Fach kann je Tag in anderem Raum/bei anderer Lehrkraft sein
+- **Drag & Drop**: Fächer, Räume und Lehrer aus der Palette direkt in die Stunden ziehen (Maus und Touch); alternativ Klick-Editor pro Zelle
 - Konfigurierbares Stundenraster (Standard + pro Kind überschreibbar), Pausen automatisch aus Rasterlücken
 - **Datenquellen** (optional, pro Kind): **Schulmanager Online**, **Eltern-Portal** und **WebUntis** – Plan-Import per Knopfdruck oder täglicher Auto-Import
 - **Vertretungen & Entfall** (Schulmanager): Overlay auf der Karte; entfallene Randstunden verschieben Schulbeginn/-schluss

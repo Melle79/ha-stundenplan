@@ -103,22 +103,24 @@ def fuehre_import_aus(data: dict, kind: dict, heute: date = None) -> dict:
     if not raster:
         return stats
 
-    faecher = data.setdefault("faecher", {})
+    kfd = kind.setdefault("fach_details", {})
 
     def fach_sicherstellen(kz):
-        """Kanonisches Kuerzel; legt das globale Fach (Name/Farbe/Material)
-        bei Bedarf an. Raum/Lehrer sind kindspezifisch und wandern mit
-        Merker-Prinzip nach kind["fach_details"]."""
+        """Kanonisches Kuerzel im Faecher-Katalog dieses Kindes; legt das Fach
+        (Name/Farbe/Material) bei Bedarf kindspezifisch an. Raum/Lehrer wandern
+        mit Merker-Prinzip in denselben Eintrag."""
         det = details.get(kz.upper(), {})
-        match = next((v for v in faecher if v.upper() == kz.upper()), None)
+        match = next((v for v in kfd if v.upper() == kz.upper()), None)
         if not match:
             match = kz
-            faecher[kz] = {"name": det.get("name") or kz,
-                           "farbe": FARBPALETTE[len(faecher) % len(FARBPALETTE)],
-                           "material": ""}
+            idx = len(kfd)
+            neu = kfd.setdefault(kz, {})
+            neu["name"] = det.get("name") or kz
+            neu["farbe"] = FARBPALETTE[idx % len(FARBPALETTE)]
+            neu["material"] = ""
             stats["neue_faecher"] += 1
             stats["geaendert"] = True
-        eintrag = kind.setdefault("fach_details", {}).setdefault(match, {})
+        eintrag = kfd.setdefault(match, {})
         # Name kindbezogen (gleiches Kuerzel kann je Kind ein anderes Fach sein),
         # daneben Raum/Lehrer - alle mit Merker-Prinzip (Handeintrag gewinnt).
         for feld in ("name", "raum", "lehrer"):

@@ -489,6 +489,52 @@ def migriere_freie_stunden():
     log.info("Migration: Raum/Lehrer sind jetzt pro Stunde speicherbar (freie Stunden)")
 
 
+FARBPALETTE = ["#e05d5d", "#4a90d9", "#e0b34c", "#4caf7d", "#9b6dd6", "#26a69a",
+               "#ec407a", "#5c6bc0", "#ef6c00", "#8d6e63", "#29b6f6", "#ab47bc",
+               "#7cb342", "#90a4ae"]
+
+
+def migriere_faecher_pro_kind():
+    """Einmalig: Faecher werden vollstaendig kindspezifisch.
+
+    Bisher lag der gemeinsame Fach-Standard (Name/Farbe/Material) global in
+    data["faecher"], pro Kind ueberschrieben in kind["fach_details"]. Kuenftig
+    ist kind["fach_details"] die alleinige Wahrheit - jedes Kind hat seinen
+    eigenen Faecher-Katalog. Diese Migration materialisiert fuer jedes genutzte
+    (oder schon angelegte) Kuerzel Name/Farbe/Material aus dem globalen Standard
+    in das Kind. data["faecher"] bleibt unangetastet als Fallback stehen (nicht
+    destruktiv), wird aber nicht mehr gepflegt."""
+    data = load_data()
+    einst = data.setdefault("einstellungen", {})
+    if einst.get("faecher_pro_kind"):
+        return
+    glob = data.get("faecher") or {}
+
+    def gcase(kz):
+        return glob.get(kz) or next(
+            (v for k, v in glob.items() if k.lower() == kz.lower()), {})
+
+    for kind in data.get("kinder", []):
+        fd = kind.setdefault("fach_details", {})
+        genutzt = {kz for po in [kind.get("plan") or {}]
+                   + [v.get("plan") or {} for v in kind.get("plaene", [])]
+                   for tag in TAGE for kz in (po.get(tag) or []) if kz}
+        idx = 0
+        for kz in sorted(set(fd) | genutzt):
+            e = fd.setdefault(kz, {})
+            g = gcase(kz)
+            if not e.get("name"):
+                e["name"] = g.get("name") or kz
+            if not e.get("farbe"):
+                e["farbe"] = g.get("farbe") or FARBPALETTE[idx % len(FARBPALETTE)]
+            if not e.get("material") and g.get("material"):
+                e["material"] = g["material"]
+            idx += 1
+    einst["faecher_pro_kind"] = True
+    save_data(data)
+    log.info("Migration: Faecher sind jetzt vollstaendig kindspezifisch")
+
+
 @app.route("/api/standard-faecher")
 def standard_faecher():
     return jsonify(STANDARD_FAECHER)
@@ -516,6 +562,7 @@ if __name__ == "__main__":
     migriere_fach_details_pro_kind()
     migriere_lehrer_namen()
     migriere_freie_stunden()
+    migriere_faecher_pro_kind()
     PUBLISHER.start()
     BackupScheduler().start()
     PushScheduler(lambda: load_data()).start()

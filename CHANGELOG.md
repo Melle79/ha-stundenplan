@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.0.0 - September 2026 · Stundenplan Manager 2
+
+Großes Update: das Datenmodell ist jetzt **vollständig kindbezogen** und der Plan lässt sich **per Drag & Drop** befüllen. Der Umstieg ist automatisch und nicht-destruktiv – bestehende Pläne, Räume und Lehrer werden übernommen.
+
+### Fächer komplett pro Kind
+- Der globale **Fächer-Tab ist entfernt**. Jedes Kind hat jetzt seinen **eigenen Fächer-Katalog** (📚 Fächer im Kind-Panel): Kürzel, Name, Farbe und **Material** – anlegen, umbenennen, löschen, Standard-Fächer laden, alles pro Kind. Gleiche Kürzel können bei verschiedenen Kindern ein anderes Fach sein (z. B. „Sw").
+- Migration: die bisherigen globalen Fächer werden je Kind materialisiert (Name/Farbe/Material übernommen); nichts geht verloren.
+
+### Drei getrennte Listen + Raum/Lehrer pro Stunde
+- Pro Kind: **📚 Fächer**, **🚪 Räume**, **👩‍🏫 Lehrernamen** – jeweils eigenständig gepflegt.
+- Raum und Lehrer hängen an der **einzelnen Stunde**, nicht mehr am Fach (Fundament aus 1.33.0). Deutsch kann montags in 130 bei einer Lehrkraft und donnerstags in 205 bei einer Lehrkraft sein.
+
+### Drag & Drop
+- Schalter **„⇅ Drag & Drop"** über dem Plan blendet eine **Palette** mit den gepflegten Fächern, Räumen und Lehrern ein (klebt beim Scrollen oben). Chips lassen sich direkt in die Stunden ziehen – **Maus und Touch**, mit Ziehbild, Zellen-Hervorhebung und Auto-Scroll. Zusätzlich Griffe (⠿) in den Listen. Der Klick-Editor bleibt.
+- Fach ziehen ersetzt die Stunde (Standard-Raum/Lehrer des Fachs kommen mit); Raum bzw. Lehrer ziehen ändert nur die getroffene Stunde.
+
+### Bedienung aufgeräumt
+- **Einstellungen** liegen jetzt hinter dem **⚙️-Zahnrad oben rechts** (Overlay) – die Tab-Leiste entfällt, „Stundenpläne" ist die Ansicht.
+- Aufgeklappte Abschnitte (Fächer/Lehrer/Räume/Push/Raster) **bleiben offen**, wenn man etwas löscht, hinzufügt oder umbenennt.
+- Die Auto-Import-Einstellung heißt jetzt **„Auto-Import der Datenquellen"** und nennt ausdrücklich Schulmanager, Eltern-Portal und WebUntis.
+
+### Import
+- Schulmanager-/Eltern-Portal-/WebUntis-Import schreibt Raum und Lehrer **je Stunde** und ersetzt beim Fachwechsel auch den alten Raum; neue Räume landen automatisch in der Räume-Liste. Neue Fächer werden kindspezifisch angelegt. Auto-Import unverändert.
+
+### Optik
+- Neues **Icon und Logo mit „2"**, Titel „Stundenplan Manager 2".
+
+
 ## 1.33.1 - September 2026
 
 ### Behoben
