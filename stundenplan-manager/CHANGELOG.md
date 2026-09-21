@@ -1,0 +1,519 @@
+# Changelog
+
+## 2.0.0 - September 2026 · Stundenplan Manager 2
+
+Großes Update: das Datenmodell ist jetzt **vollständig kindbezogen** und der Plan lässt sich **per Drag & Drop** befüllen. Der Umstieg ist automatisch und nicht-destruktiv – bestehende Pläne, Räume und Lehrer werden übernommen.
+
+### Fächer komplett pro Kind
+- Der globale **Fächer-Tab ist entfernt**. Jedes Kind hat jetzt seinen **eigenen Fächer-Katalog** (📚 Fächer im Kind-Panel): Kürzel, Name, Farbe und **Material** – anlegen, umbenennen, löschen, Standard-Fächer laden, alles pro Kind. Gleiche Kürzel können bei verschiedenen Kindern ein anderes Fach sein (z. B. „Sw").
+- Migration: die bisherigen globalen Fächer werden je Kind materialisiert (Name/Farbe/Material übernommen); nichts geht verloren.
+
+### Drei getrennte Listen + Raum/Lehrer pro Stunde
+- Pro Kind: **📚 Fächer**, **🚪 Räume**, **👩‍🏫 Lehrernamen** – jeweils eigenständig gepflegt.
+- Raum und Lehrer hängen an der **einzelnen Stunde**, nicht mehr am Fach (Fundament aus 1.33.0). Deutsch kann montags in 130 bei einer Lehrkraft und donnerstags in 205 bei einer Lehrkraft sein.
+
+### Drag & Drop
+- Schalter **„⇅ Drag & Drop"** über dem Plan blendet eine **Palette** mit den gepflegten Fächern, Räumen und Lehrern ein (klebt beim Scrollen oben). Chips lassen sich direkt in die Stunden ziehen – **Maus und Touch**, mit Ziehbild, Zellen-Hervorhebung und Auto-Scroll. Zusätzlich Griffe (⠿) in den Listen. Der Klick-Editor bleibt.
+- Fach ziehen ersetzt die Stunde (Standard-Raum/Lehrer des Fachs kommen mit); Raum bzw. Lehrer ziehen ändert nur die getroffene Stunde.
+
+### Bedienung aufgeräumt
+- **Einstellungen** liegen jetzt hinter dem **⚙️-Zahnrad oben rechts** (Overlay) – die Tab-Leiste entfällt, „Stundenpläne" ist die Ansicht.
+- Aufgeklappte Abschnitte (Fächer/Lehrer/Räume/Push/Raster) **bleiben offen**, wenn man etwas löscht, hinzufügt oder umbenennt.
+- Die Auto-Import-Einstellung heißt jetzt **„Auto-Import der Datenquellen"** und nennt ausdrücklich Schulmanager, Eltern-Portal und WebUntis.
+
+### Import
+- Schulmanager-/Eltern-Portal-/WebUntis-Import schreibt Raum und Lehrer **je Stunde** und ersetzt beim Fachwechsel auch den alten Raum; neue Räume landen automatisch in der Räume-Liste. Neue Fächer werden kindspezifisch angelegt. Auto-Import unverändert.
+
+### Optik
+- Neues **Icon und Logo mit „2"**, Titel „Stundenplan Manager 2".
+
+
+## 1.33.1 - September 2026
+
+### Behoben
+- Die Karten-Datei fürs Add-on-Image (`rootfs/card`) war beim 1.33.0-Release nicht mitgezogen worden – das Add-on lieferte noch die alte Karte v1.22.1 aus. Jetzt enthält das Image die Karte **v1.23.0** mit der stundenweisen Raum/Lehrer-Anzeige (Ressource `?v=1.23.0`)
+
+
+## 1.33.0 - September 2026
+
+### Neu
+- **Raum & Lehrer pro Stunde („freie Stunden")**: Raum und Lehrer hingen bisher fest am Fach – dasselbe Fach hatte überall denselben Raum und denselben Lehrer. Jetzt trägt **jede einzelne Stunde** ihren eigenen Raum und Lehrer. Deutsch kann montags in 130 bei einer Lehrkraft und donnerstags in 205 bei einer Lehrkraft sein. Ein Klick auf eine Zelle öffnet den **Stunden-Editor**: Fach wählen, dann Raum und Lehrer aus Auswahllisten (oder „＋ neu" anlegen)
+- **Drei getrennte Listen pro Kind** – **📚 Fächer** (Name & Farbe), **👩‍🏫 Lehrernamen** (Kürzel → Klarname) und **🚪 Räume**. Die Listen speisen die Auswahl im Stunden-Editor und wachsen beim Import automatisch mit
+- **Migration bestehender Pläne**: Alle vorhandenen Stundenpläne werden automatisch übernommen – jede Stunde erhält den bisher am Fach hinterlegten Raum/Lehrer als Startwert und ist ab sofort einzeln änderbar. Nicht-destruktiv, nichts geht verloren; die Ansicht bleibt zunächst unverändert
+- **Import schreibt pro Stunde**: Schulmanager-/Eltern-Portal-/WebUntis-Import setzt Raum und Lehrer jetzt je Stunde und ersetzt beim Fachwechsel auch den alten Raum. Neue Räume landen automatisch in der Räume-Liste. Der Auto-Import funktioniert unverändert weiter
+- Karte (Woche & Heute) und Druckansicht zeigen den stundenweisen Raum/Lehrer
+
+### Karte
+- Companion-Karte **v1.23.0**: liest Raum/Lehrer pro Stunde aus dem Plan-Overlay, Fallback auf den Fach-Standard bei Altbeständen
+
+
+## 1.32.0 - September 2026
+
+### Neu
+- **Kindbezogene Fächer**: Name, Farbe, Raum und Lehrer eines Fachs lassen sich jetzt **pro Kind** überschreiben (im Kind-Panel unter „📚 Fächer & Räume", vormals „Räume & Lehrer"). Nötig, weil dasselbe **Kürzel bei verschiedenen Kindern ein anderes Fach** sein kann (z. B. „Sw" = Schwimmen vs. Sport weiblich). Der Import füllt den Fachnamen jetzt kindbezogen (Merker-Prinzip, Handeintrag gewinnt); ein leeres Feld nutzt den globalen Standard aus dem Fächer-Tab. Karte, Plan-Raster, Picker und Morgen-Push zeigen die kindbezogene Sicht
+- Nicht-destruktiv: Bestehende Fächer bleiben als gemeinsamer Standard erhalten; ohne Override ändert sich nichts
+
+
+## 1.31.1 - September 2026
+
+### Verbessert
+- **Planversion-Auswahl zeigt die heute gültige Version**: Im Kind-Panel war beim Öffnen immer der Basisplan vorgewählt, obwohl schon eine datierte Version (z. B. „ab 14.09.2026") gilt. Jetzt wird automatisch die **aktuell gültige Version** vorausgewählt und im Dropdown mit „· heute gültig" markiert; der frühere, irreführend „Aktueller Plan" genannte Basis-Eintrag heißt jetzt „Basisplan"
+
+
+## 1.31.0 - September 2026
+
+### Neu
+- **Push pro Kind aufs eigene Handy**: Zusätzlich zum bisherigen Sammel-Push (alle Kinder an ein Elterngerät) lässt sich jetzt im Kind-Panel unter „🔔 Push an … Handy" pro Kind ein eigener Morgen-Push einrichten – **eigenes Gerät, eigene Uhrzeit**, nur der Plan dieses Kindes (ohne Namensprefix, der Name steht im Titel). Mit Test-Button. An freien Tagen wird nichts gesendet
+
+
+## 1.30.5 - September 2026
+
+### Dokumentation
+- README und Handbuch verlinken die WebUntis-HACS-Integration ([JonasJoKuJonas/homeassistant-WebUntis](https://github.com/JonasJoKuJonas/homeassistant-WebUntis)) direkt – analog zu Schulmanager und Eltern-Portal
+
+
+## 1.30.4 - September 2026
+
+### Behoben
+- **Lehrernamen-Box klappte beim Löschen zu**: Nach dem Entfernen eines Kürzels wurde das ganze Kind-Panel neu gezeichnet, wodurch die aufgeklappte „👩‍🏫 Lehrernamen"-Box wieder zuklappte. Jetzt wird beim Löschen nur die Tabelle an Ort und Stelle aktualisiert und bleibt offen
+
+
+## 1.30.3 - September 2026
+
+### Behoben
+- **Lehrer-Kürzel „nicht mehr im Plan" ließen sich nicht löschen**: Der ✕-Button entfernte das Kürzel nur aus dem Namensverzeichnis, nicht aus den Fach-Details des alten Fachs – beim Neu-Rendern kam es sofort zurück. Jetzt wird das Kürzel auch aus den Fach-Details (Lehrer-Feld) entfernt und verschwindet endgültig
+
+
+## 1.30.2 - September 2026
+
+### Dokumentation
+- README und Handbuch: WebUntis-Datenquelle vollständig beschrieben; klargestellt, dass die **echten Stundenzeiten automatisch** aus dem Kalender als Raster übernommen werden (auch beim ersten Import) und ein **von Hand geändertes Raster gesperrt** bleibt – wichtig, wenn die reguläre Schulzeit (z. B. 07:30) erst später im Kalender auftaucht
+
+
+## 1.30.1 - September 2026
+
+### Behoben
+- **Stundenzeiten beim ersten Import**: Beim erstmaligen Import von einer Quelle (z. B. WebUntis) werden jetzt die echten Schulzeiten als Raster übernommen – zuvor blieb ein vorhandenes Raster (z. B. das Standard-6-Stunden-Raster) stehen, sodass die Stunden auf falschen Uhrzeiten lagen. Ein *nach* dem Import von Hand geändertes Raster bleibt weiterhin geschützt
+
+
+## 1.30.0 - September 2026
+
+### Neu
+- **WebUntis als dritte Datenquelle** (neben Schulmanager und Eltern-Portal): Nutzt die HACS-Integration „WebUntis" (Domain `webuntis`). Pro Kind im Verknüpfungs-Dropdown auswählbar; Import, Auto-Import und Statusbox funktionieren wie gehabt
+- WebUntis liefert den Stundenplan als HA-Kalender (Termine mit Fach und Raum, echten Uhrzeiten); der Adapter leitet daraus Stundenraster und Wochenplan ab. Hausaufgaben und Prüfungen kommen aus den zugehörigen Kalendern
+- Hinweis: WebUntis liefert im Kalender **keine Lehrer** (Klarnamen von Hand pflegbar) und Vertretungen nur als HA-Event – daher werden Vertretungen aus WebUntis vorerst nicht als Overlay angezeigt
+
+## 1.29.1 - September 2026 (Card 1.22.1)
+
+### Verbessert
+- Block-Wochenübersicht: Die redundante Unterzeile „kein Blockunterricht" unter „🏭 Betrieb" entfällt – ergibt sich schon aus „Betrieb". Die Kacheln bleiben durch die Mindesthöhe gleich hoch
+
+## 1.29.0 - September 2026 (Card 1.22.0)
+
+### Neu
+- **Feiertage im Blockmodus**: In der Block-Wochenübersicht erscheinen gesetzliche Feiertage jetzt als eigene Kachel **🎉 Feiertag (Name)** und haben Vorrang vor Betrieb/Schule – denn auch Azubis haben am Feiertag frei (Schulferien dagegen bleiben Betrieb, wie bisher). Die Heute-Ansicht meldet an Feiertagen „🎉 Heute Feiertag – …". Voraussetzung ist die konfigurierte Schulferien-Integration (Kalender-Sensor mit Feiertagen). Neues Attribut `feiertage` je Kind
+- Intern: Ferien-/Feiertag-Zeiträume tragen jetzt einen `typ` (`ferien`/`feiertag`), damit Feiertage getrennt behandelt werden können
+
+## 1.28.0 - September 2026 (Card 1.21.0)
+
+### Neu
+- **Block-Wochenübersicht ohne Stundenplan**: Hat ein Kind im Blockmodus (noch) keinen Stundenplan, zeigt die Karte statt eines leeren Rasters jetzt pro Wochentag klar **🏭 Betrieb** oder **🏫 Schule (Blockname)** – abgeleitet aus den hinterlegten Blockzeiten. So sieht man auf einen Blick, wann Betrieb und wann Berufsschule ist; sobald ein Stundenplan eingetragen wird, erscheint automatisch wieder das normale Raster
+- Die Heute-Ansicht meldet im Blockmodus ohne Plan entsprechend „🏫 Heute Schule – Blockunterricht (Blockname)" bzw. „🏭 Betriebsphase"
+
+## 1.27.2 - September 2026
+
+### Neu
+- **Eigenes App-Icon & Logo**: Das Add-on hat jetzt ein `icon.png` (im Add-on-Store/Panel sichtbar) und ein `logo.png` (Kopf der Add-on-Seite und README) - ein farbiger Mini-Stundenplan im Design der Karte
+
+## 1.27.1 - August 2026 (Card 1.20.1)
+
+### Verbessert
+- Die Klasse erscheint jetzt auch auf den Umschalt-Chips („Luna 8b", „Nele 6E") - so ist sie bei mehreren Kindern sichtbar, selbst wenn per `titel:` ein eigener Karten-Titel gesetzt ist (der den „· Klasse"-Zusatz im Titel überschreibt)
+
+## 1.27.0 - August 2026 (Card 1.20.0)
+
+### Neu
+- **Schultermine auf der Karte**: Kommende schulweite Termine (Exkursionen, Elternsprechtag, Projekttage …) aus dem Schulmanager-Kalender erscheinen als „📌 Schultermine"-Liste unter der Wochen- und Heute-Ansicht (nächste ~3 Wochen, mit Datum und – falls vorhanden – Kurzinfo). Neues Attribut `schultermine` je Kind; robust über den Karenz-Cache. Hinweis: Schulmanager liefert keine Kategorien, daher ohne Farbgruppen
+- **Klasse pro Kind**: Optionales Feld „Klasse" im Kind-Panel (z. B. „6E"), das im Karten-Titel bzw. Kind-Header erscheint („Stundenplan Nele · 6E"). Von Hand pflegbar – Schulmanager liefert keinen lesbaren Klassennamen. Neues Attribut `klasse`
+
+## 1.26.0 - August 2026 (Card 1.19.0)
+
+### Neu
+- **Endzeiten im Wochenraster**: Die Zeit-Spalte zeigt unter der Startzeit dezent auch das Stundenende (z. B. „08:00 / –08:45"). Die Heute-Ansicht zeigte den Zeitraum bereits
+
+### Behoben
+- **Versionsanzeige stimmt jetzt**: Header und Health-Endpoint zeigten fest „v1.0.0". Die Version wird nun zur Laufzeit aus der (ins Image kopierten) config.yaml gelesen und bleibt damit bei jedem Release automatisch korrekt
+
+## 1.25.2 - August 2026 (Card 1.18.3)
+
+### Behoben
+- Gleiche Blockhöhe pro Reihe jetzt wirklich in allen Browsern: Zusätzlich zu `td { height: 100% }` trägt die Tabelle nun `height: 1px` - der dokumentierte Trick, damit strenge Engines (Firefox/Safari) die Prozent-Höhe der Zellen überhaupt auflösen. In Chrome griff der Fix schon, in anderen Browsern füllten Fächer ohne Raum/Lehrer die Zeile weiterhin nicht. Die neue Karten-Version (Ressource `?v=1.18.3`) erzwingt zudem ein frisches Laden im Browser
+
+## 1.25.1 - August 2026 (Card 1.18.2)
+
+### Behoben
+- Gleiche Blockhöhe pro Reihe jetzt auch bei voller Dashboard-Breite und in Safari/Firefox: Zusätzlich zur Kachel (`.sp-fach`) trägt nun die Tabellenzelle selbst `height: 100%`. Zuvor füllten Fächer ohne Raum/Lehrer die Zeilenhöhe nicht, sobald der ausgeschriebene Fachname erschien - die Zeile wirkte uneben (in Chrom-basierten Browsern fiel es nicht auf)
+
+## 1.25.0 - August 2026 (Card 1.18.1)
+
+### Neu
+- **Inaktive Fächer kennzeichnen**: Im Tab „Fächer" werden Fächer, die in keinem aktuell gültigen Plan (inkl. Blöcke) eines Kindes mehr vorkommen, abgeblendet, ans Ende sortiert und mit „nicht mehr im Plan" markiert (analog zu den Lehrer-Kürzeln) - so lassen sich Altlasten nach einem Schulwechsel gezielt aufräumen
+- **Dokumentation**: Neues ausführliches [HANDBUCH.md](HANDBUCH.md); README mit generierten Karten-Beispielbildern (Wochen-, Heute- und Schulschluss-Ansicht)
+
+### Behoben (Card 1.18.1)
+- Stundenblöcke einer Zeile sind jetzt immer gleich hoch (`.sp-fach` füllt die Zellenhöhe) - Zellen mit Vertretung/Entfall zogen die Reihe zuvor optisch auseinander
+- Doppelter Punkt in der KW-Datumszeile behoben (`14.08..2026` → `14.08.2026`)
+
+## 1.24.0 - August 2026
+
+### Neu
+- **Lehrernamen aufräumbar**: In der Tabelle „👩‍🏫 Lehrernamen" hat jede Zeile jetzt einen ✕-Button zum Löschen eines Kürzels von Hand (z. B. Altlasten nach einem Schulwechsel)
+- **Inaktiv-Kennzeichnung**: Kürzel, die in keinem Fach des aktuell gültigen Plans (inkl. Blöcke) mehr vorkommen, werden automatisch als „· nicht mehr im Plan" markiert, abgeblendet und ans Ende sortiert - die Summary nennt ihre Anzahl. So sieht man auf einen Blick, welche alten Kürzel man wegräumen kann. Rein abgeleitet aus dem Plan, kein Datenverlust; ein gelöschtes Kürzel taucht bei Bedarf durch den nächsten Import wieder auf, wenn es noch unterrichtet wird
+
+## 1.23.0 - August 2026 (Card 1.18.0)
+
+### Neu
+- **Lehrer-Klarnamen**: Pro Kind gibt es eine aufklappbare Tabelle „👩‍🏫 Lehrernamen" (Kürzel → Klarname). Die Kürzel werden aus den gelernten Fach-Details automatisch entdeckt, die Namen lassen sich von Hand befüllen. Handeinträge gewinnen und bleiben erhalten
+- **Eltern-Portal füllt automatisch**: Das Portal kennt die Klarnamen der Lehrkräfte - der Import übernimmt und korrigiert sie selbsttätig (Merker-Prinzip wie bei Raum/Lehrer; ein von Hand abweichend gesetzter Name bleibt unangetastet). Schulmanager liefert nur das Kürzel, dort werden die Namen von Hand gepflegt
+- **Anzeige nach Platz**: Die Karte zeigt bei genügend Breite den Klarnamen, sonst das Kürzel (per Container-Query, kein Umschalten nötig) - in der Heute-Liste früher als im engeren Wochenraster. Der volle Name steht zusätzlich im Zell-Tooltip. Neues MQTT-Attribut `lehrer_namen` je Kind
+
+## 1.22.0 - Juli 2026 (Card 1.17.0)
+
+### Behoben
+- Schulschluss beruecksichtigt jetzt Entfall: Fallen die letzten Stunden des Tages aus (z.B. Werken 5./6. Stunde), zeigen Sensor und Karte das echte Ende (11:20 statt 15:00) - bisher kam die regulaere Endzeit aus dem Stammplan, weil das Vertretungs-Overlay erst nach der Sensorberechnung geholt wurde. Gleiches gilt spiegelbildlich fuer den Schulbeginn bei entfallenden ersten Stunden
+- Auch 'zuletzt <Fach>' auf der Schulschluss-Karte nennt jetzt das letzte tatsaechlich stattfindende Fach; bei verschobenem Ende steht daneben 'statt 15:00 (Entfall)'
+- Der Morgen-Push rechnet Entfaelle des Folgetags ebenfalls ein ('Schluss 11:20 (statt 15:00)') und packt kein Material fuer entfallende Faecher ein
+- Faellt der komplette Tag aus, melden die Sensoren 'Schulfrei (Entfall)' statt einer reinen Uhrzeit; eine Freistunde durch Entfall mitten am Tag heisst 'Frei (Entfall)' statt 'Pause'
+- Vertretungen (Fach-, Raum- oder Lehrertausch) aendern die Zeiten weiterhin nicht - nur ersatzloser Entfall zaehlt
+
+### Neu
+- Neue Attribute je Kind: `schulbeginn_heute`, `heute_entfall` sowie `schulschluss_regulaer`/`schulbeginn_regulaer` (nur gesetzt, wenn Randstunden entfallen) - nutzbar fuer eigene Automationen
+- Attribut-Aenderungen ohne Zustandswechsel (z.B. offene Hausaufgaben) werden jetzt ebenfalls publiziert
+
+## 1.21.0 - Juli 2026
+
+### Verbessert
+- Robust gegen API-Ausfaelle: Leert die Schulmanager-Integration bei Verbindungsfehlern ihre Sensoren (state unavailable/unknown), verschwinden Vertretungen, Arbeiten und Hausaufgaben nicht mehr von der Karte - der Publisher zeigt bis zu 6 Stunden den letzten bekannten Stand weiter und protokolliert eine Warnung ('zeige Stand von 10:30 weiter'). Die Datenstand-Zeile bleibt dabei ehrlich beim alten Zeitstempel
+- Wichtig: Ein erfolgreicher Abruf mit leerer Aenderungsliste gilt weiterhin sofort ('keine Vertretungen' ist eine legitime Antwort) - nur echte Fehlzustaende greifen auf den Cache zurueck
+
+## 1.20.3 - Juli 2026 (Card 1.16.3)
+
+- Entfall-Zellen dimmen jetzt per dunklem Overlay statt Transparenz - die Notiz-Pille (z.B. 'Aula') liegt ueber dem Schleier und ist damit in vollem Weiss lesbar, waehrend der gestrichene Zellinhalt weiterhin klar als inaktiv erkennbar bleibt
+
+## 1.20.2 - Juli 2026 (Card 1.16.2)
+
+- Notiz in Entfall-/Vertretungszellen jetzt gut lesbar: kontraststarke dunkle Pille mit weissem Text (eine CSS-Namenskollision mit der bestehenden sp-info-Klasse liess die Notiz zuvor blass und unformatiert erscheinen); Entfall-Dimmung von 45% auf 60% Sichtbarkeit angehoben
+
+## 1.20.1 - Juli 2026 (Card 1.16.1)
+
+- Info-Notizen der Schule (note/reason, z.B. 'Aula' bei Entfall) erscheinen jetzt direkt in der Karten-Zelle als eigene Zeile mit Info-Icon - bewusst nicht durchgestrichen - sowie in der Heute-Liste; bisher steckten sie nur im Tooltip, Push und Web-UI
+
+## 1.20.0 - Juli 2026 (Card 1.16.0)
+
+### Neu
+- Datenstand auf der Karte: Unter Wochen- und Heute-Ansicht steht klein, wann die Schul-Integration zuletzt wirklich Daten geholt hat ('Daten: So., 12.07., 20:53') - beim Eltern-Portal aus last_fetch, beim Schulmanager aus dem Abruf-Zeitstempel der Tages-Sensoren. Neues MQTT-Attribut daten_stand je Kind
+
+## 1.19.0 - Juli 2026
+
+### Neu
+- Das Add-on versorgt sich beim Eltern-Portal selbst mit frischen Daten: Vor jedem Auto-Import-Lauf, vor dem manuellen Import-Button und vor dem Abend-Push ruft es elternportal.fetch_data auf und wartet auf die Bestaetigung ueber last_fetch (max. 40s, danach letzter bekannter Stand). Ein Aufruf pro Lauf genuegt fuer alle Portal-Kinder
+- Die zuvor empfohlene HA-Automation fuer fetch_data ist damit ueberfluessig und kann geloescht werden
+
+## 1.18.1 - Juli 2026
+
+- Raeume-und-Lehrer-Tabelle im Kind-Panel kompakt gestylt (linksbuendig, feste schmale Spalten statt voller Breite)
+- Die Tabelle zeigt nur noch Faecher des aktiven Plans (und der Bloecke) - Kuerzel aus alten Planversionen blaehen die Liste nicht mehr auf
+
+## 1.18.0 - Juli 2026
+
+### Geaendert
+- Raum und Lehrer sind jetzt kindspezifisch (kind.fach_details) statt am globalen Fach: Geschwister an verschiedenen Schulen teilen dieselben Kuerzel (D, E, M...) mit unterschiedlichen Raeumen/Lehrern, ohne sich zu ueberschreiben. Name, Farbe und Material bleiben global
+- Neue aufklappbare Tabelle 'Raeume & Lehrer' im Kind-Panel zur Handpflege; die Raum/Lehrer-Spalten im Faecher-Tab entfallen
+- Import und Merker-Prinzip arbeiten pro Kind; einmalige Migration verteilt Bestandswerte auf die Kinder, deren Plaene das Fach nutzen
+- MQTT-Publisher liefert je Kind die gemergten Faecher - die Karte zeigt automatisch die richtigen Details, keine Karten-Aenderung noetig
+
+### Behoben
+- Publisher nutzt jetzt ebenfalls den Quellen-Dispatcher: Arbeiten von Eltern-Portal-Kindern erscheinen in den MQTT-Attributen
+
+## 1.17.0 - Juli 2026
+
+### Neu
+- Eltern-Portal (eltern-portal.org) als zweite Datenquelle neben Schulmanager, via HACS-Integration workFLOw42/Elternportal_API: Das Verknuepfungs-Dropdown zeigt Kinder beider Quellen, Import/Auto-Import/Statusbox/Push funktionieren identisch
+- Eltern-Portal-Import liefert den kompletten Wochenplan inkl. Raeumen, dazu Fachnamen und Lehrerkuerzel (teachers-Block + Kuerzelverzeichnis der Schule, titel-tolerant) sowie anstehende Arbeiten aus dem Schulaufgaben-Plan; Splitfaecher (z.B. K/Ev/Eth) werden als Kombi-Fach uebernommen
+- Abweichende Stundenzeiten der Schule erzeugen wie gehabt automatisch ein Personen-Raster
+
+### Hinweis
+- Die Integration laedt Daten nur per Service elternportal.fetch_data - eine HA-Automation (z.B. 06:20/06:50/07:10 + 18:45) vor den Auto-Import-Zeiten wird empfohlen. Vertretungen und Hausaufgaben liefert das Eltern-Portal nicht
+
+### Intern
+- Neues Modul quellen.py: sync, push und server sprechen nur noch mit dem Dispatcher, Adapter sind austauschbar (kind.quelle)
+
+## 1.16.2 - Juli 2026 (Card 1.15.2)
+
+- Neue Angaben in der Vertretungszelle jetzt in Weiss statt Gelb - besser lesbar auf den farbigen Fachkacheln
+
+## 1.16.1 - Juli 2026 (Card 1.15.1)
+
+- Vertretungs-Zelle aufgeraeumt: Der Typ-Schriftzug ('Geaenderter Unterricht') entfaellt, das Aenderungs-Icon steht jetzt direkt vor den neuen Angaben ('120 - rei' -> '🔁 126 - rei'). Der Aenderungstyp bleibt im Tooltip erhalten
+
+## 1.16.0 - Juli 2026 (Card 1.15.0)
+
+### Neu
+- Automatisches Personen-Raster: Weichen die Schulmanager-Stundenzeiten vom Standard-Raster ab, legt der Import automatisch ein eigenes Raster fuer das Kind an. Merker-Prinzip wie bei Raum/Lehrer: importierte Raster folgen spaeteren Zeiten-Aenderungen der Schule, handgepflegte bleiben unangetastet
+- Vertretungs-Darstellung wie im Schulmanager: Die Karte zeigt in betroffenen Stunden die Originaldaten rot durchgestrichen (bei Fachwechsel inkl. altem Kuerzel) und darunter die neuen Angaben hervorgehoben - in Wochen- und Heute-Ansicht
+
+## 1.15.0 - Juli 2026
+
+### Neu (Web-UI)
+- Wochenplan-Raster zeigt Raum und Lehrer klein in jeder Stunde
+- Statusbox 'Schulmanager heute/morgen' im Kind-Panel: Aenderungen (Entfall rot, Vertretung orange - betroffene Stunden werden auch direkt im Raster markiert), faellige Hausaufgaben und anstehende Arbeiten
+- Einstellungs-Card 'Schulmanager Auto-Import': Import-Zeiten als Komma-Liste direkt in der Web-UI einstellbar (mit Validierung)
+
+### Behoben
+- Versions-Bump fehlte im vorigen Patch, daher bot Home Assistant kein Update an
+
+## 1.14.4 - Juli 2026
+
+### Verbessert
+- Import baut den Stammplan jetzt primaer aus den originalbereinigten Tages-Sensoren (heute/morgen): Bei Fach-Vertretungen landet das Original-Fach im Plan statt des Vertretungsfachs, Entfall-Stunden behalten ihr Stammfach. Der Wochenplan-JSON dient nur noch als Basis-Geruest
+- Damit setzt sich der Original-Stundenplan per Auto-Import Tag fuer Tag ueber die Woche zusammen - auch wenn die Schule (wie bei Luna) keinen Wochenplan pflegt, sondern nur den jeweils naechsten Tag
+
+## 1.14.3 - Juli 2026
+
+### Behoben
+- Altlasten-Heilung: Importe vor v1.14.2 konnten Vertretungswerte (Springer-Lehrer, Ausweichraum) als regulaere Fach-Daten speichern. Eine einmalige Migration markiert Bestandswerte als Schulmanager-gelernt, sodass der naechste Import sie aus den original-Daten korrigiert (z.B. Physik zurueck auf 'Ph 2 / her' statt '126 / rei')
+- Stundentyp 'changedLesson' (Geaenderter Unterricht) wird jetzt ueberall erkannt
+
+## 1.14.2 - Juli 2026
+
+### Verbessert
+- Raum/Lehrer-Lernen ist jetzt vertretungssicher: Nur regulaere Stunden werden ausgewertet; bei Vertretungen wird der regulaere Stand aus den original-Daten gelernt statt Springer-Lehrer oder Ausweichraum zu uebernehmen
+- Selbstpflegender Stundenplan: Aus Schulmanager gelernte Raeume/Lehrer werden bei regulaeren Aenderungen (z.B. Raumwechsel zum Halbjahr) automatisch aktualisiert - handgepflegte Werte gewinnen dagegen immer (Herkunfts-Merker sm_raum/sm_lehrer je Fach)
+
+## 1.14.1 - Juli 2026
+
+- Auto-Import laeuft jetzt mehrmals morgens vor Schulbeginn: 06:30, 07:00 und 07:15 Uhr (statt einmal 05:30) - so werden auch Vertretungen erfasst, die das Sekretariat erst am Morgen eintraegt. Konfigurierbar als Liste ueber auto_import_zeiten; jeder Zeitpunkt laeuft genau einmal pro Tag
+
+## 1.14.0 - Juli 2026
+
+### Neu
+- Optionaler Auto-Import: Pro Kind aktivierbare Checkbox - der Schulmanager-Plan wird taeglich (Default 05:30, einstellbar via auto_import_zeit) automatisch uebernommen. Gleiche Regeln wie der Button: nur befuellte Tage, Raum/Lehrer nur ergaenzen, eigenes Stundenraster bleibt unangetastet; vor Aenderungen entsteht ein Backup (autoimport-Prefix)
+
+### Verbessert
+- Import-Logik ins Backend verlagert (sync.py): Button und Auto-Import nutzen exakt dieselbe Merge-Funktion (Single Source of Truth), der Import landet immer in der aktuell gueltigen Planversion
+
+## 1.13.0 - Juli 2026 (Card 1.14.0)
+
+### Neu
+- Faecher haben ein optionales Lehrer-Feld (Faecher-Tab); Karte zeigt Raum und Lehrer in der Wochenzelle ('126 - rei') und in der Heute-Liste
+- Schulmanager-Import uebernimmt Raum, Lehrer und vollen Fachnamen aus den Stundenplan-heute/morgen-Sensoren: Neue Faecher heissen 'Physik' statt 'Ph' und sind komplett befuellt; bei bestehenden Faechern werden nur leere Felder ergaenzt (nichts wird ueberschrieben). Da die Quelle nur heute/morgen abdeckt, vervollstaendigen sich die Angaben ueber mehrere Importe inkrementell
+
+## 1.12.1 - Juli 2026 (Card 1.13.1)
+
+### Behoben
+- Vertretungs-Overlay zeigt jetzt alle gelieferten Details: Lehrerkuerzel und Grund werden uebernommen ('Geaenderter Unterricht - Ph - rei - 126'), der Aenderungstyp wird wie von der Integration geliefert angezeigt (die Integration lokalisiert bereits auf Deutsch, das englische Code-Mapping griff daher nie)
+- Entfall-Erkennung robust fuer deutsche und englische Typbezeichnungen; Grund/Notiz erscheint im Tooltip und im Morgen-Push
+
+## 1.12.0 - Juli 2026 (Card 1.13.0)
+
+### Neu
+- Klassenarbeiten direkt im Stundenplan: Die Wochenansicht markiert Arbeiten am Tag (roter Vermerk im Spaltenkopf, z.B. '📝 M' mit Typ als Tooltip) und umrandet die passende Fachstunde - beim Blaettern in kuenftige Wochen inklusive
+- Heute-Ansicht listet alle Arbeiten der naechsten 14 Tage (statt nur der naechsten), Quelle: upcoming_exams des Schulmanager-Sensors
+
+## 1.11.2 - Juli 2026
+
+### Behoben
+- Hausaufgaben-Liste blieb leer: Die Schulmanager-Todo-Eintraege haben kein due-Feld (supported_features 4), das Datum steht im Titel ('[2026-07-13] Mathe: ...'). Das Datum wird jetzt aus dem Titel geparst (ISO- und deutsches Format), das Praefix fuer die Anzeige entfernt
+- Ueberfaellige Aufgaben werden auf die letzten 7 Tage begrenzt (Push: 3 Tage), damit alte nie abgehakte Eintraege die Anzeige nicht fluten
+
+## 1.11.1 - Juli 2026 (Card 1.12.1)
+
+### Neu
+- Konkrete Hausaufgaben statt nur Anzahl: Die Heute-Ansicht listet demnaechst faellige Aufgaben (bis 3 Tage voraus, ueberfaellige rot markiert) mit Faelligkeits-Label (heute/morgen/Wochentag). Quelle: todo.get_items der Schulmanager-Todo-Liste
+- Morgen-Push nennt die bis morgen faelligen Aufgaben beim Namen ('Bis morgen: Mathe AB S. 12; Englisch Vokabeln' + Zaehler bei mehr als drei) statt nur der Gesamtzahl
+
+## 1.11.0 - Juli 2026 (Card 1.12.0)
+
+### Neu (nur bei Schulmanager-Verknuepfung, optional)
+- Offene Hausaufgaben: Anzahl aus der Schulmanager-Todo-Liste in der Heute-Ansicht, als Badge in der Schulschluss-Ansicht, im Morgen-Push und als Sensor-Attribut hausaufgaben_offen
+- Naechste Klassenarbeit: Heute-Ansicht zeigt anstehende Arbeiten (bis 14 Tage im Voraus, z.B. 'Schulaufgabe Mathematik in 3 Tagen'), der Morgen-Push warnt am Vorabend ('Schulaufgabe Mathematik morgen!'), Sensor-Attribut naechste_arbeit
+- Wochenansicht bleibt bewusst clean (nur der Plan); Noten werden bewusst nicht angezeigt
+
+## 1.10.1 - Juli 2026
+
+### Neu
+- Backup-System: Die seit v1.0.0 vorhandenen Add-on-Optionen backup_zeit/backup_anzahl sind jetzt tatsaechlich implementiert - taegliches Backup der Daten nach /data/backups mit Rotation, dazu Endpoints /api/backups, /api/backup/snapshot und /api/backup/restore (mit Dateinamen-Validierung)
+- Schulmanager-Import uebernimmt nur in Schulmanager befuellte Tage - leere Tage bleiben unangetastet. Damit laesst sich der Plan inkrementell fuellen, wenn die Integration (Option schedule_weeks) nur wenige Tage liefert
+- Import rueckgaengig: Vor jedem Import wird automatisch ein Server-Snapshot angelegt; der Button 'Import rueckgaengig' stellt den kompletten Vorher-Stand wieder her (bis zum Neuladen der Seite, danach greifen die Backups)
+
+### Behoben
+- Race-Condition beim Import-Undo: Ein noch laufender Auto-Save-Timer haette den Import-Stand nach dem Restore erneut speichern koennen
+
+## 1.10.0 - Juli 2026 (Card 1.11.0)
+
+### Neu: Schulmanager-Online-Anbindung (optional)
+- Voraussetzung: HACS-Integration MrIcemanLE/Schulmanager-homeassistant - der Stundenplan-Manager konsumiert deren Entities, keine eigenen Zugangsdaten noetig
+- Verknuepfung pro Kind: Dropdown 'Schulmanager' im Kind-Panel (automatisch gefundene Schueler)
+- Plan-Import: Button 'Plan importieren' uebernimmt den Wochenplan aus dem Wochenplan-JSON-Sensor in die gewaehlte Planversion; unbekannte Faecher werden mit Farbpalette angelegt, vorhandene Kuerzel (case-insensitive) wiederverwendet, Stundenraster optional als kind-eigenes Raster uebernommen
+- Vertretungs-Overlay in der Karte: Entfall durchgestrichen und gedimmt, Vertretung/Lehrerwechsel/Sonderstunde mit gestricheltem Rahmen und Detail-Badge (Fach, Raum) - in Wochen- und Heute-Ansicht, fuer heute und morgen
+- Morgen-Push warnt bei Aenderungen: '5. Std Vertretung Mathe (Raum 204)'
+- Gekapselt in eigenem Adapter-Modul (schulmanager.py) - bei API-Aenderungen der Quelle muss nur dieses Modul angepasst werden
+
+## 1.9.1 - Juli 2026
+
+- Schulferien-Einstellungen auf ein einziges Kalender-Sensor-Feld vereinfacht. Ein noch gesetztes zweites Feld (Legacy-Einzelsensoren) wird im Hintergrund weiterhin ausgewertet
+
+## 1.9.0 - Juli 2026
+
+### Verbessert
+- Unterstuetzung fuer den neuen Kalender-Sensor des Schulferien-Managers (Attribute schulferien/feiertage mit allen Zeitraeumen): ein einziges Dropdown-Feld genuegt, das Wochen-Blaettern der Karte zeigt damit weit in die Zukunft korrekte Ferien- und Feiertags-Markierungen (z.B. Herbstferien, Buss- und Bettag, Weihnachtsferien)
+- Format-Erkennung automatisch am Attribut-Set - die bisherigen Einzelsensoren funktionieren unveraendert weiter
+- Auto-Migration: Ist ein Kalender-Sensor mit gleichem Praefix vorhanden, wird die Konfiguration beim Start automatisch umgestellt
+
+## 1.8.0 - Juli 2026 (Card 1.10.0)
+
+### Neu (beides optional)
+- Morgen-Push: In den Einstellungen aktivierbar (Standard: aus) - sendet zur konfigurierten Uhrzeit (Standard 19:00) eine gesammelte Benachrichtigung ueber den morgigen Schultag aller Kinder an einen HA-Notify-Service (Geraete-Dropdown wird automatisch geladen, Test-Button inklusive). An freien Tagen bleibt der Push stumm; Blockmodus und Planversionen werden beruecksichtigt
+- Materialliste pro Fach: Optionales Material-Feld im Faecher-Tab (z.B. Sportbeutel). Erscheint im Morgen-Push, als Attribut material_morgen am Sensor 'Erste Stunde morgen' und in der Heute-Ansicht der Karte ('Heute dabei: ...') - nur wenn Material eingetragen ist
+
+## 1.7.2 - Juli 2026 (Card 1.9.1)
+
+- Schulschluss-Ansicht nutzt jetzt die vorhandenen Backend-Sensoren als primaere Quelle (schulschluss_heute fuer die Uhrzeit, aktuelle_stunde fuer den Frei-Grund) statt doppelter Berechnung - Karte und Automationen zeigen garantiert dasselbe. Lokale Berechnung bleibt als Fallback, wenn die Sensoren deaktiviert sind; das 'zuletzt {Fach}'-Detail wird weiterhin lokal angereichert
+
+## 1.7.1 - Juli 2026 (Card 1.9.0)
+
+### Neu
+- Dritte Kartenansicht 'Schulschluss heute': alle Kinder in einer kompakten Liste mit grosser Schluss-Uhrzeit, Hinweis 'noch bis ... - zuletzt {Fach}' bzw. 'Schule ist aus', an freien Tagen der Grund (Ferien/Feiertag/Wochenende/Betrieb). Beruecksichtigt Planversionen und wird komplett in der Karte berechnet
+
+## 1.7.0 - Juli 2026 (Card 1.8.0)
+
+### Neu
+- Karte: Wochenkopf mit Kalenderwoche und Datumsbereich (KW 29 - 13.07.-17.07.2026), Tagesdatum unter jedem Wochentag, Blaettern mit Pfeiltasten und Heute-Button zurueck
+- Planversionen fuer den Schuljahreswechsel: Pro Kind 'Neuer Plan ab...' mit Gueltig-ab-Datum anlegen (startet als Kopie), Sensoren und Karte wechseln am Stichtag automatisch, beim Vorblaettern zeigt die Karte bereits den kuenftigen Plan
+- Schulfrei-Markierung gilt jetzt fuer jede geblaetterte Woche (Karte erhaelt die Zeitraeume statt nur der aktuellen Woche)
+- Blockmodus: Betriebstage werden beim Blaettern pro Tag markiert (Betrieb-Vermerk im Spaltenkopf, gedimmte Spalte) - das Betriebsphasen-Banner entfaellt
+- Fach loeschen/umbenennen wirkt jetzt auf alle Planversionen
+
+## 1.6.0 - Juli 2026 (Card 1.7.0)
+
+### Verbessert
+- Ferien-Integration auf Zeitraum-Sensoren umgestellt: statt heute/morgen-Binaersensoren jetzt 'Naechste Schulferien' (beginn/ende + laufende Ferien) und 'Naechster Feiertag' (Datum + 14-Tage-Vorschau)
+- Die Karte markiert damit ALLE schulfreien Tage der Woche (z.B. Feiertag am Donnerstag schon montags sichtbar, Ferienwochen komplett gedimmt), jeweils mit Grund im Spaltenkopf
+- Sensoren zeigen 'Schulfrei (Grund)' fuer beliebige Tage, inkl. 'Erste Stunde morgen' am Vorabend eines Feiertags
+- Bestehende Konfiguration mit Binaersensoren wird automatisch auf die Zeitraum-Sensoren migriert (gleicher Geraete-Praefix)
+
+## 1.5.2 - Juli 2026 (Card 1.6.1)
+
+- Fix: Heute-Punkt im Spaltenkopf steht jetzt direkt hinter dem Tageskuerzel statt verloren unter dem Schulfrei-Vermerk
+
+## 1.5.1 - Juli 2026 (Card 1.6.0)
+
+- Schulfrei-Anzeige direkt am Tag statt Banner: Spaltenkopf zeigt klein den Grund (z.B. Sommerferien), die Stunden des freien Tags werden gedimmt; gilt fuer heute und morgen. Die Markierung der laufenden Stunde pausiert an freien Tagen. Heute-Modus zeigt weiterhin den Ferien-Hinweis
+
+## 1.5.0 - Juli 2026
+
+### Verbessert
+- Schulferien-Integration jetzt direkt in der Web-UI unter Einstellungen konfigurierbar: Dropdowns mit automatisch gefundenen schulfrei-Sensoren (binary_sensor mit schulfrei/ferien/feiertag/holiday im Namen) statt Entity-IDs in den Add-on-Optionen
+- Bereits gesetzte Add-on-Optionen ferien_heute/ferien_morgen werden beim ersten Start automatisch in die App-Einstellungen uebernommen
+
+## 1.4.0 - Juli 2026 (Card 1.5.0)
+
+### Neu
+- Schulferien-Integration: Zwei neue Add-on-Optionen ferien_heute / ferien_morgen (binary_sensor-Entities des Schulferien & Feiertage Managers, z.B. binary_sensor.schulferien_bayern_heute_schulfrei). Bei schulfrei zeigen die Sensoren "Schulfrei (Grund)" - inkl. Erste Stunde morgen am letzten Ferientag
+- Karte zeigt an schulfreien Tagen ein Ferien-Banner (Wochenansicht) bzw. nur den Ferien-Hinweis (Heute-Modus)
+- Blockmodus ignoriert Schulferien bewusst: Azubis haben in den Ferien Betrieb
+- Ohne konfigurierte Entities verhaelt sich alles unveraendert; Abfrage via HA-REST-API mit 60s-Cache
+
+## 1.3.0 - Juli 2026
+
+### Neu
+- Automatische Lovelace-Ressourcen-Registrierung: Das Add-on registriert /local/stundenplan-card.js?v={Kartenversion} beim Start selbst ueber die HA-API und aktualisiert die Version nach jedem Karten-Update - kein manuelles ?v=X-Hochzaehlen mehr, nur noch normaler Browser-Reload
+- Bestehende /local-Ressourcen (auch mit altem ?v=) werden erkannt und aktualisiert; bei YAML-Dashboards erscheint ein Hinweis im Log
+
+## 1.2.6 - Juli 2026 (Card 1.4.0)
+
+- Tabs/Chips generell groesser (.92rem, mehr Padding)
+- Neue Editor-Option 'Schriftgroesse' (Normal/Gross): skaliert die gesamte Karte - Tabs, Wochentage, Fachbloecke, Zeiten, Kindernamen, Heute-Liste
+
+## 1.2.5 - Juli 2026 (Card 1.3.1)
+
+- Layout 'untereinander': Kindernamen deutlich groesser (1.35rem, fett) und nach rechts eingerueckt, buendig mit den Wochentag-Spalten
+
+## 1.2.4 - Juli 2026 (Card 1.3.0)
+
+### Neu
+- Layout-Option fuer mehrere Kinder: Tabs (Chips) oder alle untereinander mit Namens-Ueberschriften - waehlbar im Editor
+- Deutlichere Markierung der laufenden Stunde: farbige Pill in der Zeitspalte zusaetzlich zum Glow um die Fachzelle; laufende Pausen werden ebenfalls hervorgehoben (mit Hinweis 'laeuft')
+
+## 1.2.3 - Juli 2026 (Card 1.2.1)
+
+### Design-Ueberarbeitung der Karte
+- Luft zwischen den Fachbloecken (4px Abstand, abgerundete Bloecke mit mehr Hoehe) statt gequetschter Streifen
+- Zeitspalte fix schmal (54px) - kein riesiger Leerraum mehr auf breiten Dashboards
+- Auf breiten Karten (ab 620px) wird der volle Fachname unter dem Kuerzel eingeblendet (Container Query)
+- Pausen als klar lesbare Trennzeile mit gestrichelten Linien links und rechts
+- Freie Stunden als dezente Platzhalter-Flaechen statt Gedankenstrich
+- Heutiger Tag: Punkt-Markierung im Spaltenkopf, laufende Stunde mit sanftem Glow
+
+## 1.2.2 - Juli 2026 (Card 1.2.0)
+
+- Editor findet Wochenplan-Sensoren automatisch und zeigt die Kinder als Checkbox-Liste zum Anhaken (statt Entity-Suchfeld)
+- Mehrere Kinder in einer Karte: Umschalt-Chips mit den Namen oben in der Karte
+- Ohne Konfiguration zeigt die Karte automatisch alle gefundenen Kinder
+- entity (alt) wird automatisch zu entities migriert, bestehende Konfigurationen laufen weiter
+
+## 1.2.1 - Juli 2026
+
+- Add-on liefert die Stundenplan Card jetzt selbst aus: beim Start wird sie nach /config/www kopiert, einmalig als Ressource /local/stundenplan-card.js registrieren - Karten-Updates kommen dann automatisch mit jedem Add-on-Update (HACS weiterhin als Alternative moeglich)
+- README ueberarbeitet (Karten-Doku war zuvor durch stilles Replace-Fehlschlagen nicht gelandet)
+
+## Card 1.1.0 - Juli 2026
+
+- Visueller Konfigurations-Editor fuer die Stundenplan Card: Entity-Auswahl, Ansicht-Dropdown (Woche/Heute), Pausen-Toggle und Titelfeld direkt im Dashboard-Editor, kein YAML noetig
+
+## 1.2.0 - Juli 2026
+
+### Neu
+- Fuenfter Sensor "Wochenplan" pro Kind: State = Wochenstundenzahl, Attribute = kompletter Plan (Raster, Faecher, Bloecke) fuer die Lovelace-Karte
+- Stundenplan Card (dist/stundenplan-card.js, via HACS als Dashboard-Repo installierbar): Wochenansicht mit Fachfarben, Pausen, Hervorhebung des heutigen Tags und der laufenden Stunde; Heute-Modus als kompakte Liste; Betriebsphasen-Banner im Blockmodus; nutzt HA-Theme-Variablen (hell/dunkel)
+
+## 1.1.3 - Juli 2026
+
+### Neu
+- Druckoption pro Kind: heller A4-Querformat-Ausdruck mit vollen Fachnamen, Raeumen, Pausen und dezenten Fachfarben; im Blockmodus werden die Blockzeitraeume unter dem Plan aufgelistet
+
+## 1.1.2 - Juli 2026
+
+### Behoben
+- Zeiteingabe im Stundenraster: Eingabefeld verlor bei jeder Ziffer den Fokus, weil das Panel komplett neu gerendert wurde. Zeitaenderungen aktualisieren jetzt nur noch gezielt die Plan-Tabelle und die Kurzinfos - der Editor bleibt stehen, der Collapse bleibt offen
+
+## 1.1.1 - Juli 2026
+
+- Pausen werden im Wochenplan-Raster dezent als schmale Trennzeilen angezeigt (mit Uhrzeit und Dauer)
+
+## 1.1.0 - Juli 2026
+
+### Neu
+- MQTT Discovery Sensoren pro Kind: Aktuelle Stunde, Naechste Stunde, Erste Stunde morgen, Schulschluss heute
+- Zustaende: Fach mit Kuerzel und Raum-Attributen, Pause, Kein Unterricht, Schulfrei (Wochenende/leerer Tag), Betrieb (Blockmodus ausserhalb der Bloecke)
+- Sensoren aktualisieren sich alle 30s und sofort nach jeder Aenderung in der Web-UI
+- Availability-Topic mit Last Will (Sensoren werden bei Add-on-Stopp als nicht verfuegbar markiert)
+- Aufgeraeumte Entfernung: geloeschte Kinder verschwinden auch aus HA
+
+## 1.0.3 - Juli 2026
+
+- Auto-Save: Aenderungen werden automatisch gespeichert (0,8s nach letzter Eingabe, sofort bei Tab-/Seitenwechsel via sendBeacon)
+- Fehlerbehandlung: bei fehlgeschlagenem Speichern automatischer Neuversuch nach 3s
+
+## 1.0.2 - Juli 2026
+
+- Fach-Kuerzel nachtraeglich editierbar (mit Kollisionspruefung, Plaene werden automatisch migriert)
+
+## 1.0.1 - Juli 2026
+
+- Aufraeumen: __pycache__ aus Repo entfernt, .gitignore ergaenzt
+- Version-Bump, damit HA das Add-on neu baut (einklappbares Stundenraster + Standard-Faecher werden damit sichtbar)
+
+## 1.0.0 - Juli 2026
+
+- Erste Version: Add-on-Grundstruktur, Web-UI, Blockunterricht-Datenmodell
