@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.1 - September 2026
+
+### Behoben
+- **Lehrer ließen sich nicht löschen**, wenn sie nur noch in einer einzelnen Stunde (Overlay) einer Planversion steckten (typisch nach einem Schulwechsel): `✕` entfernte sie aus Liste und Fach-Details, das Stunden-Overlay holte sie beim Neuzeichnen aber zurück. Jetzt werden sie auch aus allen Stunden entfernt und bleiben weg.
+- **🚪 Räume**: Nicht mehr genutzte Räume werden jetzt – wie bei Fächern und Lehrern – mit „nicht mehr im Plan" markiert (abgeblendet), sodass sich Altlasten (z. B. Räume der alten Schule) leicht per `✕` aufräumen lassen.
+
+
 ## 2.0.0 - September 2026 · Stundenplan Manager 2
 
 Großes Update: das Datenmodell ist jetzt **vollständig kindbezogen** und der Plan lässt sich **per Drag & Drop** befüllen. Der Umstieg ist automatisch und nicht-destruktiv – bestehende Pläne, Räume und Lehrer werden übernommen.

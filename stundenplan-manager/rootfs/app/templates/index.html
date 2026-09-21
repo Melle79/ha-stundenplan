@@ -776,15 +776,25 @@ async function kStandardFaecher() {
   alert(neu ? `${neu} Fächer zu ${k.name} hinzugefügt.` : "Alle Standard-Fächer sind schon da.");
 }
 
-// Räume-Liste eines Kindes (Basis für den Stunden-Editor und späteres Drag&Drop).
+// Räume-Liste eines Kindes (Basis für den Stunden-Editor und Drag&Drop).
 function raeumeTabelleHTML(k) {
   const raeume = k.raeume || [];
-  let zeilen = "";
+  // Räume, die im aktuell gültigen Plan (Stunden-Overlay) wirklich vorkommen
+  const benutzt = new Set();
+  const ap = aktiverPlan(k);
+  for (const [t] of TAGE) for (const o of ((ap.details || {})[t] || []))
+    if (o && (o.raum || "").trim()) benutzt.add(o.raum.trim());
+  let zeilen = "", inaktivN = 0;
+  // Reihenfolge NICHT ändern – raumUmbenennen/raumLoeschen arbeiten über den Index.
   raeume.forEach((r, i) => {
-    zeilen += `<tr><td>${gripHTML("raum", r, r, "#455a64")}<input value="${esc(r)}" onchange="raumUmbenennen(${i}, this.value)"></td>
+    const aktiv = benutzt.has(r);
+    if (!aktiv) inaktivN++;
+    zeilen += `<tr${aktiv ? "" : ' style="opacity:.55"'}><td>${gripHTML("raum", r, r, "#455a64")}<input value="${esc(r)}" onchange="raumUmbenennen(${i}, this.value)">${aktiv ? "" : `<small style="display:block;color:#e0a400;font-size:.6rem;margin-top:2px">nicht mehr im Plan</small>`}</td>
       <td><button class="icon" title="Raum löschen" onclick="raumLoeschen(${i})">✕</button></td></tr>`;
   });
-  return `<details class="card" style="margin:10px 0 0" ${sektAttr("raeume")}><summary style="cursor:pointer"><b>🚪 Räume (${esc(k.name)})</b> <small style="color:var(--text-sec)">– Auswahl für den Stunden-Editor; beim Import ergänzen sich neue Räume automatisch</small></summary>
+  const hinweis = inaktivN
+    ? ` <small style="color:#e0a400">· ${inaktivN} nicht mehr im Plan, mit ✕ löschbar</small>` : "";
+  return `<details class="card" style="margin:10px 0 0" ${sektAttr("raeume")}><summary style="cursor:pointer"><b>🚪 Räume (${esc(k.name)})</b> <small style="color:var(--text-sec)">– Auswahl für den Stunden-Editor; beim Import ergänzen sich neue Räume automatisch</small>${hinweis}</summary>
     <table class="fd-tab"><thead><tr><th>Raum</th><th></th></tr></thead><tbody>${zeilen}</tbody></table>
     <button class="btn ghost" style="margin-top:8px" onclick="raumHinzufuegen()">+ Raum</button></details>`;
 }
@@ -826,8 +836,9 @@ function lnDel(kuerzel) {
   const k = kind();
   if (k.lehrer_namen) delete k.lehrer_namen[kuerzel];
   if (k.lehrer_namen_quelle) delete k.lehrer_namen_quelle[kuerzel];
-  // Kürzel auch aus den Fach-Details entfernen – sonst käme es beim Neu-Rendern
-  // sofort wieder aus einem (alten) Fach zurück und ließe sich nie löschen.
+  // Kürzel auch aus Fach-Details UND allen Stunden-Overlays entfernen – sonst
+  // käme es beim Neu-Rendern sofort wieder aus einem Fach oder einer Stunde
+  // zurück und ließe sich nie löschen.
   const lk = String(kuerzel).toLowerCase();
   const fd = k.fach_details || {};
   for (const kz in fd) {
@@ -836,6 +847,9 @@ function lnDel(kuerzel) {
       if ("sm_lehrer" in fd[kz]) fd[kz].sm_lehrer = "";
     }
   }
+  for (const p of allePlaene(k)) for (const [t] of TAGE)
+    for (const o of ((p.details || {})[t] || []))
+      if (o && (o.lehrer || "").toLowerCase() === lk) o.lehrer = "";
   setDirty(true);
   renderKid();   // Abschnitts-Zustand bleibt über offeneSektionen erhalten
 }
