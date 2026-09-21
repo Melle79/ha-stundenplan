@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.1.0 - September 2026
+
+### Neu
+- **📊 Statistik pro Kind (optional)**: Im Kind-Panel lässt sich je Kind eine Ausfall-/Vertretungsstatistik einschalten. Gezählt werden pro **Schuljahr** (beginnt am 1. August): **Entfall** (davon entfallene **Randstunden**), **Vertretungen** – aufgeschlüsselt nach **Raum-, Lehrer- und Fachwechsel**.
+- **Geplante Termine zählen nicht als Ausfall**: Wandertage, Exkursionen, Projekttage & Co. (erkannt am Grund oder an einem schulweiten Schultermin am selben Tag) werden bewusst ausgeklammert – das ist geplanter Unterricht, kein Stundenausfall.
+- Hinweis: Schulmanager/Eltern-Portal liefern keine Historie, daher zählt der Sammler **ab Aktivierung** fortlaufend (stündlich, dedupliziert). „Zählung zurücksetzen" leert die Statistik eines Kindes.
+
+
 ## 2.0.1 - September 2026
 
 ### Behoben

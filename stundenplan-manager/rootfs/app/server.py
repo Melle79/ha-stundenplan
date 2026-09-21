@@ -16,6 +16,7 @@ from push import (PushScheduler, baue_nachricht, baue_nachricht_kind,
 import quellen
 from schulmanager import hole_fach_details, hole_wochenplan
 from sync import AutoImportScheduler, fuehre_import_aus
+from statistik import StatistikCollector
 from backup import BackupScheduler, backup_erstellen, backup_wiederherstellen, liste_backups
 
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "info").upper()
@@ -568,5 +569,6 @@ if __name__ == "__main__":
     PushScheduler(lambda: load_data()).start()
     AutoImportScheduler(load_data, save_data, backup_erstellen,
                         lambda: PUBLISHER.trigger()).start()
+    StatistikCollector(load_data, save_data).start()
     registriere_ressource_async()
     app.run(host="0.0.0.0", port=8098)

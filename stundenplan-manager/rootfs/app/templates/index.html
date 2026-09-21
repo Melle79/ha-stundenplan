@@ -642,7 +642,7 @@ function renderKid() {
     <button class="btn ${planEditMode ? "" : "ghost"}" onclick="togglePlanEdit()">${planEditMode ? "✓ Drag & Drop aktiv" : "⇅ Drag & Drop"}</button>
   </div>
   <p class="hint" style="margin:4px 0 8px">Sensoren und Karte wechseln am Stichtag automatisch auf die neue Version - praktisch für den Schuljahreswechsel.</p>`;
-  html += versionen + `${k.schulmanager ? `<div id="smStatus" class="card" style="margin:0 0 10px"><h2 style="margin-top:0">🏫 ${qLabel(k.quelle)}${(k.quelle || "schulmanager") === "schulmanager" ? " heute/morgen" : ""}</h2><p class="hint" style="margin:0">Lade…</p></div>` : ""}<div id="planWrap">${planTabelleHTML(k, r)}</div>${fachDetailsTabelleHTML(k)}${lehrerNamenTabelleHTML(k)}${raeumeTabelleHTML(k)}${pushKindHTML(k)}
+  html += versionen + `${k.schulmanager ? `<div id="smStatus" class="card" style="margin:0 0 10px"><h2 style="margin-top:0">🏫 ${qLabel(k.quelle)}${(k.quelle || "schulmanager") === "schulmanager" ? " heute/morgen" : ""}</h2><p class="hint" style="margin:0">Lade…</p></div>` : ""}<div id="planWrap">${planTabelleHTML(k, r)}</div>${fachDetailsTabelleHTML(k)}${lehrerNamenTabelleHTML(k)}${raeumeTabelleHTML(k)}${statistikTabelleHTML(k)}${pushKindHTML(k)}
     <p class="hint">Auf eine Zelle klicken, um Fach, Raum und Lehrer festzulegen – oder oben „⇅ Drag & Drop" einschalten und die Chips (Fächer, Räume, Lehrer) bequem in die Stunden ziehen.</p></div>`;
   box.innerHTML = html;
   if (k.stundenraster) renderRasterEditor(document.getElementById("rasterKid"), k.stundenraster);
@@ -823,6 +823,52 @@ function raumLoeschen(i) {
   const k = kind();
   if (k.raeume) k.raeume.splice(i, 1);
   setDirty(true); renderKid();
+}
+
+/* ---------- Statistik (optional, pro Kind) ---------- */
+function statistikToggle(on) {
+  const k = kind();
+  if (!k.statistik) k.statistik = {};
+  if (on) { k.statistik.aktiv = true; if (!k.statistik.jahre) k.statistik.jahre = {}; }
+  else delete k.statistik.aktiv;
+  setDirty(true); renderKid();
+}
+
+function statistikReset() {
+  const k = kind();
+  if (!confirm(`Statistik von ${k.name} zurücksetzen (alle Zählungen löschen)?`)) return;
+  if (k.statistik) k.statistik.jahre = {};
+  setDirty(true); renderKid();
+}
+
+function statistikTabelleHTML(k) {
+  if (!k.schulmanager) return "";   // ohne Datenquelle keine Änderungen zu zählen
+  const stat = k.statistik || {};
+  const aktiv = !!stat.aktiv;
+  let inhalt = "";
+  if (aktiv) {
+    const jahre = stat.jahre || {};
+    const namen = Object.keys(jahre).sort().reverse();
+    if (!namen.length) {
+      inhalt = `<p class="hint" style="margin:8px 0">Noch nichts gezählt – der Sammler trägt Entfall und Vertretungen ab jetzt fortlaufend ein (stündlich).</p>`;
+    } else {
+      inhalt = namen.map(sj => {
+        const e = jahre[sj] || {};
+        return `<table class="fd-tab" style="margin-top:8px"><thead><tr><th colspan="2">Schuljahr ${esc(sj)} <small style="color:var(--muted);font-weight:400">· seit ${e.seit ? fmtDatum(e.seit) : "?"}</small></th></tr></thead><tbody>
+          <tr><td>❌ Entfall</td><td><b>${e.entfall||0}</b>${e.randstunden ? ` <small style="color:var(--muted)">(davon ${e.randstunden} Randstunden)</small>` : ""}</td></tr>
+          <tr><td>🔁 Vertretung</td><td><b>${e.vertretung||0}</b></td></tr>
+          <tr><td style="padding-left:20px;color:var(--muted)">· Raumwechsel</td><td>${e.raumwechsel||0}</td></tr>
+          <tr><td style="padding-left:20px;color:var(--muted)">· Lehrerwechsel</td><td>${e.lehrerwechsel||0}</td></tr>
+          <tr><td style="padding-left:20px;color:var(--muted)">· Fachwechsel</td><td>${e.fachwechsel||0}</td></tr>
+        </tbody></table>`;
+      }).join("");
+    }
+    inhalt += `<button class="btn ghost" style="margin-top:8px" onclick="statistikReset()">Zählung zurücksetzen</button>`;
+  }
+  return `<details class="card" style="margin:10px 0 0" ${sektAttr("statistik")}><summary style="cursor:pointer"><b>📊 Statistik (${esc(k.name)})</b> <small style="color:var(--text-sec)">– optional: Entfall &amp; Vertretungen pro Schuljahr</small></summary>
+    <label style="display:block;margin:8px 0"><input type="checkbox" ${aktiv?"checked":""} onchange="statistikToggle(this.checked)"> Statistik führen</label>
+    <p class="hint" style="margin:0 0 4px">Zählt <b>ab jetzt</b> fortlaufend (Schulmanager/Eltern-Portal liefern keine Historie). Geplante Termine wie Wandertag, Exkursion oder Projekttage zählen <b>nicht</b> als Ausfall.</p>
+    ${inhalt}</details>`;
 }
 
 function lnSet(kuerzel, wert) {
