@@ -1,8 +1,8 @@
 <img src="stundenplan-manager/logo.png" alt="Stundenplan Manager" height="90">
 
-# Stundenplan Manager
+# Stundenplan Manager 2
 
-Home Assistant Add-on zur Verwaltung der Stundenpläne mehrerer Kinder – inklusive Blockunterricht-Unterstützung für Berufsschüler, MQTT-Discovery-Sensoren und Lovelace-Karte.
+Home Assistant Add-on zur Verwaltung der Stundenpläne mehrerer Kinder – **komplett kindbezogen** (eigene Fächer, Räume und Lehrer je Kind, Raum/Lehrer pro Stunde), mit **Drag & Drop**, Blockunterricht-Unterstützung für Berufsschüler, MQTT-Discovery-Sensoren und Lovelace-Karte.
 
 [![Repository zu Home Assistant hinzufügen](https://img.shields.io/badge/Repository_zu-Home_Assistant_hinzufügen-41BDF5?logo=home-assistant&logoColor=white&style=for-the-badge)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FMelle79%2Fha-stundenplan)
 
@@ -33,7 +33,7 @@ Home Assistant Add-on zur Verwaltung der Stundenpläne mehrerer Kinder – inklu
 
 1. In Home Assistant: **Einstellungen → Add-ons → Add-on Store → ⋮ → Repositories**
 2. `https://github.com/Melle79/ha-stundenplan` hinzufügen
-3. „Stundenplan Manager" installieren und starten
+3. „Stundenplan Manager 2" installieren und starten
 
 ## Lovelace-Karte
 
@@ -78,7 +78,7 @@ titel: ""                # optional, Standard: "Stundenplan {Name}"
 
 ## Schulferien-Integration
 
-In der Web-UI unter **Einstellungen -> Schulferien-Integration** den Kalender-Sensor des Schulferien & Feiertage Managers auswaehlen (alle Ferien und Feiertage in einer Entity - ein Feld genuegt). Alternativ werden die Einzelsensoren "Naechste Schulferien" und "Naechster Feiertag" unterstuetzt. Die Karte markiert alle schulfreien Tage mit Grund - auch beim Blaettern weit in die Zukunft.
+In der Web-UI über das **⚙️-Zahnrad → Schulferien-Integration** den Kalender-Sensor des Schulferien & Feiertage Managers auswaehlen (alle Ferien und Feiertage in einer Entity - ein Feld genuegt). Alternativ werden die Einzelsensoren "Naechste Schulferien" und "Naechster Feiertag" unterstuetzt. Die Karte markiert alle schulfreien Tage mit Grund - auch beim Blaettern weit in die Zukunft.
 
 An schulfreien Tagen zeigen die Sensoren dann „Schulfrei (Grund)" und die Karte ein Ferien-Banner. Kinder im Blockmodus sind bewusst ausgenommen (Azubis haben in Schulferien Betrieb).
 
@@ -86,7 +86,7 @@ An schulfreien Tagen zeigen die Sensoren dann „Schulfrei (Grund)" und die Kart
 
 Mit der HACS-Integration [Schulmanager-homeassistant](https://github.com/MrIcemanLE/Schulmanager-homeassistant) laesst sich pro Kind ein Schulmanager-Schueler verknuepfen (Dropdown im Kind-Panel):
 
-- **Plan-Import**: Wochenplan samt Stundenraster per Knopfdruck uebernehmen, Faecher werden automatisch angelegt. Es werden nur befuellte Tage ersetzt (inkrementeller Import moeglich); vor jedem Import entsteht ein Snapshot, der Import laesst sich per Knopfdruck rueckgaengig machen. Taegliche Backups nach /data/backups (Optionen backup_zeit/backup_anzahl). Optional laesst sich pro Kind ein taeglicher Auto-Import aktivieren (Default 06:30, 07:00 und 07:15 Uhr, Liste via auto_import_zeiten)
+- **Plan-Import**: Wochenplan samt Stundenraster per Knopfdruck uebernehmen, Faecher werden je Kind automatisch angelegt, Raum und Lehrer je Stunde gesetzt. Es werden nur befuellte Tage ersetzt (inkrementeller Import moeglich); vor jedem Import entsteht ein Snapshot, der Import laesst sich per Knopfdruck rueckgaengig machen. Taegliche Backups nach /data/backups (Optionen backup_zeit/backup_anzahl). Optional laesst sich pro Kind ein taeglicher Auto-Import aktivieren (Default 06:30, 07:00 und 07:15 Uhr, Liste via auto_import_zeiten)
 - **Vertretungs-Overlay**: Entfall und Vertretungen (heute/morgen) werden in der Karte markiert und im Morgen-Push gewarnt. Entfallene Rand­stunden verschieben Schulbeginn und Schulschluss - Sensoren, Karte und Push zeigen das echte Ende ("noch bis 11:20 · statt 15:00")
 - **Lehrer-Klarnamen**: Pro Kind lassen sich unter „👩‍🏫 Lehrernamen" die Kürzel zu vollen Namen auflösen (von Hand pflegbar). Das Eltern-Portal füllt sie automatisch, Schulmanager liefert nur Kürzel. Die Karte zeigt den Klarnamen, sobald genug Platz ist, sonst das Kürzel. Kürzel, die im aktuellen Plan nicht mehr vorkommen, werden als „nicht mehr im Plan" markiert und sind per ✕ von Hand löschbar
 - **Hausaufgaben & Klassenarbeiten**: Offene Hausaufgaben (Todo-Liste) und die naechste Arbeit erscheinen in Heute-/Schulschluss-Ansicht und im Morgen-Push
@@ -101,6 +101,6 @@ Alternativ zu Schulmanager lässt sich pro Kind ein Kind aus dem [Eltern-Portal]
 
 ## Morgen-Push & Materialliste (optional)
 
-In den Einstellungen laesst sich ein taeglicher **Sammel-Push** aktivieren (Uhrzeit + Geraet waehlbar, Test-Button): "Luna: Sport um 08:00, Schluss 13:10 - Sportbeutel". An freien Tagen wird nichts gesendet. Im Faecher-Tab kann pro Fach optional Material hinterlegt werden - es erscheint im Push, am Sensor 'Erste Stunde morgen' (Attribut material_morgen) und in der Heute-Ansicht der Karte.
+Über das **⚙️-Zahnrad** laesst sich ein taeglicher **Sammel-Push** aktivieren (Uhrzeit + Geraet waehlbar, Test-Button): "Luna: Sport um 08:00, Schluss 13:10 - Sportbeutel". An freien Tagen wird nichts gesendet. Im **📚-Fächer-Katalog des Kindes** kann pro Fach optional Material hinterlegt werden - es erscheint im Push, am Sensor 'Erste Stunde morgen' (Attribut material_morgen) und in der Heute-Ansicht der Karte.
 
 **Push pro Kind**: Zusaetzlich laesst sich im Kind-Panel unter „🔔 Push an … Handy" ein eigener Morgen-Push je Kind einrichten – eigenes Geraet, eigene Uhrzeit, nur der Plan dieses Kindes. So bekommt jedes Kind seinen Stundenplan aufs eigene Handy.

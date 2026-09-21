@@ -1,0 +1,262 @@
+# Handbuch – Stundenplan Manager
+
+Ausführliche Anleitung zum Home-Assistant-Add-on **Stundenplan Manager 2** und zur zugehörigen **Stundenplan Card**. Für einen schnellen Überblick siehe [README.md](https://github.com/Melle79/ha-stundenplan/blob/main/README.md).
+
+## Inhalt
+
+1. [Überblick](#überblick)
+2. [Installation](#installation)
+3. [Erste Schritte](#erste-schritte)
+4. [Fächer (pro Kind)](#fächer-pro-kind)
+5. [Wochenplan pflegen](#wochenplan-pflegen)
+6. [Stundenraster & Pausen](#stundenraster--pausen)
+7. [Planversionen (Schuljahreswechsel)](#planversionen-schuljahreswechsel)
+8. [Blockunterricht (Azubis)](#blockunterricht-azubis)
+9. [Datenquellen: Schulmanager & Eltern-Portal](#datenquellen)
+10. [Vertretungen & Entfall](#vertretungen--entfall)
+11. [Fächer, Räume & Lehrer](#fächer-räume--lehrer)
+12. [Hausaufgaben & Klassenarbeiten](#hausaufgaben--klassenarbeiten)
+13. [Schulferien-Integration](#schulferien-integration)
+14. [Morgen-Push & Materialliste](#morgen-push--materialliste)
+15. [Die Lovelace-Karte](#die-lovelace-karte)
+16. [MQTT-Sensoren & Attribute](#mqtt-sensoren--attribute)
+17. [Backups, Snapshots & Import rückgängig](#backups-snapshots--import-rückgängig)
+18. [Add-on-Optionen](#add-on-optionen)
+19. [Tipps & Fehlersuche](#tipps--fehlersuche)
+
+---
+
+## Überblick
+
+Der Stundenplan Manager verwaltet die Wochenpläne mehrerer Kinder in Home Assistant. Die Pflege geschieht in einer Web-Oberfläche (Add-on-Panel „Stundenplan"), die Anzeige über eine Lovelace-Karte und fünf MQTT-Sensoren pro Kind. Optional lässt sich pro Kind eine Schulplattform (**Schulmanager Online** oder **Eltern-Portal**) verknüpfen, aus der Plan, Räume, Lehrer, Vertretungen, Hausaufgaben und Arbeiten übernommen werden.
+
+Alle Daten liegen lokal im Add-on; es werden keine Cloud-Dienste außer den von dir verknüpften Schulplattformen kontaktiert.
+
+## Installation
+
+**Add-on**
+
+1. In Home Assistant: **Einstellungen → Add-ons → Add-on Store → ⋮ → Repositories**
+2. `https://github.com/Melle79/ha-stundenplan` hinzufügen
+3. „Stundenplan Manager" installieren und starten
+4. Das Add-on erscheint als Panel **„Stundenplan"** in der Seitenleiste (Ingress, kein Port nötig)
+
+Voraussetzung ist ein **MQTT-Broker** (z. B. das Mosquitto-Add-on) – darüber werden die Sensoren per Discovery angelegt.
+
+**Karte**
+
+Das Add-on kopiert die Karte beim Start automatisch nach `/config/www/stundenplan-card.js` und registriert ab v1.3.0 die Dashboard-Ressource selbst (inkl. Versions-Cache-Buster). Nach einem Update genügt ein normaler Browser-Reload. Nur bei Dashboards im YAML-Modus muss die Ressource `/local/stundenplan-card.js` manuell eingebunden werden (ein Hinweis erscheint im Add-on-Log).
+
+## Erste Schritte
+
+1. Panel **Stundenplan** öffnen.
+2. Oben ein **Kind hinzufügen** (Chip „+"). Name vergeben.
+3. Im Kind-Panel unter **📚 Fächer** die Fächer anlegen (**📥 Standard-Fächer** lädt die 21 gängigen).
+4. Den **Wochenplan** füllen: Zelle anklicken → Fach, Raum und Lehrer wählen, oder per **Drag & Drop** (siehe unten).
+5. Speichern erfolgt automatisch (Auto-Save); die Sensoren aktualisieren sich sofort.
+6. Optional die **Karte** aufs Dashboard legen (siehe [unten](#die-lovelace-karte)).
+
+Einstellungen (Stundenraster, Schulferien, Push, Auto-Import) liegen hinter dem **⚙️-Zahnrad oben rechts**.
+
+## Fächer (pro Kind)
+
+Jedes Kind hat seinen **eigenen Fächer-Katalog** – im Kind-Panel unter **📚 Fächer**: **Kürzel**, **Name**, **Farbe** und optional **Material**. Das Kürzel erscheint im Plan-Raster, Name und Farbe auf der Karte. **Dasselbe Kürzel kann bei verschiedenen Kindern ein anderes Fach sein** (z. B. „Sw" = Schwimmen beim einen, Sport weiblich beim anderen).
+
+- **+ Fach** legt ein neues Fach an, **📥 Standard-Fächer** lädt die 21 gängigen (nur die fehlenden).
+- **Kürzel umbenennen**: Ändert das Kürzel in allen Plänen dieses Kindes mit.
+- **Material** (z. B. „Sportbeutel"): erscheint im Morgen-Push, in der Heute-Ansicht und am Sensor „Erste Stunde morgen".
+- **Nicht im Plan**: Fächer, die im aktuellen Plan nicht vorkommen, werden markiert und lassen sich mit **✕** aufräumen (z. B. nach einem Schulwechsel).
+- **Raum und Lehrer gehören nicht zum Fach, sondern zur einzelnen Stunde** (siehe unten).
+
+## Wochenplan pflegen
+
+Im Kind-Panel steht das Raster Mo–Fr. Zwei Wege, es zu füllen:
+
+- **Klick-Editor**: Eine Zelle anklicken öffnet den **Stunden-Editor** – zuerst das **Fach** wählen, dann **Raum** und **Lehrer** aus den Auswahllisten (oder **＋ neu** direkt anlegen). „✕ Stunde leeren" leert die Zelle.
+- **Drag & Drop**: Oben **„⇅ Drag & Drop"** einschalten – eine **Palette** mit den gepflegten Fächern, Räumen und Lehrern erscheint über dem Plan (bleibt beim Scrollen oben). Chips in die Stunden ziehen (**Maus und Touch**). Ein **Fach** ersetzt die Stunde (Standard-Raum/Lehrer kommen mit), ein **Raum** bzw. **Lehrer** ändert nur die getroffene Stunde. Alternativ die ⠿-Griffe in den Listen.
+
+Änderungen werden automatisch gespeichert.
+
+**Raum und Lehrer je Stunde („freie Stunden")**: Anders als früher hängen Raum und Lehrer nicht am Fach, sondern an der **einzelnen Stunde**. Dasselbe Fach kann also je Tag/Stunde in einem anderen Raum und bei einer anderen Lehrkraft stattfinden (z. B. Deutsch montags in 130 bei Jov, donnerstags in 205 bei Sil). Bestehende Pläne werden automatisch übernommen: jede Stunde startet mit dem bisher am Fach hinterlegten Raum/Lehrer und ist ab sofort einzeln änderbar.
+
+![Wochenansicht der Karte](https://raw.githubusercontent.com/Melle79/ha-stundenplan/main/docs/img/woche.png)
+
+## Stundenraster & Pausen
+
+Das **Standard-Stundenraster** (Zeiten je Stunde) gilt für alle Kinder und ist über das **⚙️-Zahnrad** (Einstellungen) pflegbar. Pro Kind lässt sich ein **eigenes Raster** hinterlegen, das das Standardraster überschreibt (nützlich bei abweichenden Anfangszeiten). **Pausen** entstehen automatisch aus Lücken zwischen zwei Stunden (z. B. 09:30 → 09:50) und lassen sich auf der Karte ein-/ausblenden.
+
+Beim Import aus einer Schulplattform werden die **echten Stundenzeiten der Schule als Raster übernommen** – auch beim allerersten Import, selbst wenn das Kind schon ein Raster hatte. Danach gilt das **Merker-Prinzip**: Ein vom Import gesetztes Raster folgt automatisch späteren Änderungen der Schule (bei aktivem Auto-Import ganz ohne Zutun), ein **von Hand geändertes Raster bleibt dagegen gesperrt** und wird nicht mehr überschrieben.
+
+> Tipp: Wenn das Raster automatisch der Schule folgen soll (z. B. wenn die reguläre Schulzeit erst später im Kalender auftaucht), das Raster **nicht von Hand bearbeiten** – sonst gilt es als handgepflegt und der Import lässt es unangetastet.
+
+## Planversionen (Schuljahreswechsel)
+
+Über **+ Neuer Plan ab …** lässt sich pro Kind eine Planversion mit Gültigkeitsdatum anlegen. Ab dem Stichtag zeigt die Karte automatisch die neue Version; die alte bleibt für Rückblicke erhalten. Die Sensoren und der Import verwenden immer die am jeweiligen Tag gültige Version.
+
+## Blockunterricht (Azubis)
+
+Für Berufsschüler gibt es den **Blockmodus**: Statt eines durchgehenden Wochenplans pflegst du **Blockzeiträume** (von–bis). Außerhalb der Blöcke zeigen Sensoren und Karte **„Betrieb"**. Kinder im Blockmodus sind von der Schulferien-Logik bewusst ausgenommen (in den Ferien ist Betrieb, nicht schulfrei).
+
+**Ohne Stundenplan**: Solange (noch) kein Plan hinterlegt ist, zeigt die Wochenansicht kein leeres Raster, sondern pro Wochentag eine klare Kachel **🏭 Betrieb** oder **🏫 Schule (Blockname)** – rein aus den Blockzeiten abgeleitet. Trägst du später einen Stundenplan ein, erscheint für die Blockwochen automatisch das normale Raster.
+
+**Feiertage**: Gesetzliche Feiertage werden in der Block-Übersicht als **🎉 Feiertag (Name)** angezeigt und haben Vorrang vor Betrieb/Schule – denn auch Azubis haben am Feiertag frei. **Schulferien** dagegen bleiben im Blockmodus bewusst „Betrieb". Voraussetzung ist die [Schulferien-Integration](#schulferien-integration) (der Kalender-Sensor liefert die Feiertage samt Namen).
+
+## Datenquellen
+
+Optional lässt sich pro Kind eine Schulplattform verknüpfen (Dropdown im Kind-Panel). Import, täglicher Auto-Import, Statusbox und Push funktionieren für beide Quellen gleich.
+
+### Schulmanager Online
+
+Über die HACS-Integration [Schulmanager-homeassistant](https://github.com/MrIcemanLE/Schulmanager-homeassistant):
+
+- **Plan-Import** per Knopfdruck: Wochenplan samt Stundenraster übernehmen, Fächer werden automatisch angelegt. Es werden nur befüllte Tage ersetzt (inkrementell); vor jedem Import entsteht ein Snapshot (Undo möglich).
+- **Vertretungen, Entfall, Hausaufgaben und Klassenarbeiten** werden mitgeliefert.
+- Lehrer kommen als **Kürzel** (Klarnamen von Hand pflegen, siehe unten).
+
+### Eltern-Portal
+
+Über die HACS-Integration [workFLOw42/Elternportal_API](https://github.com/workFLOw42/Elternportal_API):
+
+- Liefert den kompletten Wochenplan inkl. Räumen, Fachnamen, **Lehrer-Klarnamen** (füllt das Lehrerverzeichnis automatisch) und anstehende Arbeiten.
+- **Keine** Vertretungen und **keine** Hausaufgaben.
+- Die Integration lädt Daten nur per Service `elternportal.fetch_data`. Das Add-on stößt diesen selbst an (vor Auto-Import, manuellem Import und Abend-Push) und wartet auf Bestätigung – eine eigene HA-Automation ist nicht nötig.
+
+### WebUntis
+
+Über die HACS-Integration [homeassistant-WebUntis](https://github.com/JonasJoKuJonas/homeassistant-WebUntis) (Domain `webuntis`):
+
+- WebUntis stellt den Stundenplan als **HA-Kalender** bereit (`calendar.<schüler>`) – Termine mit Fach (Titel), Raum (Ort) und echten Uhrzeiten. Das Add-on leitet daraus **Stundenraster und Wochenplan** ab und übernimmt sie wie bei den anderen Quellen. **Hausaufgaben** und **Prüfungen** kommen aus den Kalendern `…_hausaufgaben` bzw. `…_prufungen`.
+- WebUntis liefert im Kalender **keine Lehrkraft** – die Lehrer-Klarnamen lassen sich von Hand pflegen (Räume kommen automatisch).
+- **Vertretungen** meldet WebUntis nur als HA-Event (nicht als abfragbare Liste) und werden daher vorerst **nicht** als Overlay angezeigt.
+- Da WebUntis keine festen Stundennummern hat, entsteht das Raster aus den **tatsächlichen Uhrzeiten** der Kalender-Termine. Beginnt der reguläre Unterricht z. B. um 07:30, zeigt das Raster nach dem nächsten (Auto-)Import automatisch 07:30 – ohne manuelles Einstellen. Bei unregelmäßigen Einführungs-/Blocktagen (etwa ein langer Block neben kurzen Einheiten zur selben Startzeit) kann das Raster verschachtelt wirken; eine reguläre Woche mit festen Stundenzeiten ergibt ein sauberes Raster.
+
+### Auto-Import
+
+Pro Kind aktivierbar (opt-in). Standardmäßig läuft der Import zu drei Zeitpunkten vor Schulbeginn (**06:30, 07:00, 07:15**), einstellbar über `auto_import_zeiten`. So sind morgendliche Vertretungen rechtzeitig auf der Karte.
+
+## Vertretungen & Entfall
+
+Bei verknüpftem **Schulmanager** markiert die Karte für heute und morgen:
+
+- **Entfall**: Zelle abgedunkelt, durchgestrichen, „✕ Entfall"; eine etwaige Info (z. B. „Aula") erscheint als Notiz.
+- **Vertretung**: Originalangaben durchgestrichen, neue Angaben hervorgehoben („🔁 Raum/Lehrer/Fach").
+
+**Entfallene Randstunden verschieben die Zeiten**: Fällt die erste oder letzte Stunde aus, zeigen Sensor, Karte und Push den echten Schulbeginn bzw. -schluss („noch bis 11:20 · statt 15:00 (Entfall)"). Fällt der ganze Tag aus, melden die Sensoren „Schulfrei (Entfall)". Reine Fach-/Raum-/Lehrertausche (Vertretung) ändern die Zeiten nicht.
+
+## Fächer, Räume & Lehrer
+
+Jedes Kind hat im Kind-Panel **drei getrennte Listen**, alle kindspezifisch (Geschwister an verschiedenen Schulen teilen dieselben Kürzel mit unterschiedlichen Fächern/Räumen/Lehrern):
+
+- **📚 Fächer** – Kürzel → Name & Farbe (Überschreibung des globalen Standards je Kind; leeres Feld = globaler Standard).
+- **🚪 Räume** – die Raumliste des Kindes. Sie speist die Auswahl im Stunden-Editor und wächst beim Import automatisch mit; Räume lassen sich hier umbenennen (wirkt in allen Stunden) oder löschen.
+- **👩‍🏫 Lehrernamen** – Kürzel → Klarname (siehe unten).
+
+**Raum und Lehrer werden pro Stunde** im Stunden-Editor gesetzt (Zelle anklicken), nicht mehr pauschal am Fach. Der Import trägt beide je Stunde ein und pflegt die Listen; Handeinträge auf nicht importierten Tagen bleiben erhalten.
+
+**Lehrer-Klarnamen** (Tabelle **👩‍🏫 Lehrernamen** im Kind-Panel):
+
+- Die Lehrer-**Kürzel** werden automatisch aus den Fach-Details entdeckt; den **Klarnamen** trägst du daneben ein.
+- Das **Eltern-Portal** füllt die Klarnamen automatisch (und korrigiert sie); **Schulmanager** liefert nur Kürzel, dort pflegst du die Namen von Hand. Handeinträge gewinnen immer.
+- Auf der Karte erscheint bei genügend Breite der **Klarname**, sonst das Kürzel (in der Heute-Liste früher als im engeren Wochenraster). Der volle Name steht zusätzlich im Tooltip.
+- Kürzel, die im aktuellen Plan nicht mehr vorkommen, werden als **„nicht mehr im Plan"** markiert und lassen sich mit **✕** löschen (kommen bei Bedarf durch den nächsten Import zurück, falls noch unterrichtet).
+
+![Heute-Ansicht mit Lehrer-Klarnamen](https://raw.githubusercontent.com/Melle79/ha-stundenplan/main/docs/img/heute.png)
+
+## Schultermine & Klasse
+
+**Schultermine** (nur Schulmanager): Kommende schulweite Termine (Exkursionen, Elternsprechtag, Projekttage …) zieht das Add-on aus dem Schulmanager-Kalender und zeigt sie als „📌 Schultermine"-Liste unter der Wochen- und Heute-Ansicht (nächste ~3 Wochen, mit Datum und Kurzinfo). Schulmanager liefert dabei **keine Kategorien** (die farbigen Gruppen aus dem Web-Kalender), daher erscheinen die Termine ohne Farbgruppierung. Das Eltern-Portal liefert keine Schultermine.
+
+**Klasse**: Im Kind-Panel lässt sich pro Kind optional eine Klasse eintragen (z. B. „6E"). Sie erscheint im Karten-Titel bzw. Kind-Header („Stundenplan Nele · 6E"). Das Feld wird von Hand gepflegt – Schulmanager liefert nur eine numerische Klassen-ID, keinen lesbaren Namen.
+
+## Hausaufgaben & Klassenarbeiten
+
+Bei Schulmanager erscheinen offene **Hausaufgaben** (aus der Todo-Liste) und die **nächste Arbeit** in der Heute- und Schulschluss-Ansicht sowie im Morgen-Push. Fällige Hausaufgaben werden mit Datum (heute/morgen/überfällig) gelistet.
+
+![Schulschluss-Ansicht](https://raw.githubusercontent.com/Melle79/ha-stundenplan/main/docs/img/schulschluss.png)
+
+## Schulferien-Integration
+
+Über das **⚙️-Zahnrad → Schulferien-Integration** den Kalender-Sensor des [Schulferien & Feiertage Managers](https://github.com/Melle79) auswählen (alle Ferien und Feiertage in einer Entity – ein Feld genügt). Alternativ die Einzelsensoren „Nächste Schulferien" und „Nächster Feiertag".
+
+An schulfreien Tagen zeigen die Sensoren „Schulfrei (Grund)" und die Karte ein Ferien-Banner – auch beim Blättern weit in die Zukunft. Kinder im Blockmodus sind ausgenommen.
+
+## Morgen-Push & Materialliste
+
+Über das **⚙️-Zahnrad** (Einstellungen) lässt sich ein täglicher **Sammel-Push** aktivieren (Uhrzeit + Notify-Gerät wählbar, Test-Button) – eine Nachricht mit allen Kindern, typischerweise an ein Elterngerät:
+
+> „Luna: Sport um 08:00, Schluss 13:10 – Sportbeutel"
+
+An freien Tagen wird nichts gesendet. Der Push berücksichtigt Entfälle des Folgetags (verschobener Beginn/Schluss) und listet fällige Hausaufgaben und anstehende Arbeiten. **Material** je Fach erscheint im Push, am Sensor „Erste Stunde morgen" (Attribut `material_morgen`) und in der Heute-Ansicht.
+
+### Push pro Kind (aufs eigene Handy)
+
+Zusätzlich lässt sich **pro Kind** ein eigener Morgen-Push einrichten – im Kind-Panel unter **„🔔 Push an … Handy"**:
+
+- **Eigenes Gerät** (Notify-Service) und **eigene Uhrzeit** je Kind.
+- Die Nachricht enthält **nur den Plan dieses Kindes** (ohne Namensprefix – der Name steht im Titel „🎒 Finn – Schule morgen"), inklusive Material, fälliger Hausaufgaben, anstehender Arbeit und morgiger Vertretungen.
+- An freien Tagen (Wochenende, Ferien, außerhalb der Blockwochen) wird für dieses Kind nichts gesendet.
+- Mit **Test-Button** sofort ausprobieren.
+
+Voraussetzung ist ein Notify-Ziel für das Handy des Kindes (z. B. die Home-Assistant-App auf dem Kind-Handy oder ein anderer Notify-Dienst). Sammel-Push und Pro-Kind-Push sind unabhängig und können beide aktiv sein.
+
+## Die Lovelace-Karte
+
+Über den visuellen Editor („Karte hinzufügen" → „Stundenplan Card") oder per YAML:
+
+```yaml
+type: custom:stundenplan-card
+entities:                # weglassen = alle Kinder automatisch
+  - sensor.stundenplan_luna_wochenplan
+layout: tabs             # tabs | untereinander (bei mehreren Kindern)
+modus: woche             # woche | heute | schulschluss
+schrift: normal          # normal | gross
+zeige_pausen: true
+titel: ""                # optional, Standard: "Stundenplan {Name}"
+```
+
+- **modus**
+  - `woche`: Wochenraster mit Pausen, laufender Stunde und Vertretungs-Overlay; Blättern per KW.
+  - `heute`: Tagesliste mit Räumen, Lehrer-Klarnamen, Material, Hausaufgaben und Arbeit.
+  - `schulschluss`: kompakte Zusammenfassung „wie lange geht die Schule heute" über alle Kinder.
+- **entities weglassen** = alle gefundenen Kinder automatisch; bei mehreren erscheinen Umschalt-Chips.
+- **layout: untereinander** stapelt mehrere Kinder statt Chips.
+- **schrift: gross** vergrößert alles (z. B. für Wandtablets).
+- Die Karte ist rein **sensorbasiert** und funktioniert daher auch extern via Nabu Casa.
+
+## MQTT-Sensoren & Attribute
+
+Pro Kind werden fünf Sensoren per Discovery angelegt (`sensor.stundenplan_<name>_…`):
+
+| Sensor | Bedeutung |
+|--------|-----------|
+| `aktuelle_stunde` | Laufende Stunde / Pause / Kein Unterricht / Schulfrei / Betrieb |
+| `naechste_stunde` | Nächste belegte Stunde heute |
+| `erste_stunde_morgen` | Erste Stunde am nächsten Schultag (Attribut `material_morgen`) |
+| `schulschluss_heute` | Ende der letzten stattfindenden Stunde (berücksichtigt Entfall) |
+| `wochenplan` | Anzahl Wochenstunden; **Attribute** tragen den kompletten Plan |
+
+Nützliche Attribute (u. a.): `schulbeginn_heute`, `heute_stunden`, `heute_entfall`, `schulschluss_regulaer`/`schulbeginn_regulaer` (nur bei entfallenen Randstunden), `hausaufgaben_offen`, `naechste_arbeit`, `daten_stand` (letzter Schuldaten-Abruf). Der `wochenplan`-Sensor liefert als Attribute u. a. `raster`, `plan`, `plaene`, `faecher`, `lehrer_namen`, `aenderungen`, `arbeiten`, `schulfrei_zeitraeume`.
+
+## Backups, Snapshots & Import rückgängig
+
+- **Vor jedem Import** entsteht ein Snapshot; der letzte Import lässt sich mit **↩ Import rückgängig** zurücknehmen (bis zum Neuladen der Seite; danach greifen die Backups).
+- **Tägliche Backups** landen unter `/data/backups`. Zeitpunkt und Anzahl über die Add-on-Optionen `backup_zeit` / `backup_anzahl` (1–30).
+- Backups lassen sich in der Web-UI wiederherstellen.
+
+## Add-on-Optionen
+
+| Option | Standard | Bedeutung |
+|--------|----------|-----------|
+| `log_level` | `info` | Log-Ausführlichkeit (`debug`/`info`/`warning`/`error`) |
+| `backup_zeit` | `03:30` | Uhrzeit des täglichen Backups |
+| `backup_anzahl` | `7` | Aufbewahrte Backups (1–30) |
+
+Ferien- und Push-Einstellungen werden in der Web-UI gepflegt, nicht in den Add-on-Optionen.
+
+## Tipps & Fehlersuche
+
+- **Portal-Sensoren stehen in den Ferien auf „unknown".** Das Eltern-Portal lädt nur per `fetch_data`; in den Ferien laufen Auto-Import/Push nicht, also fehlt der Auslöser. Kein Fehler – nach Schulstart bzw. beim nächsten Import füllt es sich.
+- **Schule gewechselt?** Neue Quelle im Kind-Panel setzen und importieren. Alte Fächer/Lehrerkürzel werden als „nicht mehr im Plan" markiert und lassen sich mit ✕ aufräumen. Beim Wechsel von Eltern-Portal auf Schulmanager musst du die Lehrer-Klarnamen einmalig von Hand eintragen (Schulmanager liefert nur Kürzel).
+- **Karte zeigt „Warte auf Plandaten…".** MQTT-Broker prüfen und ob das Add-on läuft; die Sensoren entstehen per Discovery.
+- **Karte lädt nicht nach Update.** Normaler Browser-Reload; bei YAML-Dashboards die Ressource `/local/stundenplan-card.js` manuell einbinden.
+- **Vertretungen fehlen.** Vertretungen liefert nur Schulmanager, nicht das Eltern-Portal.
