@@ -50,6 +50,20 @@
   .plan td.slot.ed-entfall { outline:2px solid #e05d5d; outline-offset:-2px; text-decoration:line-through; opacity:.6; }
   .plan td.slot.ed-aenderung { outline:2px dashed #e0b34c; outline-offset:-2px; }
   .plan td.slot.drop-hover { outline:3px dashed #fff; outline-offset:-3px; filter: brightness(1.2); }
+  .za { display: flex; margin-top: 4px; }
+  .za-zeit { width: 46px; flex: none; }
+  .za-zeitinner { position: relative; }
+  .za-hl { position: absolute; right: 5px; transform: translateY(-50%); font-size: .68rem; color: var(--muted); }
+  .za-tag { flex: 1; min-width: 0; border-left: 1px solid var(--border); }
+  .za-kopf { text-align: center; font-size: .8rem; font-weight: 600; color: var(--text-sec); padding: 3px 0; }
+  .za-spalte { position: relative; }
+  .za-line { position: absolute; left: 0; right: 0; height: 1px; background: var(--border); opacity: .5; }
+  .za-block { position: absolute; left: 2px; right: 2px; border-radius: 6px; padding: 3px 5px;
+    box-sizing: border-box; overflow: hidden; font-weight: 600; font-size: .72rem; line-height: 1.15;
+    cursor: pointer; }
+  .za-block:hover { filter: brightness(1.12); }
+  .za-block small { display: block; font-weight: 400; font-size: .62rem; opacity: .9; }
+  .za-block.drop-hover { outline: 3px dashed #fff; outline-offset: -3px; filter: brightness(1.2); }
   .drag-grip { cursor: grab; color: var(--text); background: var(--card2); border: 1px solid var(--border);
                border-radius: 6px; padding: 2px 6px; margin-right: 6px; user-select: none;
                touch-action: none; font-size: .9rem; line-height: 1; display: inline-block; }
@@ -1093,8 +1107,55 @@ async function importRueckgaengig() {
   else alert("Wiederherstellung fehlgeschlagen: " + ((await res.json()).error || res.status));
 }
 
+// Raster mit überlappenden/verschachtelten Perioden = variable Stundenzeiten.
+function rasterUnregelmaessig(r) {
+  const m = t => { const p = String(t).split(":"); return (+p[0]) * 60 + (+p[1]); };
+  const iv = (r || []).map(s => [m(s.von), m(s.bis)]).filter(x => x[1] > x[0]).sort((a, b) => a[0] - b[0]);
+  for (let i = 1; i < iv.length; i++) if (iv[i][0] < iv[i - 1][1]) return true;
+  return false;
+}
+
+// Plan auf echter Zeitachse (variable Stundenzeiten, z. B. WebUntis). Blöcke sind
+// klickbar (Editor) und Drop-Ziel für Drag&Drop.
+function zeitachsePlanHTML(k, r) {
+  const p = aktiverPlan(k);
+  const m = t => { const q = String(t).split(":"); return (+q[0]) * 60 + (+q[1]); };
+  let lo = 24 * 60, hi = 0;
+  const perTag = TAGE.map(([tag]) => {
+    const arr = p[tag] || [], L = [];
+    arr.forEach((kz, i) => {
+      if (!kz || i >= r.length) return;
+      const v = m(r[i].von), b = m(r[i].bis);
+      if (b <= v) return;
+      lo = Math.min(lo, v); hi = Math.max(hi, b);
+      L.push({ v, b, i, kz, von: r[i].von, bis: r[i].bis });
+    });
+    return L;
+  });
+  if (hi <= lo) { lo = 7 * 60; hi = 17 * 60; }
+  lo = Math.floor(lo / 60) * 60; hi = Math.ceil(hi / 60) * 60;
+  const PPM = 0.9, H = (hi - lo) * PPM;
+  let zeitHTML = "";
+  for (let t = lo; t <= hi; t += 60)
+    zeitHTML += `<div class="za-hl" style="top:${(t - lo) * PPM}px">${String(t / 60 | 0).padStart(2, "0")}:00</div>`;
+  const spalten = TAGE.map(([tag, label], di) => {
+    let inhalt = "";
+    for (let tt = lo; tt <= hi; tt += 60) inhalt += `<div class="za-line" style="top:${(tt - lo) * PPM}px"></div>`;
+    for (const s of perTag[di]) {
+      const f = fachOf(k, s.kz);
+      const rl = zellenRaumLehrer(k, p, tag, s.i, s.kz);
+      const det = [rl.raum, rl.lehrer].filter(Boolean).join(" · ");
+      const y = (s.v - lo) * PPM, h = (s.b - s.v) * PPM - 1;
+      inhalt += `<div class="za-block" style="top:${y}px;height:${h}px;background:${f.farbe};color:${textAuf(f.farbe)}" title="${esc(f.name)}${det ? " · " + esc(det) : ""}" data-tag="${tag}" data-si="${s.i}" onclick="openPicker('${tag}',${s.i})">${esc(s.kz)}<small>${s.von}${h > 26 ? "–" + s.bis : ""}${det && h > 42 ? " · " + esc(det) : ""}</small></div>`;
+    }
+    return `<div class="za-tag"><div class="za-kopf">${label.slice(0, 2)}</div><div class="za-spalte" style="height:${H}px">${inhalt}</div></div>`;
+  }).join("");
+  return `<div class="za"><div class="za-zeit"><div class="za-kopf">&nbsp;</div><div class="za-zeitinner" style="height:${H}px">${zeitHTML}</div></div>${spalten}</div>`;
+}
+
 function planTabelleHTML(k, r) {
   let html = planEditMode ? palettePlanHTML(k) : "";
+  if (rasterUnregelmaessig(r)) return html + zeitachsePlanHTML(k, r);
   html += `<div style="overflow-x:auto"><table class="plan"><thead><tr><th class="zeit">Stunde</th>`;
   for (const [,label] of TAGE) html += `<th>${label.slice(0,2)}</th>`;
   html += `</tr></thead><tbody>`;
@@ -1250,7 +1311,7 @@ function dragStart(ev, el) {
 
 function dragZelleUnter(x, y) {
   const el = document.elementFromPoint(x, y);
-  return el ? el.closest("#planWrap td.slot") : null;
+  return el ? el.closest("#planWrap td.slot, #planWrap .za-block") : null;
 }
 
 function dragMove(ev) {

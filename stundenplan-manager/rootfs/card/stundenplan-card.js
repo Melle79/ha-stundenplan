@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.24.0 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.25.0 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -377,6 +377,28 @@ class StundenplanCard extends HTMLElement {
           .sp-bw-heute { outline: 2px solid var(--primary-color); outline-offset: 1px; }
           .sp-gross .sp-bw-status { font-size: 1.08rem; }
           .sp-gross .sp-bw-tag { min-height: 108px; }
+          .sp-za { display: flex; margin-top: 6px; }
+          .sp-za-zeit { width: 40px; flex: none; }
+          .sp-za-zeitinner { position: relative; }
+          .sp-za-hl { position: absolute; right: 4px; transform: translateY(-50%);
+            font-size: .6rem; color: var(--secondary-text-color); }
+          .sp-za-tag { flex: 1; min-width: 0; border-left: 1px solid var(--divider-color); }
+          .sp-za-kopf { text-align: center; font-size: .72rem; font-weight: 600;
+            color: var(--secondary-text-color); padding: 2px 0; }
+          .sp-za-kopf.sp-heute { color: var(--primary-color); }
+          .sp-za-spalte { position: relative; }
+          .sp-za-line { position: absolute; left: 0; right: 0; height: 1px;
+            background: var(--divider-color); opacity: .45; }
+          .sp-za-block { position: absolute; left: 2px; right: 2px; border-radius: 6px;
+            padding: 2px 4px; box-sizing: border-box; overflow: hidden; font-weight: 600;
+            font-size: .64rem; line-height: 1.15; }
+          .sp-za-block small { display: block; font-weight: 400; font-size: .58rem; opacity: .92; }
+          .sp-za-now { position: absolute; left: 0; right: 0; height: 2px;
+            background: var(--primary-color); z-index: 3; }
+          .sp-za-frei { position: absolute; top: 8px; left: 0; right: 0; text-align: center;
+            font-size: .64rem; color: var(--secondary-text-color); }
+          .sp-gross .sp-za-block { font-size: .74rem; }
+          .sp-gross .sp-za-block small { font-size: .66rem; }
           .sp-info { margin-top: 8px; padding: 6px 12px; border-radius: 8px;
             font-size: .8rem; color: var(--secondary-text-color);
             border: 1px solid var(--divider-color); }
@@ -482,6 +504,12 @@ class StundenplanCard extends HTMLElement {
       (arbTag[x.datum] = arbTag[x.datum] || []).push(x);
     const arbKz = x => (x.kuerzel || x.fach || "").toUpperCase();
 
+    // Unregelmaessiges Raster (variable Stundenzeiten, z. B. WebUntis/Berufsschule)
+    // -> Zeitachsen-Ansicht statt festem Stunden-Gitter
+    if (this._rasterUnregelmaessig(a.raster))
+      return html + this._zeitachseWocheHTML(a, tage, aktuelleWoche, heute, aend, zeit)
+        + this._termineHTML(a) + this._standHTML(a);
+
     html += `<table class="sp-tabelle"><colgroup><col style="width:54px"><col span="5"></colgroup><thead><tr><th></th>`;
     for (const t of tage) {
       const istHeute = aktuelleWoche && t.i === heute;
@@ -547,6 +575,73 @@ class StundenplanCard extends HTMLElement {
       html += `</tr>`;
     });
     return html + `</tbody></table>` + this._termineHTML(a) + this._standHTML(a);
+  }
+
+  // Raster mit ueberlappenden/verschachtelten Perioden = variable Stundenzeiten
+  _rasterUnregelmaessig(raster) {
+    const m = t => { const p = String(t).split(":"); return (+p[0]) * 60 + (+p[1]); };
+    const iv = (raster || []).map(s => [m(s.von), m(s.bis)])
+      .filter(x => x[1] > x[0]).sort((a, b) => a[0] - b[0]);
+    for (let i = 1; i < iv.length; i++) if (iv[i][0] < iv[i - 1][1]) return true;
+    return false;
+  }
+
+  // Wochenansicht auf echter Zeitachse (jede Stunde per Startzeit platziert,
+  // Hoehe = Dauer). Fuer variable Stundenzeiten (WebUntis/Berufsschule).
+  _zeitachseWocheHTML(a, tage, aktuelleWoche, heute, aend, zeit) {
+    const r = a.raster || [];
+    const m = t => { const p = String(t).split(":"); return (+p[0]) * 60 + (+p[1]); };
+    let lo = 24 * 60, hi = 0;
+    const perTag = tage.map(t => {
+      const arr = t.plan[t.tag] || [];
+      const L = [];
+      arr.forEach((kz, i) => {
+        if (!kz || i >= r.length) return;
+        const v = m(r[i].von), b = m(r[i].bis);
+        if (b <= v) return;
+        lo = Math.min(lo, v); hi = Math.max(hi, b);
+        L.push({ v, b, i, kz, nr: r[i].nr, von: r[i].von, bis: r[i].bis });
+      });
+      return L;
+    });
+    if (hi <= lo) { lo = 7 * 60; hi = 17 * 60; }
+    lo = Math.floor(lo / 60) * 60; hi = Math.ceil(hi / 60) * 60;
+    const PPM = 0.85, H = (hi - lo) * PPM;
+    const jetztMin = zeit ? m(zeit) : -1;
+
+    let zeitHTML = "";
+    for (let t = lo; t <= hi; t += 60)
+      zeitHTML += `<div class="sp-za-hl" style="top:${(t - lo) * PPM}px">${String(t / 60 | 0).padStart(2, "0")}:00</div>`;
+
+    const spalten = tage.map((t, di) => {
+      const istHeute = aktuelleWoche && t.i === heute;
+      let inhalt = "";
+      for (let tt = lo; tt <= hi; tt += 60)
+        inhalt += `<div class="sp-za-line" style="top:${(tt - lo) * PPM}px"></div>`;
+      if (t.frei) {
+        inhalt += `<div class="sp-za-frei">${t.frei}</div>`;
+      } else {
+        for (const s of perTag[di]) {
+          const f = (a.faecher || {})[s.kz];
+          const farbe = f ? f.farbe : "#888";
+          const rl = this._stundeRaumLehrer(t.plan, t.tag, s.i, f);
+          const x = aend[`${t.iso}|${s.nr}`];
+          const entfall = x && (x.entfall || x.typ === "cancelledLesson");
+          const y = (s.v - lo) * PPM, h = (s.b - s.v) * PPM - 1;
+          const tip = `${s.von}–${s.bis} ${f ? f.name : s.kz}${rl.raum ? " · " + rl.raum : ""}`;
+          const stil = entfall ? "opacity:.5;text-decoration:line-through" : "";
+          inhalt += `<div class="sp-za-block" style="top:${y}px;height:${h}px;background:${farbe};color:${this._textFarbe(farbe)};${stil}" title="${tip}">`
+            + `${s.kz}${entfall ? " ✕" : ""}<small>${s.von}${h > 26 ? "–" + s.bis : ""}${rl.raum && h > 40 ? " · " + rl.raum : ""}</small></div>`;
+        }
+      }
+      const now = (istHeute && jetztMin >= lo && jetztMin <= hi)
+        ? `<div class="sp-za-now" style="top:${(jetztMin - lo) * PPM}px"></div>` : "";
+      return `<div class="sp-za-tag"><div class="sp-za-kopf ${istHeute ? "sp-heute" : ""}">${t.l}</div>`
+        + `<div class="sp-za-spalte" style="height:${H}px">${inhalt}${now}</div></div>`;
+    }).join("");
+
+    return `<div class="sp-za"><div class="sp-za-zeit"><div class="sp-za-kopf">&nbsp;</div>`
+      + `<div class="sp-za-zeitinner" style="height:${H}px">${zeitHTML}</div></div>${spalten}</div>`;
   }
 
   _renderSchulschluss(ids) {
@@ -817,4 +912,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.22.1", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.25.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");

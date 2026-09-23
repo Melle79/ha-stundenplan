@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.0 - September 2026
+
+### Neu
+- **Zeitachsen-Ansicht für variable Stundenzeiten**: Pläne mit unterschiedlich langen Stunden zu unregelmäßigen Zeiten (z. B. **WebUntis/Berufsschule**) passen nicht in ein festes Stunden-Gitter. Solche Pläne werden jetzt **automatisch** als echte Zeitachse dargestellt – jede Stunde per Startzeit platziert, Höhe = Dauer, Pausen als Lücken sichtbar. Betrifft die **Lovelace-Karte** (Wochenansicht, **v1.25.0**) und das **Add-on-Panel**. Kinder mit sauberem festem Raster behalten das gewohnte Stunden-Gitter. Im Panel sind die Blöcke klickbar (Editor) und Drop-Ziel für Drag & Drop.
+
+
 ## 2.1.3 - September 2026
 
 ### Neu
