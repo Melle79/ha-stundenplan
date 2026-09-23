@@ -287,8 +287,63 @@ def _import_datumsplan(kind: dict, heute: date, details: dict,
             tp[iso] = neu
             stats["geaendert"] = True
             neu_tage += 1
-    if neu_tage:
-        stats["datums_tage"] = neu_tage
+    stats["datumsplan"] = True
+    stats["datums_tage"] = neu_tage
+    stats["datums_gesamt"] = sum(1 for l in tp.values() if l)
+    if kind.get("modus") == "block":
+        _bloecke_aus_webuntis(kind, stats)
+
+
+def _bloecke_aus_webuntis(kind: dict, stats: dict) -> None:
+    """Leitet die Blockzeitraeume aus den echten WebUntis-Schultagen ab -
+    aber nur im tatsaechlich abgedeckten Zeitraum. Bloecke ausserhalb (schon
+    aus dem WebUntis-Fenster gefallene Vergangenheit ODER noch nicht
+    veroeffentlichte Zukunft) bleiben unangetastet, damit von Hand gepflegte
+    kuenftige Bloecke nicht verloren gehen. Aufeinanderfolgende Schulwochen
+    bilden je einen Block; Labels ueberlappender Handbloecke werden uebernommen."""
+    tp = kind.get("tagesplan") or {}
+    schul = sorted(iso for iso, l in tp.items() if l)
+    if not schul:
+        return
+    ab, bis_auth = schul[0], schul[-1]          # von WebUntis abgedeckter Bereich
+
+    def mo_iso(iso):
+        d = date.fromisoformat(iso)
+        return (d - timedelta(days=d.weekday())).isoformat()
+
+    def plus(iso, tage):
+        return (date.fromisoformat(iso) + timedelta(days=tage)).isoformat()
+
+    # Schulwochen (Montage) zu aufeinanderfolgenden Bloecken gruppieren
+    montage = sorted({mo_iso(x) for x in schul})
+    gruppen = []
+    for mo in montage:
+        if gruppen and plus(gruppen[-1][-1], 7) == mo:
+            gruppen[-1].append(mo)
+        else:
+            gruppen.append([mo])
+    alt = kind.get("bloecke") or []
+
+    def label_fuer(von, bis):
+        for a in alt:
+            if a.get("label") and not (a.get("bis", "") < von or a.get("von", "") > bis):
+                return a["label"]
+        return ""
+
+    abgeleitet = []
+    for g in gruppen:
+        ende = plus(g[-1], 6)
+        tage = [d for d in schul if g[0] <= d <= ende]
+        von, bis = tage[0], tage[-1]
+        abgeleitet.append({"label": label_fuer(von, bis), "von": von, "bis": bis})
+    # Handbloecke ausserhalb des abgedeckten Bereichs behalten (Historie + Zukunft)
+    behalten = [b for b in alt
+                if b.get("bis", "") < ab or b.get("von", "") > bis_auth]
+    neu = sorted(behalten + abgeleitet, key=lambda b: b.get("von", ""))
+    if neu != alt:
+        kind["bloecke"] = neu
+        stats["geaendert"] = True
+        stats["bloecke_abgeleitet"] = len(abgeleitet)
 
 
 DEFAULT_ZEITEN = ["06:30", "07:00", "07:15"]

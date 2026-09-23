@@ -1110,10 +1110,18 @@ async function schulmanagerImport(btn) {
     IMPORT_SNAPSHOT = d.snapshot || null;
     clearTimeout(saveTimer); dirty = false;
     await laden(); setDirty(false);
-    if (!d.importiert.length && !d.neue_faecher && !d.ergaenzt) {
-      alert("Schulmanager liefert aktuell keine Stunden (" + (d.kw || "leer") + ").");
+    if (d.datumsplan) {
+      // Datumsgenauer Modus: nicht auf einen Wochenplan falten, sondern je Datum archivieren
+      if (!d.datums_gesamt) {
+        alert(`${qLabel(k.quelle)} liefert aktuell keine Stunden (${d.kw || "leer"}).\n\nDatumsgenauer Modus: der nächste Auto-Import archiviert die Wochen, sobald ${qLabel(k.quelle)} sie ausgibt.`);
+      } else {
+        const bl = d.bloecke_abgeleitet ? `\nBlöcke aus ${qLabel(k.quelle)} abgeleitet: ${d.bloecke_abgeleitet}` : "";
+        alert(`Import aus ${qLabel(k.quelle)} (datumsgenau):\n${d.datums_tage} Tag(e) aktualisiert · ${d.datums_gesamt} Tag(e) im Archiv.${bl}\n\nJede Woche bleibt an ihrem Datum erhalten; der Wochenplan bleibt als Reserve unangetastet.`);
+      }
+    } else if (!d.importiert.length && !d.neue_faecher && !d.ergaenzt) {
+      alert(`${qLabel(k.quelle)} liefert aktuell keine Stunden (${d.kw || "leer"}).`);
     } else {
-      alert(`Import (${d.kw}):\nÜbernommen: ${d.importiert.join(", ") || "nichts"}\nUnverändert (in Schulmanager leer): ${d.uebersprungen.join(", ") || "–"}\nNeue Fächer: ${d.neue_faecher} · Bei bestehenden ergänzt: ${d.ergaenzt} Angaben${d.raster_gesetzt ? "\nStundenraster übernommen" : ""}\n\nRückgängig über den ↩-Button (bis zum Neuladen der Seite; danach greifen die Backups).`);
+      alert(`Import (${d.kw}):\nÜbernommen: ${d.importiert.join(", ") || "nichts"}\nUnverändert (in der Quelle leer): ${d.uebersprungen.join(", ") || "–"}\nNeue Fächer: ${d.neue_faecher} · Bei bestehenden ergänzt: ${d.ergaenzt} Angaben${d.raster_gesetzt ? "\nStundenraster übernommen" : ""}\n\nRückgängig über den ↩-Button (bis zum Neuladen der Seite; danach greifen die Backups).`);
     }
   } catch (e) {
     alert("Import fehlgeschlagen: " + e.message);

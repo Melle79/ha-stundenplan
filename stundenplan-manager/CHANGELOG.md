@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.3.3 - September 2026
+
+### Neu
+- **Blockzeiträume aus WebUntis ableiten** (datumsgenauer Modus): Die App leitet die Blockzeiträume jetzt aus den echten WebUntis-Schulwochen ab und korrigiert sie – aber **nur im tatsächlich von WebUntis abgedeckten Zeitraum**. Von Hand gepflegte Blöcke in der Vergangenheit oder in der noch nicht veröffentlichten Zukunft bleiben erhalten (kein Datenverlust).
+
+### Behoben
+- **Import-Meldung im datumsgenauen Modus**: Der Import meldete fälschlich „liefert aktuell keine Stunden", weil er (korrekt) nicht mehr auf den Wochenplan faltet. Jetzt zeigt er die datumsgenaue Zusammenfassung (aktualisierte Tage · Tage im Archiv · abgeleitete Blöcke) und nennt durchgängig die richtige Quelle (WebUntis statt „Schulmanager").
+
 ## 2.3.2 - September 2026
 
 ### Behoben
