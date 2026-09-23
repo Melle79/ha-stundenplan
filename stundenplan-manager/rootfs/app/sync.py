@@ -13,7 +13,7 @@ Merge-Regeln:
 """
 import logging
 import threading
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 import quellen
 
@@ -227,7 +227,57 @@ def fuehre_import_aus(data: dict, kind: dict, heute: date = None) -> dict:
             if kind.get("sm_raster") != sm_raster:
                 kind["sm_raster"] = sm_raster
                 stats["geaendert"] = True
+
+    # Datumsgenauer Modus (optional pro Kind): zusaetzlich zum Wochen-Template
+    # jede echte Kalenderstunde an ihrem Datum ablegen. Fuer Quellen mit
+    # individuellem Plan je Block/Woche (WebUntis/Berufsschule) - Karte und
+    # Sensoren bevorzugen dann den Tag genau dort, wo die Quelle ihn ausgibt.
+    if kind.get("datumsplan"):
+        _import_datumsplan(kind, heute, details, fach_sicherstellen, stats)
     return stats
+
+
+DATUMSPLAN_WOCHEN_VOR = 8  # so viele Wochen vorausschauen (Quelle liefert oft nur wenige)
+
+
+def _import_datumsplan(kind: dict, heute: date, details: dict,
+                       fach_sicherstellen, stats: dict) -> None:
+    """Fuellt kind["tagesplan"] = {iso: [{von,bis,kz,raum,lehrer}]} aus der
+    datumsgenauen Quelle. Bestehende Tage ausserhalb des Abrufzeitraums bleiben
+    erhalten (Historie/Archiv), abgerufene Tage werden aktualisiert."""
+    von = heute - timedelta(days=heute.weekday() + 7)          # Mo der Vorwoche
+    bis = heute + timedelta(weeks=DATUMSPLAN_WOCHEN_VOR)
+    try:
+        bereich = quellen.hole_zeitplan_bereich(kind, von, bis)
+    except Exception as exc:
+        log.warning("Datumsgenauer Import fuer %s fehlgeschlagen: %s",
+                    kind.get("name"), exc)
+        return
+    tage = bereich.get("tage") or {}
+    # Namen/Raeume kuenftiger Faecher, die in der Referenzwoche fehlen, nachziehen
+    for kz, det in (bereich.get("details") or {}).items():
+        details.setdefault(kz, det)
+    tp = kind.setdefault("tagesplan", {})
+    neu_tage = 0
+    for iso, stunden in tage.items():
+        neu = []
+        for s in stunden:
+            kz = s.get("kz")
+            if not kz:
+                continue
+            match = fach_sicherstellen(kz)
+            eintrag = (kind.get("fach_details") or {}).get(match, {})
+            raum = (s.get("raum") or eintrag.get("raum") or "").strip()
+            lehrer = (eintrag.get("lehrer") or "").strip()
+            neu.append({"von": s["von"], "bis": s["bis"], "kz": match,
+                        "raum": raum, "lehrer": lehrer})
+        neu.sort(key=lambda x: (x["von"], x["bis"]))
+        if tp.get(iso) != neu:
+            tp[iso] = neu
+            stats["geaendert"] = True
+            neu_tage += 1
+    if neu_tage:
+        stats["datums_tage"] = neu_tage
 
 
 DEFAULT_ZEITEN = ["06:30", "07:00", "07:15"]

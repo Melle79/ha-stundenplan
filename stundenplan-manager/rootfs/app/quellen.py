@@ -56,6 +56,13 @@ def hole_tagesplaene(kind: dict) -> dict:
     return _adapter(kind).hole_tagesplaene(kind["schulmanager"])
 
 
+def hole_zeitplan_bereich(kind: dict, von: date, bis: date) -> dict:
+    """Datumsgenaue Termine im Zeitraum, sofern die Quelle sie anbietet
+    (nur WebUntis). Andere Adapter liefern nichts -> {"tage":{},"details":{}}."""
+    fn = getattr(_adapter(kind), "hole_zeitplan_bereich", None)
+    return fn(kind["schulmanager"], von, bis) if fn else {"tage": {}, "details": {}}
+
+
 def hole_aenderungen(kind: dict, heute: date) -> list:
     return _adapter(kind).hole_aenderungen(kind["schulmanager"], heute)
 

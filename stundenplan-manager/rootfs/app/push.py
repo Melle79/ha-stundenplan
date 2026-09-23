@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 
 from ferien import hole_schulfrei_zeitraeume, schulfrei_grund, API_URL
 from mqtt_publisher import (TAGE, belegte_stunden, entfall_stunden,
-                            ist_im_block, plan_fuer_datum)
+                            ist_im_block, plan_fuer_datum, raster_fuer_kind)
 import quellen
 
 log = logging.getLogger("stundenplan.push")
@@ -59,8 +59,8 @@ def _zeilen_fuer_kind(data: dict, kind: dict, jetzt: datetime,
         return zeilen
     if modus == "block" and not ist_im_block(kind, morgen):
         return zeilen
-    plan = plan_fuer_datum(kind, morgen.date()).get(TAGE[morgen.weekday()], [])
-    raster = kind.get("stundenraster") or std_raster
+    raster = raster_fuer_kind(kind, std_raster)
+    plan = plan_fuer_datum(kind, morgen.date(), raster).get(TAGE[morgen.weekday()], [])
     geplant = belegte_stunden(plan, raster)
     if not geplant:
         return zeilen

@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.3.0 - September 2026
+
+### Neu
+- **Datumsgenauer Modus (WebUntis-Blöcke)** – optional pro Kind: Bei WebUntis-Kindern lässt sich jetzt „📅 Datumsgenau" einschalten. Der Import legt die Stunden dann **genau an dem Kalendertag** ab, an dem WebUntis sie ausgibt – statt sie auf einen sich wiederholenden Wochenplan zu falten. So zeigt jede Woche **ihren eigenen Block-Plan** (Berufsschule: jeder Block kann anders sein), auf Karte und im Panel. Vorausschauend über mehrere Wochen; für Wochen ohne WebUntis-Daten dient der Wochenplan als Reserve. **Ein Tag mit WebUntis-Unterricht gilt als Schule** – auch wenn er außerhalb der hinterlegten Blockzeiträume liegt (die Quelle ist maßgeblich).
+- Betrifft die **Lovelace-Karte** (**v1.26.0**) und das **Add-on-Panel** (neue read-only Wochen-Vorschau „Aus WebUntis", Wochenplan wird zur eingeklappten Reserve).
+- Für Kinder ohne den Schalter ändert sich nichts.
+
 ## 2.2.0 - September 2026
 
 ### Neu

@@ -56,6 +56,7 @@
   .za-hl { position: absolute; right: 5px; transform: translateY(-50%); font-size: .68rem; color: var(--muted); }
   .za-tag { flex: 1; min-width: 0; border-left: 1px solid var(--border); }
   .za-kopf { text-align: center; font-size: .8rem; font-weight: 600; color: var(--text-sec); padding: 3px 0; }
+  .za-kopf.heute { color: #fff; background: #4a90d9; border-radius: 5px; }
   .za-spalte { position: relative; }
   .za-line { position: absolute; left: 0; right: 0; height: 1px; background: var(--border); opacity: .5; }
   .za-block { position: absolute; left: 2px; right: 2px; border-radius: 6px; padding: 3px 5px;
@@ -547,7 +548,18 @@ function kindLoeschen() {
   setDirty(true); renderChips(); renderKid();
 }
 
-function raster(k) { return k.stundenraster || DATA.einstellungen.stundenraster_standard; }
+function raster(k) {
+  const basis = k.stundenraster || DATA.einstellungen.stundenraster_standard || [];
+  if (!k.datumsplan) return basis;
+  // Datumsgenau: Vereinigung aus eigenem Raster + allen Zeiten aus tagesplan
+  const m = t => (+String(t).split(":")[0]) * 60 + (+String(t).split(":")[1]);
+  const slots = new Map();
+  for (const s of basis) if (s.von && s.bis) slots.set(s.von + "|" + s.bis, [s.von, s.bis]);
+  for (const iso in (k.tagesplan || {}))
+    for (const s of (k.tagesplan[iso] || [])) if (s.von && s.bis) slots.set(s.von + "|" + s.bis, [s.von, s.bis]);
+  return [...slots.values()].sort((a, b) => m(a[0]) - m(b[0]) || m(a[1]) - m(b[1]))
+    .map(([von, bis], i) => ({ nr: i + 1, von, bis }));
+}
 
 function aktiverPlan(k) {
   const v = (k.plaene || [])[aktivPlanIdx];
@@ -629,6 +641,7 @@ function renderKid() {
       <select id="smSelect" onchange="kind().schulmanager=this.value||undefined;kind().quelle=(this.selectedOptions[0]&&this.selectedOptions[0].dataset.quelle)||undefined;setDirty(true);renderKid()"></select>
       ${k.schulmanager ? `<button class="btn ghost" onclick="schulmanagerImport(this)">⬇ Plan importieren</button>` : ""}
       ${k.schulmanager ? `<label title="Täglich um ${((DATA.einstellungen||{}).auto_import_zeiten || ["06:30","07:00","07:15"]).join ? ((DATA.einstellungen||{}).auto_import_zeiten || ["06:30","07:00","07:15"]).join(", ") : (DATA.einstellungen||{}).auto_import_zeiten} Uhr"><input type="checkbox" ${k.auto_import ? "checked" : ""} onchange="kind().auto_import=this.checked||undefined;setDirty(true)"> 🔄 Auto-Import</label>` : ""}
+      ${k.quelle === "untis" ? `<label title="Stunden datumsgenau übernehmen – genau dort, wo WebUntis sie ausgibt. Für individuelle Pläne je Block (Berufsschule)."><input type="checkbox" ${k.datumsplan ? "checked" : ""} onchange="kind().datumsplan=this.checked||undefined;setDirty(true);renderKid()"> 📅 Datumsgenau</label>` : ""}
       ${IMPORT_SNAPSHOT ? `<button class="btn ghost" onclick="importRueckgaengig()">↩ Import rückgängig</button>` : ""}
       <span style="flex:1"></span>
       <button class="btn ghost" onclick="drucken()">🖨 Drucken</button>
@@ -677,8 +690,21 @@ function renderKid() {
     <button class="btn ${planEditMode ? "" : "ghost"}" onclick="togglePlanEdit()">${planEditMode ? "✓ Drag & Drop aktiv" : "⇅ Drag & Drop"}</button>
   </div>
   <p class="hint" style="margin:4px 0 8px">Sensoren und Karte wechseln am Stichtag automatisch auf die neue Version - praktisch für den Schuljahreswechsel.</p>`;
-  html += versionen + `${k.schulmanager ? `<div id="smStatus" class="card" style="margin:0 0 10px"><h2 style="margin-top:0">🏫 ${qLabel(k.quelle)}${(k.quelle || "schulmanager") === "schulmanager" ? " heute/morgen" : ""}</h2><p class="hint" style="margin:0">Lade…</p></div>` : ""}<div id="planWrap">${planTabelleHTML(k, r)}</div>${fachDetailsTabelleHTML(k)}${lehrerNamenTabelleHTML(k)}${raeumeTabelleHTML(k)}${statistikTabelleHTML(k)}${pushKindHTML(k)}
-    <p class="hint">Auf eine Zelle klicken, um Fach, Raum und Lehrer festzulegen – oder oben „⇅ Drag & Drop" einschalten und die Chips (Fächer, Räume, Lehrer) bequem in die Stunden ziehen.</p></div>`;
+  const smStatus = k.schulmanager ? `<div id="smStatus" class="card" style="margin:0 0 10px"><h2 style="margin-top:0">🏫 ${qLabel(k.quelle)}${(k.quelle || "schulmanager") === "schulmanager" ? " heute/morgen" : ""}</h2><p class="hint" style="margin:0">Lade…</p></div>` : "";
+  const zusatz = `${fachDetailsTabelleHTML(k)}${lehrerNamenTabelleHTML(k)}${raeumeTabelleHTML(k)}${statistikTabelleHTML(k)}${pushKindHTML(k)}`;
+  if (k.datumsplan) {
+    // Datumsgenauer Modus: die echten WebUntis-Wochen zeigen, das Wochen-Template
+    // nur als eingeklappte Reserve (gilt für Wochen ohne WebUntis-Daten).
+    html += smStatus + datumsWochenHTML(k)
+      + `<details class="collapse" style="margin-top:14px" ${sektAttr("reserveplan")}>
+          <summary><h2>🗓 Reserve-Wochenplan</h2><span class="hint">gilt nur für Wochen ohne WebUntis-Daten</span></summary>
+          <div id="planWrap" style="margin-top:10px">${planTabelleHTML(k, r)}</div>
+          <p class="hint">Diese Vorlage wird verwendet, wenn WebUntis für eine Woche (noch) nichts liefert.</p>
+        </details>` + zusatz + `</div>`;
+  } else {
+    html += versionen + smStatus + `<div id="planWrap">${planTabelleHTML(k, r)}</div>` + zusatz +
+      `<p class="hint">Auf eine Zelle klicken, um Fach, Raum und Lehrer festzulegen – oder oben „⇅ Drag & Drop" einschalten und die Chips (Fächer, Räume, Lehrer) bequem in die Stunden ziehen.</p></div>`;
+  }
   box.innerHTML = html;
   if (k.stundenraster) renderRasterEditor(document.getElementById("rasterKid"), k.stundenraster);
   renderSchulmanagerSelect();
@@ -1151,6 +1177,72 @@ function zeitachsePlanHTML(k, r) {
     return `<div class="za-tag"><div class="za-kopf">${label.slice(0, 2)}</div><div class="za-spalte" style="height:${H}px">${inhalt}</div></div>`;
   }).join("");
   return `<div class="za"><div class="za-zeit"><div class="za-kopf">&nbsp;</div><div class="za-zeitinner" style="height:${H}px">${zeitHTML}</div></div>${spalten}</div>`;
+}
+
+// Blocklabel, falls die Woche [von..bis] in einen Blockzeitraum fällt
+function blockLabelFuer(k, von, bis) {
+  const b = (k.bloecke || []).find(b => b.von <= bis && von <= b.bis);
+  return b ? (b.label || "").trim() : "";
+}
+
+// Datumsgenaue Wochen aus WebUntis (read-only): jede Woche als echte Zeitachse,
+// jede Stunde an ihrem Kalendertag. Zeigt diese + kommende Wochen mit Daten.
+function datumsWochenHTML(k) {
+  const tp = k.tagesplan || {};
+  const isos = Object.keys(tp).filter(iso => (tp[iso] || []).length).sort();
+  const r = raster(k);
+  const m = t => (+String(t).split(":")[0]) * 60 + (+String(t).split(":")[1]);
+  const heute = new Date(); heute.setHours(0, 0, 0, 0);
+  const isoOf = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const montagVon = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; };
+  const isoKW = d => { const t = new Date(d); t.setDate(t.getDate() + 3 - ((t.getDay() + 6) % 7)); const w1 = new Date(t.getFullYear(), 0, 4); return 1 + Math.round(((t - w1) / 864e5 - 3 + ((w1.getDay() + 6) % 7)) / 7); };
+  const fmt = d => d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+  const abMo = isoOf(montagVon(heute));
+  const wochen = [...new Set(isos.map(iso => isoOf(montagVon(new Date(iso + "T00:00")))))].sort()
+    .filter(w => w >= abMo).slice(0, 6);
+  const kopf = `<div class="card" style="margin:0 0 10px"><h2 style="margin-top:0">📅 Aus WebUntis (datumsgenau)</h2>`;
+  if (!wochen.length)
+    return kopf + `<p class="hint" style="margin:0">Noch keine WebUntis-Daten für die kommenden Wochen – der nächste Auto-Import füllt sie automatisch.</p></div>`;
+  let out = kopf + `<p class="hint" style="margin:0 0 8px">Stunden genau dort, wo WebUntis sie ausgibt – jeder Block kann anders sein.</p>`;
+  const heuteIso = isoOf(heute);
+  for (const wMo of wochen) {
+    const moD = new Date(wMo + "T00:00");
+    const tage = TAGE.map(([tag, label], i) => {
+      const d = new Date(moD); d.setDate(moD.getDate() + i);
+      return { tag, label, iso: isoOf(d), d };
+    });
+    let lo = 24 * 60, hi = 0;
+    const perTag = tage.map(t => {
+      const L = [];
+      for (const s of (tp[t.iso] || [])) {
+        const v = m(s.von), b = m(s.bis);
+        if (b <= v) continue;
+        lo = Math.min(lo, v); hi = Math.max(hi, b);
+        L.push({ v, b, kz: s.kz, von: s.von, bis: s.bis, raum: s.raum, lehrer: s.lehrer });
+      }
+      return L;
+    });
+    if (hi <= lo) continue;
+    lo = Math.floor(lo / 60) * 60; hi = Math.ceil(hi / 60) * 60;
+    const PPM = 0.75, H = (hi - lo) * PPM;
+    let zeitHTML = "";
+    for (let t = lo; t <= hi; t += 60) zeitHTML += `<div class="za-hl" style="top:${(t - lo) * PPM}px">${String(t / 60 | 0).padStart(2, "0")}:00</div>`;
+    const spalten = tage.map((t, di) => {
+      let inhalt = "";
+      for (let tt = lo; tt <= hi; tt += 60) inhalt += `<div class="za-line" style="top:${(tt - lo) * PPM}px"></div>`;
+      for (const s of perTag[di]) {
+        const f = fachOf(k, s.kz);
+        const det = [s.raum, s.lehrer].filter(Boolean).join(" · ");
+        const y = (s.v - lo) * PPM, h = (s.b - s.v) * PPM - 1;
+        inhalt += `<div class="za-block" style="top:${y}px;height:${h}px;background:${f.farbe};color:${textAuf(f.farbe)}" title="${esc(f.name)}${det ? " · " + esc(det) : ""}">${esc(s.kz)}<small>${s.von}${h > 26 ? "–" + s.bis : ""}${det && h > 42 ? " · " + esc(det) : ""}</small></div>`;
+      }
+      return `<div class="za-tag"><div class="za-kopf${t.iso === heuteIso ? " heute" : ""}">${t.label.slice(0, 2)} <small>${fmt(t.d)}</small></div><div class="za-spalte" style="height:${H}px">${inhalt}</div></div>`;
+    }).join("");
+    const bl = blockLabelFuer(k, wMo, tage[4].iso);
+    out += `<div style="margin:8px 0 2px;font-weight:600">KW ${isoKW(moD)} · ${fmt(moD)}–${fmt(tage[4].d)}${bl ? ` · <span class="hint" style="font-weight:400">${esc(bl)}</span>` : ""}</div>
+      <div class="za"><div class="za-zeit"><div class="za-kopf">&nbsp;</div><div class="za-zeitinner" style="height:${H}px">${zeitHTML}</div></div>${spalten}</div>`;
+  }
+  return out + `</div>`;
 }
 
 function planTabelleHTML(k, r) {

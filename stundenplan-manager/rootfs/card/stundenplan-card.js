@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.25.0 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.26.0 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -62,8 +62,11 @@ class StundenplanCard extends HTMLElement {
   }
 
   _imBlock(a, datum) {
-    if (a.modus !== "block") return true;
     const d = datum.toISOString().slice(0, 10);
+    // Datumsgenau: hat WebUntis für den Tag Unterricht, ist Schule (die
+    // Blockzeiträume können unvollständig/veraltet sein).
+    if (a.datumsplan && ((a.tagesplan || {})[d] || []).length) return true;
+    if (a.modus !== "block") return true;
     return (a.bloecke || []).some(b => b.von <= d && d <= b.bis);
   }
 
@@ -91,12 +94,38 @@ class StundenplanCard extends HTMLElement {
   }
 
   _planFuerDatum(a, isoDatum) {
+    // Datumsgenauer Modus (WebUntis-Blöcke): ein Tag mit eigenen Quelldaten
+    // hat Vorrang vor dem Wochen-Template.
+    if (a.datumsplan && a.tagesplan && a.tagesplan[isoDatum])
+      return this._tagesplanObj(a, isoDatum, a.tagesplan[isoDatum]);
     const passend = (a.plaene || []).filter(p => p.gueltig_ab <= isoDatum)
       .sort((x, y) => x.gueltig_ab.localeCompare(y.gueltig_ab));
     return passend.length ? passend[passend.length - 1].plan : (a.plan || {});
   }
 
+  // Datumsgenaue Stundenliste eines Tages -> Plan-Objekt {tag:[zellen],
+  // details:{tag:[overlay]}} am Raster ausgerichtet (Rest rendert unverändert).
+  _tagesplanObj(a, iso, lessons) {
+    const wd = (new Date(iso + "T00:00").getDay() + 6) % 7; // 0=Mo
+    if (wd > 4) return {};
+    const tag = StundenplanCard.TAGE[wd][0];
+    const r = a.raster || [];
+    const idx = {};
+    r.forEach((s, i) => { idx[s.von + "|" + s.bis] = i; });
+    const cells = new Array(r.length).fill(null);
+    const dets = new Array(r.length).fill(null);
+    for (const s of lessons || []) {
+      const i = idx[s.von + "|" + s.bis];
+      if (i == null) continue;
+      cells[i] = s.kz;
+      dets[i] = (s.raum || s.lehrer) ? { raum: s.raum || "", lehrer: s.lehrer || "" } : null;
+    }
+    return { [tag]: cells, details: { [tag]: dets } };
+  }
+
   _freiGrund(a, isoDatum) {
+    // Datumsgenau: WebUntis-Unterricht an dem Tag => Schule (Vorrang vor Blöcken)
+    if (a.datumsplan && ((a.tagesplan || {})[isoDatum] || []).length) return null;
     if (a.modus === "block")
       return (a.bloecke || []).some(b => b.von <= isoDatum && isoDatum <= b.bis)
         ? null : "🏭 Betrieb";
@@ -912,4 +941,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.25.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.26.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");

@@ -202,6 +202,48 @@ def hole_tagesplaene(basis: str) -> dict:
     return _plan_daten(basis)[2]
 
 
+def hole_zeitplan_bereich(basis: str, von: date, bis: date) -> dict:
+    """Alle Unterrichtstermine im Zeitraum, datumsgenau (fuer den
+    datumsgenauen Modus - jeder Block/jede Woche kann anders sein).
+
+    Anders als hole_wochenplan/hole_tagesplaene wird hier nichts auf eine
+    Referenzwoche zusammengefaltet: jede echte Kalenderstunde bleibt an ihrem
+    Datum. Rueckgabe:
+      {"tage": {iso: [{"von","bis","kz","name","raum"}, ...]},
+       "details": {KZ_UPPER: {"raum","lehrer","name","lehrer_name"}}}
+    """
+    try:
+        roh = _events(basis, von, bis) or []
+    except Exception as exc:
+        log.debug("WebUntis-Bereich %s nicht abrufbar: %s", basis, exc)
+        return {"tage": {}, "details": {}}
+    tage, details = {}, {}
+    for e in roh:
+        d0, v = _dt(e.get("start"))
+        _, b = _dt(e.get("end"))
+        if not (d0 and v and b) or b <= v:
+            continue
+        try:
+            if date.fromisoformat(d0).weekday() > 4:
+                continue
+        except ValueError:
+            continue
+        summary = (e.get("summary") or "").strip()
+        kz = _kuerzel(summary)
+        raum = str(e.get("location") or "").strip()
+        tage.setdefault(d0, []).append({"von": v, "bis": b, "kz": kz,
+                                        "name": summary, "raum": raum})
+        det = details.setdefault(kz.upper(),
+                                 {"raum": "", "lehrer": "", "name": "", "lehrer_name": ""})
+        if not det["name"]:
+            det["name"] = summary
+        if not det["raum"] and raum:
+            det["raum"] = raum
+    for iso in tage:
+        tage[iso].sort(key=lambda s: (s["von"], s["bis"]))
+    return {"tage": tage, "details": details}
+
+
 def hole_fach_details(basis: str) -> dict:
     """{KUERZEL_UPPER: {"raum","lehrer","name","lehrer_name"}}.
     WebUntis liefert keinen Lehrer im Kalender - bleibt leer."""

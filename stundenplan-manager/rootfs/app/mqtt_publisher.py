@@ -15,7 +15,7 @@ import os
 import re
 import threading
 import time
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 import paho.mqtt.client as mqtt
 
@@ -39,9 +39,62 @@ SENSOREN = [
 ]
 
 
-def plan_fuer_datum(kind: dict, datum) -> dict:
+def _min(t) -> int:
+    p = str(t).split(":")
+    return int(p[0]) * 60 + int(p[1])
+
+
+def raster_fuer_kind(kind: dict, std_raster: list = None) -> list:
+    """Das Stundenraster eines Kindes. Im datumsgenauen Modus die Vereinigung
+    aus eigenem Raster und allen in tagesplan vorkommenden Zeitfenstern -
+    kuenftige Bloecke koennen neue Uhrzeiten mitbringen, die sonst fehlten."""
+    basis = kind.get("stundenraster") or std_raster or []
+    if not kind.get("datumsplan"):
+        return basis
+    slots = {(r["von"], r["bis"]) for r in basis
+             if r.get("von") and r.get("bis")}
+    for lessons in (kind.get("tagesplan") or {}).values():
+        for s in lessons:
+            if s.get("von") and s.get("bis"):
+                slots.add((s["von"], s["bis"]))
+    order = sorted(slots, key=lambda vb: (_min(vb[0]), _min(vb[1])))
+    return [{"nr": i + 1, "von": v, "bis": b} for i, (v, b) in enumerate(order)]
+
+
+def _tagesplan_planobj(lessons: list, raster: list, iso: str) -> dict:
+    """Datumsgenaue Stundenliste -> Plan-Objekt {tag: [zellen], "details":
+    {tag: [overlay]}} ausgerichtet am Raster - so rendert der Rest unveraendert."""
+    try:
+        wd = date.fromisoformat(iso[:10]).weekday()
+    except ValueError:
+        return {}
+    if wd > 4:
+        return {}
+    tag = TAGE[wd]
+    idx = {(r["von"], r["bis"]): i for i, r in enumerate(raster)}
+    cells = [None] * len(raster)
+    dets = [None] * len(raster)
+    for s in lessons or []:
+        i = idx.get((s.get("von"), s.get("bis")))
+        if i is None:
+            continue
+        cells[i] = s.get("kz")
+        raum = (s.get("raum") or "").strip()
+        lehrer = (s.get("lehrer") or "").strip()
+        dets[i] = {"raum": raum, "lehrer": lehrer} if (raum or lehrer) else None
+    return {tag: cells, "details": {tag: dets}}
+
+
+def plan_fuer_datum(kind: dict, datum, raster: list = None) -> dict:
     """Plan-Version, die am gegebenen Datum gilt (Schuljahreswechsel).
-    plaene: [{"gueltig_ab": iso, "plan": {...}}, ...]; Basis ist kind["plan"]."""
+    plaene: [{"gueltig_ab": iso, "plan": {...}}, ...]; Basis ist kind["plan"].
+    Im datumsgenauen Modus hat ein Tag mit eigenen Quelldaten Vorrang."""
+    if kind.get("datumsplan"):
+        iso = datum.isoformat() if hasattr(datum, "isoformat") else str(datum)[:10]
+        eintrag = (kind.get("tagesplan") or {}).get(iso)
+        if eintrag is not None:
+            r = raster if raster is not None else raster_fuer_kind(kind)
+            return _tagesplan_planobj(eintrag, r, iso)
     d = datum.isoformat() if hasattr(datum, "isoformat") else str(datum)
     passend = sorted((p for p in kind.get("plaene", [])
                       if p.get("gueltig_ab", "9999") <= d),
@@ -142,15 +195,20 @@ def berechne_sensoren(kind: dict, faecher: dict, raster: list, jetzt: datetime,
 
     def tagesinfo(offset: int):
         d = jetzt + timedelta(days=offset)
-        if kind.get("modus", "wochenplan") == "wochenplan":
-            grund = schulfrei_grund(d.date(), zeitraeume)
-            if grund:
-                return None, f"Schulfrei ({grund})", []
         if d.weekday() > 4:
             return None, "Schulfrei", []
-        if not ist_im_block(kind, d):
-            return None, "Betrieb", []
-        planobj = plan_fuer_datum(kind, d.date())
+        # Datumsgenau: hat WebUntis fuer den Tag Unterricht, ist Schule -
+        # unabhaengig von Ferien/Blockzeitraeumen (die Quelle ist massgeblich).
+        iso = d.date().isoformat()
+        hat_tag = kind.get("datumsplan") and (kind.get("tagesplan") or {}).get(iso)
+        if not hat_tag:
+            if kind.get("modus", "wochenplan") == "wochenplan":
+                grund = schulfrei_grund(d.date(), zeitraeume)
+                if grund:
+                    return None, f"Schulfrei ({grund})", []
+            if not ist_im_block(kind, d):
+                return None, "Betrieb", []
+        planobj = plan_fuer_datum(kind, d.date(), raster)
         tag = TAGE[d.weekday()]
         plan = planobj.get(tag, [])
         if not any(plan):
@@ -164,7 +222,7 @@ def berechne_sensoren(kind: dict, faecher: dict, raster: list, jetzt: datetime,
     attrs = {"kind": kind["name"], "modus": kind.get("modus", "wochenplan")}
 
     # --- wochenplan: Anzahl Unterrichtsstunden Mo-Fr (aktuell gueltiger Plan) ---
-    _p = plan_fuer_datum(kind, jetzt.date())
+    _p = plan_fuer_datum(kind, jetzt.date(), raster)
     res["wochenplan"] = sum(1 for tag in TAGE for kz in _p.get(tag, []) if kz)
 
     # --- erste_stunde_morgen (+ Materialliste morgen) ---
@@ -321,11 +379,14 @@ class SensorPublisher:
             if kid not in self._bekannte_kids:
                 self._discovery(kind)
                 self._bekannte_kids.add(kid)
-            raster = kind.get("stundenraster") or std_raster
+            raster = raster_fuer_kind(kind, std_raster)
             kind_faecher = quellen.faecher_fuer_kind(faecher, kind)
 
             genutzt = {kz for p in [kind.get("plan", {})] + [v.get("plan", {}) for v in kind.get("plaene", [])]
                        for tag in TAGE for kz in p.get(tag, []) if kz}
+            if kind.get("datumsplan"):
+                genutzt |= {s["kz"] for lessons in (kind.get("tagesplan") or {}).values()
+                            for s in lessons if s.get("kz")}
             aenderungen = []
             zusatz = {"hausaufgaben_offen": None, "naechste_arbeit": None}
             ha_faellig = []
@@ -397,6 +458,8 @@ class SensorPublisher:
                 "raster": raster,
                 "plan": kind.get("plan", {}),
                 "plaene": kind.get("plaene", []),
+                "datumsplan": bool(kind.get("datumsplan")),
+                "tagesplan": kind.get("tagesplan", {}) if kind.get("datumsplan") else {},
                 "faecher": {kz: f for kz, f in kind_faecher.items() if kz in genutzt},
                 "lehrer_namen": {k: v for k, v in (kind.get("lehrer_namen") or {}).items() if v},
                 "bloecke": kind.get("bloecke", []),
