@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.4.3 - September 2026
+
+### Behoben
+- **Vertretungs-Schrift passt sich der Fachfarbe an**: Im Wochen-Gitter hatten die Vertretungs-Zusätze feste Farben – die neuen Angaben („🔁 Raum · Lehrer") waren weiß und auf hellen Fachfarben unsichtbar, das durchgestrichene Original hellrot und kaum lesbar. Beide erben jetzt wie der normale Text die zur Fachfarbe passende Schriftfarbe (dunkel auf hell, weiß auf dunkel); das Original bleibt durchgestrichen und leicht gedimmt. Lovelace-Karte **v1.27.2**.
+
 ## 2.4.2 - September 2026
 
 ### Dokumentation
