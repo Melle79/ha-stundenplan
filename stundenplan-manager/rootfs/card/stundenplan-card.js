@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.27.0 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.27.1 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -251,10 +251,15 @@ class StundenplanCard extends HTMLElement {
     return b ? (b.label || "").trim() : "";
   }
 
-  // Detail-Popup einer angeklickten Stunde
+  // Detail-Popup einer angeklickten Stunde. Alle Styles sind INLINE gesetzt und
+  // das Overlay haengt an document.body: so ist es unabhaengig vom (Shadow-)DOM
+  // der Karte sichtbar UND ueberlebt einen Rerender der Karte (set hass).
   _zeigeStunde(ds) {
     const rows = [];
-    const add = (label, val) => { if (val) rows.push(`<div class="sp-pop-row"><span>${this._ea(label)}</span><b>${this._ea(val)}</b></div>`); };
+    const add = (label, val) => { if (val) rows.push(
+      `<div style="display:flex;justify-content:space-between;gap:12px;padding:9px 2px;border-top:1px solid var(--divider-color,#e6e6e6)">`
+      + `<span style="color:var(--secondary-text-color,#888)">${this._ea(label)}</span>`
+      + `<b style="text-align:right">${this._ea(val)}</b></div>`); };
     add("Datum", ds.datum);
     add("Zeit", (ds.von || "") + (ds.bis ? "–" + ds.bis : ""));
     add("Raum", ds.raum);
@@ -264,24 +269,26 @@ class StundenplanCard extends HTMLElement {
     if (ds.arbeit) add("Anstehend", "📝 " + ds.arbeit);
     const farbe = ds.farbe || "var(--primary-color,#4a90d9)";
     const titel = this._ea(ds.fach || ds.kz || "Stunde")
-      + (ds.kz && ds.fach && ds.kz !== ds.fach ? ` <small>${this._ea(ds.kz)}</small>` : "");
+      + (ds.kz && ds.fach && ds.kz !== ds.fach ? ` <small style="font-weight:500;color:var(--secondary-text-color,#888);font-size:.85rem">${this._ea(ds.kz)}</small>` : "");
     const aend = ds.aenderung
-      ? `<div class="sp-pop-aend">${this._ea(ds.aenderung)}${ds.grund ? `<br><small>ℹ️ ${this._ea(ds.grund)}</small>` : ""}</div>` : "";
+      ? `<div style="background:var(--secondary-background-color,#f2f2f2);border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:.9rem">${this._ea(ds.aenderung)}${ds.grund ? `<br><small style="color:var(--secondary-text-color,#888)">ℹ️ ${this._ea(ds.grund)}</small>` : ""}</div>` : "";
     const ov = document.createElement("div");
-    ov.className = "sp-pop-ov";
-    ov.innerHTML = `<div class="sp-pop" style="border-top:5px solid ${this._ea(farbe)}">
-        <button class="sp-pop-x" aria-label="Schließen">✕</button>
-        <div class="sp-pop-titel">${titel}</div>
+    ov.style.cssText = "position:fixed;inset:0;z-index:99999;display:flex;align-items:center;"
+      + "justify-content:center;padding:16px;background:rgba(0,0,0,.5)";
+    ov.innerHTML = `<div style="background:var(--card-background-color,#fff);`
+      + `color:var(--primary-text-color,#1c1c1c);border-radius:14px;width:100%;max-width:360px;`
+      + `box-shadow:0 12px 40px rgba(0,0,0,.4);position:relative;padding:18px 18px 10px;`
+      + `border-top:5px solid ${this._ea(farbe)};font-family:var(--paper-font-body1_-_font-family,inherit)">
+        <button aria-label="Schließen" style="position:absolute;top:8px;right:8px;border:none;background:none;font-size:1.15rem;line-height:1;cursor:pointer;color:var(--secondary-text-color,#888);padding:6px">✕</button>
+        <div style="font-size:1.25rem;font-weight:700;margin:2px 26px 10px 0">${titel}</div>
         ${aend}
-        <div class="sp-pop-body">${rows.join("") || '<div class="sp-pop-row"><span>Keine weiteren Angaben</span></div>'}</div>
+        <div>${rows.join("") || '<div style="color:var(--secondary-text-color,#888);padding:9px 2px">Keine weiteren Angaben</div>'}</div>
       </div>`;
     const close = () => { ov.remove(); document.removeEventListener("keydown", onKey); };
     const onKey = e => { if (e.key === "Escape") close(); };
     ov.addEventListener("click", e => { if (e.target === ov) close(); });
-    ov.querySelector(".sp-pop-x").onclick = close;
+    ov.querySelector("button").onclick = close;
     document.addEventListener("keydown", onKey);
-    // An document.body haengen, damit die HA-Karten-Containment (container-type)
-    // das fixed-Overlay nicht einfaengt - so bleibt es echt viewport-zentriert.
     document.body.appendChild(ov);
   }
 
@@ -562,26 +569,6 @@ class StundenplanCard extends HTMLElement {
           .sp-gross .sp-schluss-zeit { font-size: 1.9rem; }
           .sp-gross .sp-schluss-sub { font-size: .9rem; }
           .sp-klick { cursor: pointer; }
-          .sp-pop-ov { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.5);
-            display: flex; align-items: center; justify-content: center; padding: 16px; }
-          .sp-pop { background: var(--card-background-color, #fff); color: var(--primary-text-color, #1c1c1c);
-            border-radius: 14px; width: 100%; max-width: 360px; box-shadow: 0 12px 40px rgba(0,0,0,.4);
-            position: relative; padding: 18px 18px 8px; }
-          .sp-pop-x { position: absolute; top: 8px; right: 8px; border: none; background: none;
-            font-size: 1.1rem; line-height: 1; cursor: pointer; color: var(--secondary-text-color, #888);
-            padding: 6px; border-radius: 8px; }
-          .sp-pop-x:hover { background: var(--secondary-background-color, #eee); }
-          .sp-pop-titel { font-size: 1.25rem; font-weight: 700; margin: 2px 24px 10px 0; }
-          .sp-pop-titel small { font-weight: 500; color: var(--secondary-text-color, #888); font-size: .85rem; }
-          .sp-pop-aend { background: var(--secondary-background-color, #f2f2f2); border-radius: 8px;
-            padding: 8px 10px; margin-bottom: 10px; font-size: .9rem; }
-          .sp-pop-aend small { color: var(--secondary-text-color, #888); }
-          .sp-pop-body { display: flex; flex-direction: column; }
-          .sp-pop-row { display: flex; justify-content: space-between; gap: 12px;
-            padding: 9px 2px; border-top: 1px solid var(--divider-color, #eee); }
-          .sp-pop-row:first-child { border-top: none; }
-          .sp-pop-row span { color: var(--secondary-text-color, #888); }
-          .sp-pop-row b { text-align: right; }
         </style>
         <div class="sp-wrap ${this._config.schrift === "gross" ? "sp-gross" : ""}">${chips}${inhalt}</div>
       </ha-card>`;
@@ -1098,4 +1085,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.27.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.27.1", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");

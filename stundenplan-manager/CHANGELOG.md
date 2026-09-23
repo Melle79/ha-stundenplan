@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.4.1 - September 2026
+
+### Behoben
+- **Stunden-Popup war unsichtbar** (auf echten Dashboards): Die Popup-Styles lagen im Style-Bereich der Karte, das Popup selbst hing außerhalb (am Seitenkörper) – im Shadow-DOM eines Dashboards griffen die Styles dort nicht, das Popup öffnete unsichtbar. Jetzt trägt das Popup alle Styles inline und ist unabhängig vom Dashboard-Aufbau sichtbar und mittig. Lovelace-Karte **v1.27.1**.
+
 ## 2.4.0 - September 2026
 
 ### Neu
