@@ -63,6 +63,7 @@
     box-sizing: border-box; overflow: hidden; font-weight: 600; font-size: .72rem; line-height: 1.15;
     cursor: pointer; }
   .za-block:hover { filter: brightness(1.12); }
+  .za-block.ro { cursor: default; }
   .za-block small { display: block; font-weight: 400; font-size: .62rem; opacity: .9; }
   .za-block.drop-hover { outline: 3px dashed #fff; outline-offset: -3px; filter: brightness(1.2); }
   .drag-grip { cursor: grab; color: var(--text); background: var(--card2); border: 1px solid var(--border);
@@ -1141,6 +1142,35 @@ function rasterUnregelmaessig(r) {
   return false;
 }
 
+// Parallel laufende Stunden nebeneinander legen: setzt lane/lanes je Stunde.
+function laneLayout(items) {
+  if (!items.length) return;
+  items.sort((a, b) => a.v - b.v || a.b - b.b);
+  let cluster = [], clusterEnd = -1;
+  const flush = () => {
+    const enden = [];
+    for (const it of cluster) {
+      let li = enden.findIndex(e => e <= it.v);
+      if (li === -1) { li = enden.length; enden.push(it.b); } else enden[li] = it.b;
+      it.lane = li;
+    }
+    for (const it of cluster) it.lanes = enden.length;
+    cluster = [];
+  };
+  for (const it of items) {
+    if (cluster.length && it.v >= clusterEnd) flush();
+    cluster.push(it);
+    clusterEnd = cluster.length === 1 ? it.b : Math.max(clusterEnd, it.b);
+  }
+  flush();
+}
+
+// Waagerechte Position/Breite einer Stunde in ihrer Überlappungsgruppe
+function laneStil(s) {
+  const lanes = s.lanes || 1, lane = s.lane || 0;
+  return lanes > 1 ? `left:calc(${(lane / lanes) * 100}% + 1px);width:calc(${100 / lanes}% - 2px);right:auto;` : "";
+}
+
 // Plan auf echter Zeitachse (variable Stundenzeiten, z. B. WebUntis). Blöcke sind
 // klickbar (Editor) und Drop-Ziel für Drag&Drop.
 function zeitachsePlanHTML(k, r) {
@@ -1156,6 +1186,7 @@ function zeitachsePlanHTML(k, r) {
       lo = Math.min(lo, v); hi = Math.max(hi, b);
       L.push({ v, b, i, kz, von: r[i].von, bis: r[i].bis });
     });
+    laneLayout(L);
     return L;
   });
   if (hi <= lo) { lo = 7 * 60; hi = 17 * 60; }
@@ -1172,7 +1203,7 @@ function zeitachsePlanHTML(k, r) {
       const rl = zellenRaumLehrer(k, p, tag, s.i, s.kz);
       const det = [rl.raum, rl.lehrer].filter(Boolean).join(" · ");
       const y = (s.v - lo) * PPM, h = (s.b - s.v) * PPM - 1;
-      inhalt += `<div class="za-block" style="top:${y}px;height:${h}px;background:${f.farbe};color:${textAuf(f.farbe)}" title="${esc(f.name)}${det ? " · " + esc(det) : ""}" data-tag="${tag}" data-si="${s.i}" onclick="openPicker('${tag}',${s.i})">${esc(s.kz)}<small>${s.von}${h > 26 ? "–" + s.bis : ""}${det && h > 42 ? " · " + esc(det) : ""}</small></div>`;
+      inhalt += `<div class="za-block" style="top:${y}px;height:${h}px;${laneStil(s)}background:${f.farbe};color:${textAuf(f.farbe)}" title="${esc(f.name)}${det ? " · " + esc(det) : ""}" data-tag="${tag}" data-si="${s.i}" onclick="openPicker('${tag}',${s.i})">${esc(s.kz)}<small>${s.von}${h > 26 ? "–" + s.bis : ""}${det && h > 42 ? " · " + esc(det) : ""}</small></div>`;
     }
     return `<div class="za-tag"><div class="za-kopf">${label.slice(0, 2)}</div><div class="za-spalte" style="height:${H}px">${inhalt}</div></div>`;
   }).join("");
@@ -1220,6 +1251,7 @@ function datumsWochenHTML(k) {
         lo = Math.min(lo, v); hi = Math.max(hi, b);
         L.push({ v, b, kz: s.kz, von: s.von, bis: s.bis, raum: s.raum, lehrer: s.lehrer });
       }
+      laneLayout(L);
       return L;
     });
     if (hi <= lo) continue;
@@ -1234,7 +1266,7 @@ function datumsWochenHTML(k) {
         const f = fachOf(k, s.kz);
         const det = [s.raum, s.lehrer].filter(Boolean).join(" · ");
         const y = (s.v - lo) * PPM, h = (s.b - s.v) * PPM - 1;
-        inhalt += `<div class="za-block" style="top:${y}px;height:${h}px;background:${f.farbe};color:${textAuf(f.farbe)}" title="${esc(f.name)}${det ? " · " + esc(det) : ""}">${esc(s.kz)}<small>${s.von}${h > 26 ? "–" + s.bis : ""}${det && h > 42 ? " · " + esc(det) : ""}</small></div>`;
+        inhalt += `<div class="za-block ro" style="top:${y}px;height:${h}px;${laneStil(s)}background:${f.farbe};color:${textAuf(f.farbe)}" title="${esc(f.name)}${det ? " · " + esc(det) : ""}">${esc(s.kz)}<small>${s.von}${h > 26 ? "–" + s.bis : ""}${det && h > 42 ? " · " + esc(det) : ""}</small></div>`;
       }
       return `<div class="za-tag"><div class="za-kopf${t.iso === heuteIso ? " heute" : ""}">${t.label.slice(0, 2)} <small>${fmt(t.d)}</small></div><div class="za-spalte" style="height:${H}px">${inhalt}</div></div>`;
     }).join("");

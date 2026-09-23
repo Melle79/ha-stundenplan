@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.26.0 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.26.1 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -615,6 +615,30 @@ class StundenplanCard extends HTMLElement {
     return false;
   }
 
+  // Parallel laufende Stunden nebeneinander legen (Spalten-Packing): jede Stunde
+  // bekommt lane/lanes -> waagerechte Position/Breite in ihrer Überlappungsgruppe.
+  _laneLayout(items) {
+    if (!items.length) return;
+    items.sort((a, b) => a.v - b.v || a.b - b.b);
+    let cluster = [], clusterEnd = -1;
+    const flush = () => {
+      const enden = [];
+      for (const it of cluster) {
+        let li = enden.findIndex(e => e <= it.v);
+        if (li === -1) { li = enden.length; enden.push(it.b); } else enden[li] = it.b;
+        it.lane = li;
+      }
+      for (const it of cluster) it.lanes = enden.length;
+      cluster = [];
+    };
+    for (const it of items) {
+      if (cluster.length && it.v >= clusterEnd) flush();
+      cluster.push(it);
+      clusterEnd = cluster.length === 1 ? it.b : Math.max(clusterEnd, it.b);
+    }
+    flush();
+  }
+
   // Wochenansicht auf echter Zeitachse (jede Stunde per Startzeit platziert,
   // Hoehe = Dauer). Fuer variable Stundenzeiten (WebUntis/Berufsschule).
   _zeitachseWocheHTML(a, tage, aktuelleWoche, heute, aend, zeit) {
@@ -622,15 +646,30 @@ class StundenplanCard extends HTMLElement {
     const m = t => { const p = String(t).split(":"); return (+p[0]) * 60 + (+p[1]); };
     let lo = 24 * 60, hi = 0;
     const perTag = tage.map(t => {
-      const arr = t.plan[t.tag] || [];
       const L = [];
-      arr.forEach((kz, i) => {
-        if (!kz || i >= r.length) return;
-        const v = m(r[i].von), b = m(r[i].bis);
-        if (b <= v) return;
-        lo = Math.min(lo, v); hi = Math.max(hi, b);
-        L.push({ v, b, i, kz, nr: r[i].nr, von: r[i].von, bis: r[i].bis });
-      });
+      // Datumsgenau: direkt aus der Roh-Stundenliste des Tages (bewahrt parallele
+      // Stunden); sonst aus dem positionsbasierten Wochen-Template.
+      const roh = (a.datumsplan && a.tagesplan) ? a.tagesplan[t.iso] : null;
+      if (roh && roh.length) {
+        for (const s of roh) {
+          const v = m(s.von), b = m(s.bis);
+          if (b <= v) continue;
+          lo = Math.min(lo, v); hi = Math.max(hi, b);
+          const nr = (r.find(x => x.von === s.von && x.bis === s.bis) || {}).nr;
+          L.push({ v, b, kz: s.kz, nr, von: s.von, bis: s.bis,
+                   raum: s.raum || "", lehrer: s.lehrer || "", raw: true });
+        }
+      } else {
+        const arr = t.plan[t.tag] || [];
+        arr.forEach((kz, i) => {
+          if (!kz || i >= r.length) return;
+          const v = m(r[i].von), b = m(r[i].bis);
+          if (b <= v) return;
+          lo = Math.min(lo, v); hi = Math.max(hi, b);
+          L.push({ v, b, i, kz, nr: r[i].nr, von: r[i].von, bis: r[i].bis });
+        });
+      }
+      this._laneLayout(L);
       return L;
     });
     if (hi <= lo) { lo = 7 * 60; hi = 17 * 60; }
@@ -653,13 +692,18 @@ class StundenplanCard extends HTMLElement {
         for (const s of perTag[di]) {
           const f = (a.faecher || {})[s.kz];
           const farbe = f ? f.farbe : "#888";
-          const rl = this._stundeRaumLehrer(t.plan, t.tag, s.i, f);
-          const x = aend[`${t.iso}|${s.nr}`];
+          const rl = s.raw ? { raum: s.raum, lehrer: s.lehrer }
+            : this._stundeRaumLehrer(t.plan, t.tag, s.i, f);
+          const x = s.nr != null ? aend[`${t.iso}|${s.nr}`] : null;
           const entfall = x && (x.entfall || x.typ === "cancelledLesson");
           const y = (s.v - lo) * PPM, h = (s.b - s.v) * PPM - 1;
+          const lanes = s.lanes || 1, lane = s.lane || 0;
+          const pos = lanes > 1
+            ? `left:calc(${(lane / lanes) * 100}% + 1px);width:calc(${100 / lanes}% - 2px);right:auto`
+            : "";
           const tip = `${s.von}–${s.bis} ${f ? f.name : s.kz}${rl.raum ? " · " + rl.raum : ""}`;
           const stil = entfall ? "opacity:.5;text-decoration:line-through" : "";
-          inhalt += `<div class="sp-za-block" style="top:${y}px;height:${h}px;background:${farbe};color:${this._textFarbe(farbe)};${stil}" title="${tip}">`
+          inhalt += `<div class="sp-za-block" style="top:${y}px;height:${h}px;${pos};background:${farbe};color:${this._textFarbe(farbe)};${stil}" title="${tip}">`
             + `${s.kz}${entfall ? " ✕" : ""}<small>${s.von}${h > 26 ? "–" + s.bis : ""}${rl.raum && h > 40 ? " · " + rl.raum : ""}</small></div>`;
         }
       }
@@ -941,4 +985,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.26.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.26.1", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");

@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.3.1 - September 2026
+
+### Verbessert
+- **Parallele Stunden nebeneinander**: Laufen im datumsgenauen Modus zwei Stunden zur selben Zeit (z. B. zwei parallele Kurse in verschiedenen Räumen), werden sie jetzt **nebeneinander** dargestellt statt sich zu überdecken – keine Stunde geht mehr verloren. Betrifft **Lovelace-Karte** (**v1.26.1**) und Panel (WebUntis-Wochen und Zeitachsen-Editor).
+
 ## 2.3.0 - September 2026
 
 ### Neu
