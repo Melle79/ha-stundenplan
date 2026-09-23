@@ -90,11 +90,13 @@ def plan_fuer_datum(kind: dict, datum, raster: list = None) -> dict:
     plaene: [{"gueltig_ab": iso, "plan": {...}}, ...]; Basis ist kind["plan"].
     Im datumsgenauen Modus hat ein Tag mit eigenen Quelldaten Vorrang."""
     if kind.get("datumsplan"):
+        # Nur echte Quelldaten des Tages, kein Rueckfall auf das Wochen-Template
         iso = datum.isoformat() if hasattr(datum, "isoformat") else str(datum)[:10]
         eintrag = (kind.get("tagesplan") or {}).get(iso)
-        if eintrag is not None:
-            r = raster if raster is not None else raster_fuer_kind(kind)
-            return _tagesplan_planobj(eintrag, r, iso)
+        if eintrag is None:
+            return {}
+        r = raster if raster is not None else raster_fuer_kind(kind)
+        return _tagesplan_planobj(eintrag, r, iso)
     d = datum.isoformat() if hasattr(datum, "isoformat") else str(datum)
     passend = sorted((p for p in kind.get("plaene", [])
                       if p.get("gueltig_ab", "9999") <= d),

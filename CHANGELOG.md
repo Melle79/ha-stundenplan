@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.4.0 - September 2026
+
+### Neu
+- **Stunden-Popup auf der Karte**: Ein Tipp auf eine Stunde öffnet ein Detail-Popup mit allen Angaben – voller Fachname, Datum, Uhrzeit, Raum, Lehrer, Block, Material und ggf. Vertretung/Entfall mit Grund. Praktisch auf dem Handy, wo die Zellen klein sind. Betrifft Wochenansicht (Gitter **und** Zeitachse). Schließen per ✕, Escape oder Tippen daneben. Lovelace-Karte **v1.27.0**.
+
+### Behoben
+- **Datumsgenauer Modus zeigt keine fremden Wochen mehr**: Eine Woche ohne WebUntis-Daten fiel bisher auf das (gefaltete) Wochen-Template zurück und zeigte dadurch den Plan einer anderen Woche als „falsch". Jetzt zeigt die Karte im datumsgenauen Modus **nur echte WebUntis-Tage**; Tage ohne Daten erscheinen als ehrliche Block-/Betriebs-Übersicht (z. B. „🏫 Schule · Block 1"). Wenn WebUntis eine Woche liefert, erscheint sie wieder korrekt.
+
 ## 2.3.3 - September 2026
 
 ### Neu

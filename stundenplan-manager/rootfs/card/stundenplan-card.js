@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.26.1 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.27.0 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -94,10 +94,12 @@ class StundenplanCard extends HTMLElement {
   }
 
   _planFuerDatum(a, isoDatum) {
-    // Datumsgenauer Modus (WebUntis-Blöcke): ein Tag mit eigenen Quelldaten
-    // hat Vorrang vor dem Wochen-Template.
-    if (a.datumsplan && a.tagesplan && a.tagesplan[isoDatum])
-      return this._tagesplanObj(a, isoDatum, a.tagesplan[isoDatum]);
+    // Datumsgenauer Modus (WebUntis-Blöcke): nur echte Quelldaten des Tages,
+    // KEIN Rückfall auf das Wochen-Template - sonst zeigte eine Woche ohne
+    // WebUntis-Daten den (gefalteten) Plan einer anderen Woche als "falsch".
+    if (a.datumsplan)
+      return (a.tagesplan && a.tagesplan[isoDatum])
+        ? this._tagesplanObj(a, isoDatum, a.tagesplan[isoDatum]) : {};
     const passend = (a.plaene || []).filter(p => p.gueltig_ab <= isoDatum)
       .sort((x, y) => x.gueltig_ab.localeCompare(y.gueltig_ab));
     return passend.length ? passend[passend.length - 1].plan : (a.plan || {});
@@ -200,6 +202,87 @@ class StundenplanCard extends HTMLElement {
     if (c.length < 6) return "#fff";
     const r = parseInt(c.slice(0, 2), 16), g = parseInt(c.slice(2, 4), 16), b = parseInt(c.slice(4, 6), 16);
     return (r * 299 + g * 587 + b * 114) / 1000 > 150 ? "#1c1c1c" : "#fff";
+  }
+
+  // Wert fuer ein data-Attribut escapen
+  _ea(s) {
+    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/"/g, "&quot;")
+      .replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  // data-* Attribute (nicht-leere) fuer ein anklickbares Stundenelement
+  _lessonAttrs(o) {
+    return Object.entries(o).filter(([, v]) => v != null && v !== "")
+      .map(([k, v]) => `data-${k}="${this._ea(v)}"`).join(" ");
+  }
+
+  // Sammelt alle Angaben einer Stunde in data-Attribute (fuer das Klick-Popup)
+  _stundeAttrs(a, o) {
+    const lehrerVoll = this._lehrerName(a, o.lehrer) || o.lehrer || "";
+    let datum = "";
+    if (o.iso) {
+      const d = new Date(o.iso + "T00:00");
+      if (!isNaN(d)) datum = d.toLocaleDateString("de-DE",
+        { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" });
+    }
+    let aend = "", grund = "";
+    if (o.x) {
+      const entf = o.x.entfall || o.x.typ === "cancelledLesson";
+      if (entf) aend = "❌ Entfall" + (o.x.label && o.x.label !== "Entfall" ? " · " + o.x.label : "");
+      else {
+        const nd = [o.x.fach, o.x.raum, o.x.lehrer].filter(Boolean).join(" · ");
+        aend = "🔁 Vertretung" + (nd ? " · " + nd : "");
+      }
+      grund = o.x.grund || "";
+    }
+    return this._lessonAttrs({
+      kz: o.kz, fach: (o.f && o.f.name) || o.kz, von: o.von, bis: o.bis, datum,
+      raum: o.raum, lehrer: lehrerVoll, block: o.block,
+      material: (o.f && o.f.material) || "", farbe: (o.f && o.f.farbe) || "",
+      arbeit: o.arbeit ? ((o.arbeit.typ || "Arbeit") + (o.arbeit.fach ? " " + o.arbeit.fach : "")) : "",
+      aenderung: aend, grund,
+    });
+  }
+
+  // Block-Label fuer ein Datum (nur Blockmodus), sonst ""
+  _blockLabelFor(a, iso) {
+    if (a.modus !== "block") return "";
+    const b = (a.bloecke || []).find(b => b.von <= iso && iso <= b.bis);
+    return b ? (b.label || "").trim() : "";
+  }
+
+  // Detail-Popup einer angeklickten Stunde
+  _zeigeStunde(ds) {
+    const rows = [];
+    const add = (label, val) => { if (val) rows.push(`<div class="sp-pop-row"><span>${this._ea(label)}</span><b>${this._ea(val)}</b></div>`); };
+    add("Datum", ds.datum);
+    add("Zeit", (ds.von || "") + (ds.bis ? "–" + ds.bis : ""));
+    add("Raum", ds.raum);
+    add("Lehrer", ds.lehrer);
+    if (ds.block) add("Block", ds.block);
+    if (ds.material) add("Mitbringen", ds.material);
+    if (ds.arbeit) add("Anstehend", "📝 " + ds.arbeit);
+    const farbe = ds.farbe || "var(--primary-color,#4a90d9)";
+    const titel = this._ea(ds.fach || ds.kz || "Stunde")
+      + (ds.kz && ds.fach && ds.kz !== ds.fach ? ` <small>${this._ea(ds.kz)}</small>` : "");
+    const aend = ds.aenderung
+      ? `<div class="sp-pop-aend">${this._ea(ds.aenderung)}${ds.grund ? `<br><small>ℹ️ ${this._ea(ds.grund)}</small>` : ""}</div>` : "";
+    const ov = document.createElement("div");
+    ov.className = "sp-pop-ov";
+    ov.innerHTML = `<div class="sp-pop" style="border-top:5px solid ${this._ea(farbe)}">
+        <button class="sp-pop-x" aria-label="Schließen">✕</button>
+        <div class="sp-pop-titel">${titel}</div>
+        ${aend}
+        <div class="sp-pop-body">${rows.join("") || '<div class="sp-pop-row"><span>Keine weiteren Angaben</span></div>'}</div>
+      </div>`;
+    const close = () => { ov.remove(); document.removeEventListener("keydown", onKey); };
+    const onKey = e => { if (e.key === "Escape") close(); };
+    ov.addEventListener("click", e => { if (e.target === ov) close(); });
+    ov.querySelector(".sp-pop-x").onclick = close;
+    document.addEventListener("keydown", onKey);
+    // An document.body haengen, damit die HA-Karten-Containment (container-type)
+    // das fixed-Overlay nicht einfaengt - so bleibt es echt viewport-zentriert.
+    document.body.appendChild(ov);
   }
 
   // Lehrer-Kürzel -> Klarname aus dem Verzeichnis (case-insensitiv), "" wenn keiner
@@ -478,6 +561,27 @@ class StundenplanCard extends HTMLElement {
           .sp-gross .sp-schluss-name { font-size: 1.25rem; }
           .sp-gross .sp-schluss-zeit { font-size: 1.9rem; }
           .sp-gross .sp-schluss-sub { font-size: .9rem; }
+          .sp-klick { cursor: pointer; }
+          .sp-pop-ov { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.5);
+            display: flex; align-items: center; justify-content: center; padding: 16px; }
+          .sp-pop { background: var(--card-background-color, #fff); color: var(--primary-text-color, #1c1c1c);
+            border-radius: 14px; width: 100%; max-width: 360px; box-shadow: 0 12px 40px rgba(0,0,0,.4);
+            position: relative; padding: 18px 18px 8px; }
+          .sp-pop-x { position: absolute; top: 8px; right: 8px; border: none; background: none;
+            font-size: 1.1rem; line-height: 1; cursor: pointer; color: var(--secondary-text-color, #888);
+            padding: 6px; border-radius: 8px; }
+          .sp-pop-x:hover { background: var(--secondary-background-color, #eee); }
+          .sp-pop-titel { font-size: 1.25rem; font-weight: 700; margin: 2px 24px 10px 0; }
+          .sp-pop-titel small { font-weight: 500; color: var(--secondary-text-color, #888); font-size: .85rem; }
+          .sp-pop-aend { background: var(--secondary-background-color, #f2f2f2); border-radius: 8px;
+            padding: 8px 10px; margin-bottom: 10px; font-size: .9rem; }
+          .sp-pop-aend small { color: var(--secondary-text-color, #888); }
+          .sp-pop-body { display: flex; flex-direction: column; }
+          .sp-pop-row { display: flex; justify-content: space-between; gap: 12px;
+            padding: 9px 2px; border-top: 1px solid var(--divider-color, #eee); }
+          .sp-pop-row:first-child { border-top: none; }
+          .sp-pop-row span { color: var(--secondary-text-color, #888); }
+          .sp-pop-row b { text-align: right; }
         </style>
         <div class="sp-wrap ${this._config.schrift === "gross" ? "sp-gross" : ""}">${chips}${inhalt}</div>
       </ha-card>`;
@@ -495,6 +599,11 @@ class StundenplanCard extends HTMLElement {
         this._letzterHash = null;
         this.hass = this._hass;
       };
+    });
+    // Klick auf eine Stunde -> Detail-Popup (praktisch auf dem Handy, wo die
+    // Zellen klein sind)
+    this.querySelectorAll(".sp-klick").forEach(el => {
+      el.onclick = ev => { ev.stopPropagation(); this._zeigeStunde(el.dataset); };
     });
   }
 
@@ -593,8 +702,10 @@ class StundenplanCard extends HTMLElement {
           const lehrerVoll = this._lehrerName(a, rl.lehrer);
           const tip = `${f.name}${lehrerVoll ? " · " + lehrerVoll : ""}${x ? " – " + x.label + (details ? " (" + details + ")" : "") + (x.grund ? ": " + x.grund : "") : ""}${arbeit ? " – " + arbeit.typ : ""}`;
           const raumLehrer = [rl.raum || "", rl.lehrer ? this._lehrerHTML(a, rl.lehrer, "grid") : ""].filter(Boolean).join(" · ");
-          html += `<td class="${spalte}"><div class="sp-fach ${istJetzt ? "sp-aktuell" : ""} ${t.frei ? "sp-gedimmt" : ""} ${aCls}"
-            style="background:${f.farbe};color:${this._textFarbe(f.farbe)}" title="${tip}">${kz}${arbeit ? " 📝" : ""}<small class="sp-name">${f.name}</small>${(rl.raum || rl.lehrer) && !vertretung ? `<small>${raumLehrer}</small>` : ""}${badge}</div></td>`;
+          const attrs = this._stundeAttrs(a, { iso: t.iso, kz, f, von: st.von, bis: st.bis,
+            raum: rl.raum, lehrer: rl.lehrer, x, arbeit, block: this._blockLabelFor(a, t.iso) });
+          html += `<td class="${spalte}"><div class="sp-fach sp-klick ${istJetzt ? "sp-aktuell" : ""} ${t.frei ? "sp-gedimmt" : ""} ${aCls}"
+            style="background:${f.farbe};color:${this._textFarbe(f.farbe)}" title="${tip}" ${attrs}>${kz}${arbeit ? " 📝" : ""}<small class="sp-name">${f.name}</small>${(rl.raum || rl.lehrer) && !vertretung ? `<small>${raumLehrer}</small>` : ""}${badge}</div></td>`;
         } else if (x) {
           html += `<td class="${spalte}"><div class="sp-fach ${aCls}" style="background:var(--secondary-background-color,#444)">${badge}</div></td>`;
         } else {
@@ -703,7 +814,9 @@ class StundenplanCard extends HTMLElement {
             : "";
           const tip = `${s.von}–${s.bis} ${f ? f.name : s.kz}${rl.raum ? " · " + rl.raum : ""}`;
           const stil = entfall ? "opacity:.5;text-decoration:line-through" : "";
-          inhalt += `<div class="sp-za-block" style="top:${y}px;height:${h}px;${pos};background:${farbe};color:${this._textFarbe(farbe)};${stil}" title="${tip}">`
+          const attrs = this._stundeAttrs(a, { iso: t.iso, kz: s.kz, f, von: s.von, bis: s.bis,
+            raum: rl.raum, lehrer: rl.lehrer, x, block: this._blockLabelFor(a, t.iso) });
+          inhalt += `<div class="sp-za-block sp-klick" style="top:${y}px;height:${h}px;${pos};background:${farbe};color:${this._textFarbe(farbe)};${stil}" title="${tip}" ${attrs}>`
             + `${s.kz}${entfall ? " ✕" : ""}<small>${s.von}${h > 26 ? "–" + s.bis : ""}${rl.raum && h > 40 ? " · " + rl.raum : ""}</small></div>`;
         }
       }
@@ -985,4 +1098,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.26.1", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.27.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");

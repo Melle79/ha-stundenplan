@@ -698,9 +698,9 @@ function renderKid() {
     // nur als eingeklappte Reserve (gilt für Wochen ohne WebUntis-Daten).
     html += smStatus + datumsWochenHTML(k)
       + `<details class="collapse" style="margin-top:14px" ${sektAttr("reserveplan")}>
-          <summary><h2>🗓 Reserve-Wochenplan</h2><span class="hint">gilt nur für Wochen ohne WebUntis-Daten</span></summary>
+          <summary><h2>🗓 Wochenplan-Vorlage</h2><span class="hint">ungenutzt im datumsgenauen Modus</span></summary>
+          <p class="hint" style="margin:10px 0 0">Im datumsgenauen Modus zeigt die Karte <b>nur echte WebUntis-Tage</b>. Tage ohne WebUntis-Daten erscheinen als Block-/Betriebs-Übersicht, nicht mit dieser Vorlage.</p>
           <div id="planWrap" style="margin-top:10px">${planTabelleHTML(k, r)}</div>
-          <p class="hint">Diese Vorlage wird verwendet, wenn WebUntis für eine Woche (noch) nichts liefert.</p>
         </details>` + zusatz + `</div>`;
   } else {
     html += versionen + smStatus + `<div id="planWrap">${planTabelleHTML(k, r)}</div>` + zusatz +
