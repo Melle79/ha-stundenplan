@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.4.2 - September 2026
+
+### Dokumentation
+- README, DOCS und HANDBUCH auf den aktuellen Stand gebracht: **Zeitachsen-Ansicht**, **datumsgenauer WebUntis-Modus** (eigener Block-Plan je Woche, Archiv, Blöcke aus WebUntis abgeleitet), und das **Stunden-Popup** sind jetzt beschrieben.
+
 ## 2.4.1 - September 2026
 
 ### Behoben

@@ -128,7 +128,20 @@ Optional lässt sich pro Kind eine Schulplattform verknüpfen (Dropdown im Kind-
 - WebUntis stellt den Stundenplan als **HA-Kalender** bereit (`calendar.<schüler>`) – Termine mit Fach (Titel), Raum (Ort) und echten Uhrzeiten. Das Add-on leitet daraus **Stundenraster und Wochenplan** ab und übernimmt sie wie bei den anderen Quellen. **Hausaufgaben** und **Prüfungen** kommen aus den Kalendern `…_hausaufgaben` bzw. `…_prufungen`.
 - WebUntis liefert im Kalender **keine Lehrkraft** – die Lehrer-Klarnamen lassen sich von Hand pflegen (Räume kommen automatisch).
 - **Vertretungen** meldet WebUntis nur als HA-Event (nicht als abfragbare Liste) und werden daher vorerst **nicht** als Overlay angezeigt.
-- Da WebUntis keine festen Stundennummern hat, entsteht das Raster aus den **tatsächlichen Uhrzeiten** der Kalender-Termine. Beginnt der reguläre Unterricht z. B. um 07:30, zeigt das Raster nach dem nächsten (Auto-)Import automatisch 07:30 – ohne manuelles Einstellen. Bei unregelmäßigen Einführungs-/Blocktagen (etwa ein langer Block neben kurzen Einheiten zur selben Startzeit) kann das Raster verschachtelt wirken; eine reguläre Woche mit festen Stundenzeiten ergibt ein sauberes Raster.
+- Da WebUntis keine festen Stundennummern hat, entsteht das Raster aus den **tatsächlichen Uhrzeiten** der Kalender-Termine. Beginnt der reguläre Unterricht z. B. um 07:30, zeigt das Raster nach dem nächsten (Auto-)Import automatisch 07:30 – ohne manuelles Einstellen.
+
+#### Datumsgenauer Modus (Berufsschule mit unterschiedlichen Blöcken)
+
+Berufsschüler haben oft **je Block einen anderen Wochenplan**. Standardmäßig faltet der Import die Stunden auf **einen** wiederkehrenden Wochenplan – dann würde jeder Block denselben Plan zeigen. Für solche Fälle gibt es den Schalter **„📅 Datumsgenau"** (nur bei WebUntis-Kindern, im Kind-Panel):
+
+- **Pro Kalendertag statt Wochenraster**: Der Import legt die Stunden genau an dem Datum ab, an dem WebUntis sie ausgibt (mehrere Wochen im Voraus). So zeigt jede Woche ihren **eigenen** Block-Plan.
+- **Archiv**: Bereits gelaufene Schultage werden **eingefroren** – sie werden nicht mehr überschrieben, auch wenn WebUntis sie später anders oder gar nicht mehr liefert. Der Import schaut zusätzlich einige Wochen zurück, um vorhandene Historie zu sichern.
+- **Blöcke aus WebUntis**: Die Blockzeiträume werden aus den echten WebUntis-Schulwochen **abgeleitet** – aber nur im tatsächlich abgedeckten Zeitraum; von Hand gepflegte Blöcke in der noch nicht veröffentlichten Zukunft bleiben erhalten.
+- **WebUntis ist maßgeblich**: Ein Tag mit WebUntis-Unterricht gilt als **Schule** (auch außerhalb der hinterlegten Blöcke). Wochen **ohne** WebUntis-Daten zeigen kein fremdes Wochen-Template, sondern die ehrliche Block-/Betriebs-Übersicht. Der bisherige Wochenplan bleibt als ungenutzte Vorlage bestehen.
+
+#### Zeitachsen-Ansicht (variable Stundenzeiten)
+
+Pläne mit unterschiedlich langen Stunden zu unregelmäßigen Zeiten (teils überlappend) passen nicht in ein festes Gitter. Solche Pläne stellt die Karte (und das Panel) **automatisch als echte Zeitachse** dar: jede Stunde per Startzeit platziert, Höhe = Dauer, Pausen als Lücken, **parallele Stunden nebeneinander**. Eine reguläre Woche mit festen Stundenzeiten behält das gewohnte Gitter.
 
 ### Auto-Import
 
@@ -222,6 +235,8 @@ titel: ""                # optional, Standard: "Stundenplan {Name}"
 - **layout: untereinander** stapelt mehrere Kinder statt Chips.
 - **schrift: gross** vergrößert alles (z. B. für Wandtablets).
 - Die Karte ist rein **sensorbasiert** und funktioniert daher auch extern via Nabu Casa.
+- **Zeitachse**: Bei variablen Stundenzeiten (Berufsschule/WebUntis) stellt die Wochenansicht den Plan automatisch als echte Zeitachse dar (Startzeit + Dauer, parallele Stunden nebeneinander) – feste Raster behalten das Gitter.
+- **Stunden-Popup**: Ein Tipp/Klick auf eine Stunde öffnet ein Detail-Popup mit allen Angaben (voller Fachname, Datum, Zeit, Raum, Lehrer, Block, Material, Vertretung/Entfall mit Grund). Schließen per ✕, Escape oder Tippen daneben.
 
 ## MQTT-Sensoren & Attribute
 

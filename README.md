@@ -25,6 +25,9 @@ Home Assistant Add-on zur Verwaltung der Stundenpläne mehrerer Kinder – **kom
 - **Klasse** pro Kind (z. B. „6E") im Karten-Titel
 - **Lehrer-Klarnamen**: Kürzel zu vollen Namen auflösen (von Hand oder automatisch vom Eltern-Portal), Anzeige auf der Karte nach Platz
 - **Blockunterricht-Modus**: Blockzeiträume pflegen, außerhalb zeigen Sensoren und Karte „Betrieb"
+- **Zeitachsen-Ansicht** für variable Stundenzeiten (z. B. Berufsschule/WebUntis): unterschiedlich lange Stunden zu unregelmäßigen Zeiten werden automatisch als echte Zeitachse dargestellt (Startzeit + Dauer), parallele Stunden nebeneinander; feste Raster behalten das gewohnte Gitter
+- **Datumsgenauer WebUntis-Modus** (optional pro Kind): jede Woche mit ihrem echten Block-Plan an ihrem Datum – ideal für Berufsschüler, deren Blöcke sich unterscheiden; vergangene Wochen bleiben archiviert
+- **Stunden-Popup**: Tipp auf eine Stunde öffnet alle Details (voller Fachname, Datum, Zeit, Raum, Lehrer, Block, Material, Vertretung/Entfall) – praktisch auf dem Handy
 - Druckansicht (A4 quer) mit vollen Fachnamen, Räumen und Pausen
 - **5 MQTT Discovery Sensoren pro Kind**: Aktuelle Stunde, Nächste Stunde, Erste Stunde morgen, Schulschluss heute, Wochenplan (mit kompletten Plandaten als Attribute)
 - Lovelace-Karte mit Wochen-, Heute- und Schulschluss-Ansicht sowie visuellem Editor
@@ -37,7 +40,7 @@ Home Assistant Add-on zur Verwaltung der Stundenpläne mehrerer Kinder – **kom
 
 ## Lovelace-Karte
 
-Die Stundenplan Card zeigt Wochen-, Tages- oder Schulschluss-Ansicht direkt im Dashboard – mit Fachfarben, Pausen, Hervorhebung der laufenden Stunde und Betriebsphasen-Banner im Blockmodus. Sie ist rein sensorbasiert und funktioniert daher auch extern via Nabu Casa.
+Die Stundenplan Card zeigt Wochen-, Tages- oder Schulschluss-Ansicht direkt im Dashboard – mit Fachfarben, Pausen, Hervorhebung der laufenden Stunde und Betriebsphasen-Banner im Blockmodus. Sie ist rein sensorbasiert und funktioniert daher auch extern via Nabu Casa. Bei variablen Stundenzeiten (Berufsschule) schaltet die Wochenansicht automatisch auf eine **Zeitachse** um. Ein **Tipp auf eine Stunde** öffnet ein Detail-Popup mit allen Angaben – gerade auf dem Handy praktisch.
 
 Die **Heute-Ansicht** listet den Tag mit Räumen und Lehrer-Klarnamen, Vertretungen, Entfall, Material und Hausaufgaben:
 
@@ -93,7 +96,9 @@ Mit der HACS-Integration [Schulmanager-homeassistant](https://github.com/MrIcema
 
 ## WebUntis (optional)
 
-Alternativ lässt sich pro Kind ein WebUntis-Schüler verknüpfen (HACS-Integration [homeassistant-WebUntis](https://github.com/JonasJoKuJonas/homeassistant-WebUntis), Domain `webuntis`). WebUntis stellt den Stundenplan als HA-Kalender bereit (Termine mit Fach und Raum); das Add-on leitet daraus Stundenraster und Wochenplan ab – die **echten Uhrzeiten** werden automatisch als Raster übernommen (bei aktivem Auto-Import ohne Zutun). Hausaufgaben und Prüfungen kommen aus den zugehörigen Kalendern. Da WebUntis im Kalender keine Lehrkraft mitliefert, bleiben Lehrer leer (Klarnamen von Hand pflegbar); Vertretungen liefert WebUntis nur als Event und werden vorerst nicht als Overlay angezeigt. Details siehe [HANDBUCH.md](HANDBUCH.md#datenquellen).
+Alternativ lässt sich pro Kind ein WebUntis-Schüler verknüpfen (HACS-Integration [homeassistant-WebUntis](https://github.com/JonasJoKuJonas/homeassistant-WebUntis), Domain `webuntis`). WebUntis stellt den Stundenplan als HA-Kalender bereit (Termine mit Fach und Raum); das Add-on leitet daraus Stundenraster und Wochenplan ab – die **echten Uhrzeiten** werden automatisch als Raster übernommen (bei aktivem Auto-Import ohne Zutun). Hausaufgaben und Prüfungen kommen aus den zugehörigen Kalendern. Da WebUntis im Kalender keine Lehrkraft mitliefert, bleiben Lehrer leer (Klarnamen von Hand pflegbar); Vertretungen liefert WebUntis nur als Event und werden vorerst nicht als Overlay angezeigt.
+
+**Datumsgenauer Modus** (Schalter „📅 Datumsgenau" im Kind-Panel): Für Berufsschüler, deren **Blöcke jeweils einen eigenen Plan** haben, legt der Import die Stunden **genau an ihrem Kalendertag** ab statt sie auf einen sich wiederholenden Wochenplan zu falten. So zeigt jede Woche ihren echten Block-Plan; vergangene Schultage werden **archiviert** (eingefroren) und die Blockzeiträume aus den WebUntis-Wochen abgeleitet. Ein Tag mit WebUntis-Unterricht gilt als Schule – auch außerhalb der hinterlegten Blöcke. Wochen ohne WebUntis-Daten erscheinen als ehrliche Block-/Betriebs-Übersicht. Unregelmäßige Stundenzeiten stellt die Karte automatisch als **Zeitachse** dar. Details siehe [HANDBUCH.md](HANDBUCH.md#datenquellen).
 
 ## Eltern-Portal (optional)
 
