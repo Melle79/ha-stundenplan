@@ -152,6 +152,14 @@ def fuehre_import_aus(data: dict, kind: dict, heute: date = None) -> dict:
                 stats["geaendert"] = True
         return match
 
+    # Datumsgenauer Modus (optional pro Kind): NICHT auf einen Wochenplan falten
+    # - das wuerde bei jedem Import die zuletzt gezeigte Woche ueberschreiben.
+    # Stattdessen jede echte Kalenderstunde an ihrem Datum ablegen; jede Woche
+    # bleibt so erhalten (Archiv). Der Wochenplan bleibt als Reserve unangetastet.
+    if kind.get("datumsplan"):
+        _import_datumsplan(kind, heute, details, fach_sicherstellen, stats)
+        return stats
+
     # Finalen Plan je Tag bestimmen: Tagesplan schlaegt Wochen-JSON
     nr_index = {st["nr"]: i for i, st in enumerate(raster)}
     tage_namen = ["mo", "di", "mi", "do", "fr"]
@@ -227,25 +235,25 @@ def fuehre_import_aus(data: dict, kind: dict, heute: date = None) -> dict:
             if kind.get("sm_raster") != sm_raster:
                 kind["sm_raster"] = sm_raster
                 stats["geaendert"] = True
-
-    # Datumsgenauer Modus (optional pro Kind): zusaetzlich zum Wochen-Template
-    # jede echte Kalenderstunde an ihrem Datum ablegen. Fuer Quellen mit
-    # individuellem Plan je Block/Woche (WebUntis/Berufsschule) - Karte und
-    # Sensoren bevorzugen dann den Tag genau dort, wo die Quelle ihn ausgibt.
-    if kind.get("datumsplan"):
-        _import_datumsplan(kind, heute, details, fach_sicherstellen, stats)
     return stats
 
 
-DATUMSPLAN_WOCHEN_VOR = 8  # so viele Wochen vorausschauen (Quelle liefert oft nur wenige)
+DATUMSPLAN_WOCHEN_VOR = 8    # so viele Wochen vorausschauen (Quelle liefert oft nur wenige)
+DATUMSPLAN_WOCHEN_ZURUECK = 6  # so weit rueckwaerts abrufen, um Historie zu archivieren
 
 
 def _import_datumsplan(kind: dict, heute: date, details: dict,
                        fach_sicherstellen, stats: dict) -> None:
     """Fuellt kind["tagesplan"] = {iso: [{von,bis,kz,raum,lehrer}]} aus der
-    datumsgenauen Quelle. Bestehende Tage ausserhalb des Abrufzeitraums bleiben
-    erhalten (Historie/Archiv), abgerufene Tage werden aktualisiert."""
-    von = heute - timedelta(days=heute.weekday() + 7)          # Mo der Vorwoche
+    datumsgenauen Quelle - jede Woche bleibt an ihrem Datum (Archiv).
+
+    Zwei Regeln schuetzen die Historie:
+      - Tage in der Vergangenheit werden nur ergaenzt, nie ueberschrieben
+        (einmal gelaufener Schultag ist eingefroren, auch wenn WebUntis ihn
+        spaeter anders/gar nicht mehr liefert).
+      - Tage ausserhalb des Abrufzeitraums bleiben ohnehin unberuehrt."""
+    heute_iso = heute.isoformat()
+    von = heute - timedelta(days=heute.weekday() + 7 * DATUMSPLAN_WOCHEN_ZURUECK)
     bis = heute + timedelta(weeks=DATUMSPLAN_WOCHEN_VOR)
     try:
         bereich = quellen.hole_zeitplan_bereich(kind, von, bis)
@@ -260,6 +268,9 @@ def _import_datumsplan(kind: dict, heute: date, details: dict,
     tp = kind.setdefault("tagesplan", {})
     neu_tage = 0
     for iso, stunden in tage.items():
+        # Vergangenen Tag nicht ueberschreiben, wenn schon archiviert
+        if iso < heute_iso and iso in tp:
+            continue
         neu = []
         for s in stunden:
             kz = s.get("kz")

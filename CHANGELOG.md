@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.3.2 - September 2026
+
+### Behoben
+- **Datumsgenauer Modus überschreibt nicht mehr die letzte Woche**: Der Import faltete bisher auch im datumsgenauen Modus die aktuelle Woche auf den einen Wochenplan – dadurch ging die zuvor gezeigte Woche verloren. Jetzt wird im datumsgenauen Modus **nur** das datumsgenaue Archiv gepflegt; der Wochenplan bleibt als Reserve unangetastet.
+- **Vergangene Tage werden eingefroren (archiviert)**: Einmal gespeicherte Schultage werden nicht mehr überschrieben, auch wenn WebUntis sie später anders oder gar nicht mehr liefert. Der Import schaut zusätzlich bis zu 6 Wochen zurück, um vorhandene Historie aus WebUntis zu sichern.
+
 ## 2.3.1 - September 2026
 
 ### Verbessert
