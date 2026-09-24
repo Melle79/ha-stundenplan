@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.27.4 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.27.5 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -230,7 +230,8 @@ class StundenplanCard extends HTMLElement {
       const entf = o.x.entfall || o.x.typ === "cancelledLesson";
       if (entf) aend = "❌ Entfall" + (o.x.label && o.x.label !== "Entfall" ? " · " + o.x.label : "");
       else {
-        const nd = [o.x.fach, o.x.raum, o.x.lehrer].filter(Boolean).join(" · ");
+        const vLehrer = o.x.lehrer ? (this._lehrerName(a, o.x.lehrer) || o.x.lehrer) : "";
+        const nd = [o.x.fach, o.x.raum, vLehrer].filter(Boolean).join(" · ");
         aend = "🔁 Vertretung" + (nd ? " · " + nd : "");
       }
       grund = o.x.grund || "";
@@ -1090,4 +1091,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.27.4", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.27.5", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
