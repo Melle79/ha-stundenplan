@@ -3,7 +3,7 @@
 ## 2.4.7 - September 2026
 
 ### Behoben
-- **Vertretungslehrer im Stunden-Popup als Klarname**: In der Vertretungszeile des Popups stand der Ersatzlehrer noch noch als Kürzel, obwohl der Klarname hinterlegt ist. Er wird jetzt wie überall zum Klarnamen aufgelöst. Lovelace-Karte **v1.27.5**.
+- **Vertretungslehrer im Stunden-Popup als Klarname**: In der Vertretungszeile des Popups stand der Ersatzlehrer noch als Kürzel, obwohl der Klarname hinterlegt ist. Er wird jetzt wie überall zum Klarnamen aufgelöst. Lovelace-Karte **v1.27.5**.
 
 ## 2.4.6 - September 2026
 
