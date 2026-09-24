@@ -235,6 +235,22 @@ def fuehre_import_aus(data: dict, kind: dict, heute: date = None) -> dict:
             if kind.get("sm_raster") != sm_raster:
                 kind["sm_raster"] = sm_raster
                 stats["geaendert"] = True
+
+    # Vertretungslehrer entdecken: Kuerzel, die nur in einer Vertretung vorkommen,
+    # tauchen sonst nie in der Lehrernamen-Tabelle auf - man koennte sie also nicht
+    # benennen. Sie werden hier (mit leerem Klarnamen) angelegt, damit sie in der
+    # UI zum Ausfuellen erscheinen. Schulmanager liefert nur das Kuerzel.
+    if kind.get("schulmanager"):
+        try:
+            verz = kind.setdefault("lehrer_namen", {})
+            for a in quellen.hole_aenderungen(kind, heute):
+                kz = (a.get("lehrer") or "").strip()
+                if kz and not a.get("entfall") \
+                        and not any(k.lower() == kz.lower() for k in verz):
+                    verz[kz] = ""
+                    stats["geaendert"] = True
+        except Exception:
+            log.debug("Vertretungslehrer-Entdeckung uebersprungen (%s)", kind.get("name"))
     return stats
 
 

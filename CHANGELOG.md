@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.4.6 - September 2026
+
+### Verbessert
+- **Vertretungslehrer benennbar machen**: Ein Lehrer-Kürzel, das nur in einer Vertretung vorkommt (nicht im regulären Plan), tauchte bisher gar nicht in der 👩‍🏫 Lehrernamen-Tabelle auf – man konnte also keinen Klarnamen dafür hinterlegen. Der Import legt solche Vertretungs-Kürzel jetzt (mit leerem Namen) an, sodass sie in der Tabelle zum Ausfüllen erscheinen. Sobald ein Name eingetragen ist, zeigt die Karte ihn auch in der Vertretung. (Schulmanager liefert bei Vertretungen nur das Kürzel.)
+
 ## 2.4.5 - September 2026
 
 ### Behoben
