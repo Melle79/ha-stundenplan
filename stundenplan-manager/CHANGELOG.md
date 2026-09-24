@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.4.5 - September 2026
+
+### Behoben
+- **Lehrer bei Vertretungen als Klarname**: In der Vertretungs-Anzeige des Wochen-Gitters standen Original- und Ersatz-Lehrer noch als Kürzel (z. B. „brö"), während die normalen Stunden längst den Klarnamen zeigen. Jetzt werden auch die Lehrer im durchgestrichenen Original und in der neuen Angabe zum Klarnamen aufgelöst (bei genug Platz, sonst Kürzel) – z. B. „Bio 2 · Lehrername". Lovelace-Karte **v1.27.4**.
+
 ## 2.4.4 - September 2026
 
 ### Behoben

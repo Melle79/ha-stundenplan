@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.27.3 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.27.4 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -679,8 +679,11 @@ class StundenplanCard extends HTMLElement {
           const fNeu = x.fach && f && x.fach.toUpperCase() !== kz.toUpperCase()
             && x.fach.toUpperCase() !== f.name.toUpperCase() ? x.fach : "";
           const _rl = this._stundeRaumLehrer(t.plan, t.tag, si, f);
-          const altDetail = f ? [fNeu ? kz : "", _rl.raum, _rl.lehrer].filter(Boolean).join(" · ") : "";
-          const neuDetail = [fNeu, x.raum, x.lehrer].filter(Boolean).join(" · ");
+          // Lehrer-Kürzel wie bei den normalen Zellen zum Klarnamen auflösen
+          const altLehrer = _rl.lehrer ? this._lehrerHTML(a, _rl.lehrer, "grid") : "";
+          const neuLehrer = x.lehrer ? this._lehrerHTML(a, x.lehrer, "grid") : "";
+          const altDetail = f ? [fNeu ? kz : "", _rl.raum, altLehrer].filter(Boolean).join(" · ") : "";
+          const neuDetail = [fNeu, x.raum, neuLehrer].filter(Boolean).join(" · ");
           badge = (altDetail ? `<small class="sp-orig">${altDetail}</small>` : "")
             + (neuDetail ? `<small class="sp-neu">🔁 ${neuDetail}</small>`
                          : `<small class="sp-aend">🔁 ${x.label}</small>`) + info;
@@ -1087,4 +1090,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.27.3", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.27.4", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
