@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.4.4 - September 2026
+
+### Behoben
+- **Lehrername im Wochen-Gitter verschwand auf breiten Dashboards**: Durch eine falsche CSS-Reihenfolge überschrieb die Standardregel „Klarname aus" die `@container`-Regel „Klarname zeigen" (gleiche Spezifität, spätere Regel gewinnt) – bei breitem Container wurde so das Kürzel ausgeblendet *und* der Klarname unterdrückt, es blieb nur „Raum ·". Auf schmalen Geräten (Handy) fiel es nicht auf, weil dort das Kürzel steht. Jetzt steht der Standard vor den `@container`-Regeln; der Lehrer erscheint wieder (Klarname bei genug Platz, sonst Kürzel). Lovelace-Karte **v1.27.3**.
+
 ## 2.4.3 - September 2026
 
 ### Behoben

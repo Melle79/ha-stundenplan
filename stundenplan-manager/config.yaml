@@ -1,5 +1,5 @@
 name: Stundenplan Manager 2
-version: 2.4.3
+version: 2.4.4
 slug: stundenplan_manager
 description: Stundenpläne für Kinder verwalten – mit MQTT-Sensoren und Blockunterricht-Unterstützung
 url: https://github.com/Melle79/ha-stundenplan

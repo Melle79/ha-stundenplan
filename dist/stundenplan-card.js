@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.27.2 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.27.3 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -418,14 +418,16 @@ class StundenplanCard extends HTMLElement {
           .sp-nav:hover { color: var(--primary-text-color); }
           .sp-heute-btn { color: var(--primary-color); border-color: var(--primary-color); }
           .sp-gross .sp-kw { font-size: 1rem; }
+          /* Lehrer: Kürzel eng, Klarname bei genug Platz (Liste früher als Raster).
+             Standard (Klarname aus) MUSS vor den @container-Regeln stehen, sonst
+             ueberschreibt er sie bei gleicher Spezifitaet und der Lehrer verschwindet. */
+          .sp-lg .sp-lv, .sp-ll .sp-lv { display: none; }
           @container (min-width: 620px) {
             .sp-fach { padding: 8px 6px; }
             .sp-fach .sp-name { display: block; }
             .sp-lg .sp-lk { display: none; }
             .sp-lg .sp-lv { display: inline; }
           }
-          /* Lehrer: Kürzel eng, Klarname bei genug Platz (Liste früher als Raster) */
-          .sp-lg .sp-lv, .sp-ll .sp-lv { display: none; }
           @container (min-width: 440px) {
             .sp-ll .sp-lk { display: none; }
             .sp-ll .sp-lv { display: inline; }
@@ -1085,4 +1087,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.27.2", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.27.3", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
