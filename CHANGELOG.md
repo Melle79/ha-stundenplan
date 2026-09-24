@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.4.9 - September 2026
+
+### Verbessert
+- **Vertretung/Entfall auch im Wochen-Gitter hervorgehoben** – konsistent zum Popup: Jede geänderte Stunde trägt jetzt oben ein farbiges Band – **gelb „🔁 Vertretung"** (findet statt) bzw. **rot „✕ Entfällt"** (fällt weg). Bei Vertretung steht das Alte durchgestrichen und das Neue fett darunter; bei Entfall wird das Fach durchgestrichen. Die Farbcodierung (Vertretung = gelb, Ausfall = rot) gilt jetzt einheitlich in Karte und Popup. Lovelace-Karte **v1.27.7**.
+
 ## 2.4.8 - September 2026
 
 ### Verbessert
