@@ -3,7 +3,7 @@
 ## 2.4.7 - September 2026
 
 ### Behoben
-- **Vertretungslehrer im Stunden-Popup als Klarname**: In der Vertretungszeile des Popups stand der Ersatzlehrer noch als Kürzel (z. B. „mac"), obwohl der Klarname hinterlegt ist. Er wird jetzt wie überall zum Klarnamen aufgelöst („… · Lehrername"). Lovelace-Karte **v1.27.5**.
+- **Vertretungslehrer im Stunden-Popup als Klarname**: In der Vertretungszeile des Popups stand der Ersatzlehrer noch noch als Kürzel, obwohl der Klarname hinterlegt ist. Er wird jetzt wie überall zum Klarnamen aufgelöst. Lovelace-Karte **v1.27.5**.
 
 ## 2.4.6 - September 2026
 
@@ -13,7 +13,7 @@
 ## 2.4.5 - September 2026
 
 ### Behoben
-- **Lehrer bei Vertretungen als Klarname**: In der Vertretungs-Anzeige des Wochen-Gitters standen Original- und Ersatz-Lehrer noch als Kürzel (z. B. „brö"), während die normalen Stunden längst den Klarnamen zeigen. Jetzt werden auch die Lehrer im durchgestrichenen Original und in der neuen Angabe zum Klarnamen aufgelöst (bei genug Platz, sonst Kürzel) – z. B. „Bio 2 · Lehrername". Lovelace-Karte **v1.27.4**.
+- **Lehrer bei Vertretungen als Klarname**: In der Vertretungs-Anzeige des Wochen-Gitters standen Original- und Ersatz-Lehrer noch als Kürzel, während die normalen Stunden längst den Klarnamen zeigen. Jetzt werden auch die Lehrer im durchgestrichenen Original und in der neuen Angabe zum Klarnamen aufgelöst (bei genug Platz, sonst Kürzel). Lovelace-Karte **v1.27.4**.
 
 ## 2.4.4 - September 2026
 
@@ -119,7 +119,7 @@ Großes Update: das Datenmodell ist jetzt **vollständig kindbezogen** und der P
 
 ### Drei getrennte Listen + Raum/Lehrer pro Stunde
 - Pro Kind: **📚 Fächer**, **🚪 Räume**, **👩‍🏫 Lehrernamen** – jeweils eigenständig gepflegt.
-- Raum und Lehrer hängen an der **einzelnen Stunde**, nicht mehr am Fach (Fundament aus 1.33.0). Deutsch kann montags in 130 bei einer Lehrkraft und donnerstags in 205 bei einer Lehrkraft sein.
+- Raum und Lehrer hängen an der **einzelnen Stunde**, nicht mehr am Fach (Fundament aus 1.33.0). Deutsch kann montags in Raum 130 bei einer anderen Lehrkraft stattfinden als donnerstags in Raum 205.
 
 ### Drag & Drop
 - Schalter **„⇅ Drag & Drop"** über dem Plan blendet eine **Palette** mit den gepflegten Fächern, Räumen und Lehrern ein (klebt beim Scrollen oben). Chips lassen sich direkt in die Stunden ziehen – **Maus und Touch**, mit Ziehbild, Zellen-Hervorhebung und Auto-Scroll. Zusätzlich Griffe (⠿) in den Listen. Der Klick-Editor bleibt.
@@ -146,7 +146,7 @@ Großes Update: das Datenmodell ist jetzt **vollständig kindbezogen** und der P
 ## 1.33.0 - September 2026
 
 ### Neu
-- **Raum & Lehrer pro Stunde („freie Stunden")**: Raum und Lehrer hingen bisher fest am Fach – dasselbe Fach hatte überall denselben Raum und denselben Lehrer. Jetzt trägt **jede einzelne Stunde** ihren eigenen Raum und Lehrer. Deutsch kann montags in 130 bei einer Lehrkraft und donnerstags in 205 bei einer Lehrkraft sein. Ein Klick auf eine Zelle öffnet den **Stunden-Editor**: Fach wählen, dann Raum und Lehrer aus Auswahllisten (oder „＋ neu" anlegen)
+- **Raum & Lehrer pro Stunde („freie Stunden")**: Raum und Lehrer hingen bisher fest am Fach – dasselbe Fach hatte überall denselben Raum und denselben Lehrer. Jetzt trägt **jede einzelne Stunde** ihren eigenen Raum und Lehrer. Deutsch kann montags in Raum 130 bei einer anderen Lehrkraft stattfinden als donnerstags in Raum 205. Ein Klick auf eine Zelle öffnet den **Stunden-Editor**: Fach wählen, dann Raum und Lehrer aus Auswahllisten (oder „＋ neu" anlegen)
 - **Drei getrennte Listen pro Kind** – **📚 Fächer** (Name & Farbe), **👩‍🏫 Lehrernamen** (Kürzel → Klarname) und **🚪 Räume**. Die Listen speisen die Auswahl im Stunden-Editor und wachsen beim Import automatisch mit
 - **Migration bestehender Pläne**: Alle vorhandenen Stundenpläne werden automatisch übernommen – jede Stunde erhält den bisher am Fach hinterlegten Raum/Lehrer als Startwert und ist ab sofort einzeln änderbar. Nicht-destruktiv, nichts geht verloren; die Ansicht bleibt zunächst unverändert
 - **Import schreibt pro Stunde**: Schulmanager-/Eltern-Portal-/WebUntis-Import setzt Raum und Lehrer jetzt je Stunde und ersetzt beim Fachwechsel auch den alten Raum. Neue Räume landen automatisch in der Räume-Liste. Der Auto-Import funktioniert unverändert weiter
