@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.4.11 - September 2026
+
+### Behoben
+- **Kein „Geänderter Unterricht" ohne echte Änderung**: Schulmanager meldet Stunden manchmal als geändert, obwohl Fach, Raum und Lehrer mit dem Plan übereinstimmen (z. B. eine planmäßig doppelt geführte Stunde). Die Karte zeigte dann trotzdem ein Änderungs-Band – obwohl es nichts zu sehen gab. Jetzt erscheint ein Band (und der Popup-Hinweis) nur noch, wenn sich wirklich etwas unterscheidet oder ein Grund hinterlegt ist. Lovelace-Karte **v1.27.9**.
+
 ## 2.4.10 - September 2026
 
 ### Verbessert

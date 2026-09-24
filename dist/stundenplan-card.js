@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.27.8 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.27.9 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -228,10 +228,11 @@ class StundenplanCard extends HTMLElement {
     // Aenderung strukturiert: Typ, Label und die NEUEN Werte einzeln, damit das
     // Popup je Feld "alt durchgestrichen -> neu" zeigen kann.
     let aendtyp = "", aendlabel = "", grund = "", neuraum = "", neulehrer = "", neufach = "";
-    if (o.x) {
+    const fachName = (o.f && o.f.name) || "";
+    if (o.x && this._hatSichtbareAend(o.x, o.raum, o.lehrer, o.kz, fachName)) {
       const entf = o.x.entfall || o.x.typ === "cancelledLesson";
       aendtyp = entf ? "entfall" : "vertretung";
-      aendlabel = this._aendLabel(o.x, o.raum, o.lehrer, o.kz, (o.f && o.f.name) || "");
+      aendlabel = this._aendLabel(o.x, o.raum, o.lehrer, o.kz, fachName);
       grund = o.x.grund || "";
       if (!entf) {
         neuraum = (o.x.raum || "").trim();
@@ -248,6 +249,19 @@ class StundenplanCard extends HTMLElement {
       arbeit: o.arbeit ? ((o.arbeit.typ || "Arbeit") + (o.arbeit.fach ? " " + o.arbeit.fach : "")) : "",
       aendtyp, aendlabel, grund, neuraum, neulehrer, neufach,
     });
+  }
+
+  // Ist die Aenderung ueberhaupt sichtbar? Schulmanager meldet Stunden manchmal
+  // als "geaendert", obwohl Fach/Raum/Lehrer mit dem Plan uebereinstimmen -
+  // dann gibt es nichts zu zeigen (kein Band).
+  _hatSichtbareAend(x, planRaum, planLehrer, planKz, fachName) {
+    if (!x) return false;
+    if (x.entfall || x.typ === "cancelledLesson") return true;
+    if (x.grund) return true;
+    const up = s => String(s || "").trim().toUpperCase();
+    return (x.fach && up(x.fach) !== up(planKz) && up(x.fach) !== up(fachName))
+      || (x.raum && up(x.raum) !== up(planRaum))
+      || (x.lehrer && up(x.lehrer) !== up(planLehrer));
   }
 
   // Praeziser Aenderungs-Text: was genau ist anders? (leitet Raum-/Fach-/
@@ -718,7 +732,9 @@ class StundenplanCard extends HTMLElement {
         const arbeit = kz && (arbTag[t.iso] || []).find(w => arbKz(w) === kz.toUpperCase()
           || (w.fach && f && w.fach.toUpperCase() === f.name.toUpperCase()));
         const entfall = x && (x.entfall || x.typ === "cancelledLesson");
-        const vertretung = x && !entfall;
+        const rl = f ? this._stundeRaumLehrer(t.plan, t.tag, si, f) : {};
+        // Nur als Vertretung behandeln, wenn wirklich etwas anders ist als im Plan
+        const vertretung = x && !entfall && this._hatSichtbareAend(x, rl.raum, rl.lehrer, kz, f && f.name);
         const details = x ? [x.fach, x.lehrer, x.raum].filter(Boolean).join(" · ") : "";
         let badge = "", tag = "";
         const info = x && x.grund ? `<small class="sp-notiz">ℹ️ ${x.grund}</small>` : "";
@@ -729,22 +745,20 @@ class StundenplanCard extends HTMLElement {
         } else if (vertretung) {
           // Vertretung = gelb, oben ein Band mit dem genauen Änderungstyp;
           // darunter Altes durchgestrichen, Neues fett
-          const _rl = this._stundeRaumLehrer(t.plan, t.tag, si, f);
-          tag = `<span class="sp-tag sp-tag-v">🔁 ${this._aendLabel(x, _rl.raum, _rl.lehrer, kz, f.name)}</span>`;
+          tag = `<span class="sp-tag sp-tag-v">🔁 ${this._aendLabel(x, rl.raum, rl.lehrer, kz, f.name)}</span>`;
           const fNeu = x.fach && f && x.fach.toUpperCase() !== kz.toUpperCase()
             && x.fach.toUpperCase() !== f.name.toUpperCase() ? x.fach : "";
-          const altLehrer = _rl.lehrer ? this._lehrerHTML(a, _rl.lehrer, "grid") : "";
+          const altLehrer = rl.lehrer ? this._lehrerHTML(a, rl.lehrer, "grid") : "";
           const neuLehrer = x.lehrer ? this._lehrerHTML(a, x.lehrer, "grid") : "";
-          const altDetail = f ? [fNeu ? kz : "", _rl.raum, altLehrer].filter(Boolean).join(" · ") : "";
+          const altDetail = f ? [fNeu ? kz : "", rl.raum, altLehrer].filter(Boolean).join(" · ") : "";
           const neuDetail = [fNeu, x.raum, neuLehrer].filter(Boolean).join(" · ");
           badge = (altDetail ? `<small class="sp-orig">${altDetail}</small>` : "")
             + (neuDetail ? `<small class="sp-neu">${neuDetail}</small>` : "") + info;
         }
         const aCls = (entfall ? "sp-entfall" : vertretung ? "sp-vertretung" : "") + (arbeit ? " sp-arbeit" : "");
         if (f) {
-          const rl = this._stundeRaumLehrer(t.plan, t.tag, si, f);
           const lehrerVoll = this._lehrerName(a, rl.lehrer);
-          const tip = `${f.name}${lehrerVoll ? " · " + lehrerVoll : ""}${x ? " – " + x.label + (details ? " (" + details + ")" : "") + (x.grund ? ": " + x.grund : "") : ""}${arbeit ? " – " + arbeit.typ : ""}`;
+          const tip = `${f.name}${lehrerVoll ? " · " + lehrerVoll : ""}${(entfall || vertretung) ? " – " + x.label + (details ? " (" + details + ")" : "") + (x.grund ? ": " + x.grund : "") : ""}${arbeit ? " – " + arbeit.typ : ""}`;
           const raumLehrer = [rl.raum || "", rl.lehrer ? this._lehrerHTML(a, rl.lehrer, "grid") : ""].filter(Boolean).join(" · ");
           const attrs = this._stundeAttrs(a, { iso: t.iso, kz, f, von: st.von, bis: st.bis,
             raum: rl.raum, lehrer: rl.lehrer, x, arbeit, block: this._blockLabelFor(a, t.iso) });
@@ -1142,4 +1156,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.27.8", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.27.9", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
