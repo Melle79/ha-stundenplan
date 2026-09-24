@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.4.10 - September 2026
+
+### Verbessert
+- **Genauer Änderungstyp im Band und Popup**: Statt eines pauschalen „Vertretung" nennt das Band (Gitter) und der Popup-Kopf jetzt, **was** sich ändert – **Raumänderung**, **Fachänderung**, **Vertretung** (Lehrerwechsel) oder **Entfall**. Der Typ wird aus dem tatsächlichen Vergleich Plan ↔ Änderung abgeleitet (bei mehreren gleichzeitigen Änderungen bleibt es „Vertretung"). Lovelace-Karte **v1.27.8**.
+
 ## 2.4.9 - September 2026
 
 ### Verbessert

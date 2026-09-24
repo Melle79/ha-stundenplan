@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.27.7 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.27.8 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -231,7 +231,7 @@ class StundenplanCard extends HTMLElement {
     if (o.x) {
       const entf = o.x.entfall || o.x.typ === "cancelledLesson";
       aendtyp = entf ? "entfall" : "vertretung";
-      aendlabel = o.x.label || (entf ? "Entfall" : "Vertretung");
+      aendlabel = this._aendLabel(o.x, o.raum, o.lehrer, o.kz, (o.f && o.f.name) || "");
       grund = o.x.grund || "";
       if (!entf) {
         neuraum = (o.x.raum || "").trim();
@@ -248,6 +248,24 @@ class StundenplanCard extends HTMLElement {
       arbeit: o.arbeit ? ((o.arbeit.typ || "Arbeit") + (o.arbeit.fach ? " " + o.arbeit.fach : "")) : "",
       aendtyp, aendlabel, grund, neuraum, neulehrer, neufach,
     });
+  }
+
+  // Praeziser Aenderungs-Text: was genau ist anders? (leitet Raum-/Fach-/
+  // Lehreraenderung aus dem Vergleich Plan<->neu ab, sonst der Quell-Label)
+  _aendLabel(x, planRaum, planLehrer, planKz, fachName) {
+    if (!x) return "";
+    if (x.entfall || x.typ === "cancelledLesson") return x.label || "Entfall";
+    const up = s => String(s || "").trim().toUpperCase();
+    const fachNeu = x.fach && up(x.fach) !== up(planKz) && up(x.fach) !== up(fachName);
+    const raumNeu = x.raum && up(x.raum) !== up(planRaum);
+    const lehrerNeu = x.lehrer && up(x.lehrer) !== up(planLehrer);
+    const n = (fachNeu ? 1 : 0) + (raumNeu ? 1 : 0) + (lehrerNeu ? 1 : 0);
+    if (n === 1) {
+      if (fachNeu) return "Fachänderung";
+      if (raumNeu) return "Raumänderung";
+      if (lehrerNeu) return "Vertretung";
+    }
+    return x.label || "Vertretung";
   }
 
   // Block-Label fuer ein Datum (nur Blockmodus), sonst ""
@@ -706,14 +724,15 @@ class StundenplanCard extends HTMLElement {
         const info = x && x.grund ? `<small class="sp-notiz">ℹ️ ${x.grund}</small>` : "";
         if (entfall) {
           // Ausfall = rot, oben ein Band; Fach unten durchgestrichen (per CSS)
-          tag = `<span class="sp-tag sp-tag-e">✕ Entfällt</span>`;
+          tag = `<span class="sp-tag sp-tag-e">✕ ${x.label || "Entfall"}</span>`;
           badge = info;
         } else if (vertretung) {
-          // Vertretung = gelb, oben ein Band; darunter Altes durchgestrichen, Neues fett
-          tag = `<span class="sp-tag sp-tag-v">🔁 Vertretung</span>`;
+          // Vertretung = gelb, oben ein Band mit dem genauen Änderungstyp;
+          // darunter Altes durchgestrichen, Neues fett
+          const _rl = this._stundeRaumLehrer(t.plan, t.tag, si, f);
+          tag = `<span class="sp-tag sp-tag-v">🔁 ${this._aendLabel(x, _rl.raum, _rl.lehrer, kz, f.name)}</span>`;
           const fNeu = x.fach && f && x.fach.toUpperCase() !== kz.toUpperCase()
             && x.fach.toUpperCase() !== f.name.toUpperCase() ? x.fach : "";
-          const _rl = this._stundeRaumLehrer(t.plan, t.tag, si, f);
           const altLehrer = _rl.lehrer ? this._lehrerHTML(a, _rl.lehrer, "grid") : "";
           const neuLehrer = x.lehrer ? this._lehrerHTML(a, x.lehrer, "grid") : "";
           const altDetail = f ? [fNeu ? kz : "", _rl.raum, altLehrer].filter(Boolean).join(" · ") : "";
@@ -1123,4 +1142,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.27.7", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.27.8", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
