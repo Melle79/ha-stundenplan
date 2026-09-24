@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.27.5 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.27.6 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -225,23 +225,28 @@ class StundenplanCard extends HTMLElement {
       if (!isNaN(d)) datum = d.toLocaleDateString("de-DE",
         { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" });
     }
-    let aend = "", grund = "";
+    // Aenderung strukturiert: Typ, Label und die NEUEN Werte einzeln, damit das
+    // Popup je Feld "alt durchgestrichen -> neu" zeigen kann.
+    let aendtyp = "", aendlabel = "", grund = "", neuraum = "", neulehrer = "", neufach = "";
     if (o.x) {
       const entf = o.x.entfall || o.x.typ === "cancelledLesson";
-      if (entf) aend = "❌ Entfall" + (o.x.label && o.x.label !== "Entfall" ? " · " + o.x.label : "");
-      else {
-        const vLehrer = o.x.lehrer ? (this._lehrerName(a, o.x.lehrer) || o.x.lehrer) : "";
-        const nd = [o.x.fach, o.x.raum, vLehrer].filter(Boolean).join(" · ");
-        aend = "🔁 Vertretung" + (nd ? " · " + nd : "");
-      }
+      aendtyp = entf ? "entfall" : "vertretung";
+      aendlabel = o.x.label || (entf ? "Entfall" : "Vertretung");
       grund = o.x.grund || "";
+      if (!entf) {
+        neuraum = (o.x.raum || "").trim();
+        neulehrer = o.x.lehrer ? (this._lehrerName(a, o.x.lehrer) || o.x.lehrer) : "";
+        const nf = (o.x.fach || "").trim();
+        if (nf && nf.toUpperCase() !== (o.kz || "").toUpperCase()
+            && nf.toUpperCase() !== ((o.f && o.f.name) || "").toUpperCase()) neufach = nf;
+      }
     }
     return this._lessonAttrs({
       kz: o.kz, fach: (o.f && o.f.name) || o.kz, von: o.von, bis: o.bis, datum,
       raum: o.raum, lehrer: lehrerVoll, block: o.block,
       material: (o.f && o.f.material) || "", farbe: (o.f && o.f.farbe) || "",
       arbeit: o.arbeit ? ((o.arbeit.typ || "Arbeit") + (o.arbeit.fach ? " " + o.arbeit.fach : "")) : "",
-      aenderung: aend, grund,
+      aendtyp, aendlabel, grund, neuraum, neulehrer, neufach,
     });
   }
 
@@ -256,33 +261,51 @@ class StundenplanCard extends HTMLElement {
   // das Overlay haengt an document.body: so ist es unabhaengig vom (Shadow-)DOM
   // der Karte sichtbar UND ueberlebt einen Rerender der Karte (set hass).
   _zeigeStunde(ds) {
+    const esc = s => this._ea(s);
+    const rot = "var(--error-color,#e05d5d)";
+    const vertretung = ds.aendtyp === "vertretung";
+    const entfall = ds.aendtyp === "entfall";
     const rows = [];
-    const add = (label, val) => { if (val) rows.push(
+    const zeile = (label, inner) => rows.push(
       `<div style="display:flex;justify-content:space-between;gap:12px;padding:9px 2px;border-top:1px solid var(--divider-color,#e6e6e6)">`
-      + `<span style="color:var(--secondary-text-color,#888)">${this._ea(label)}</span>`
-      + `<b style="text-align:right">${this._ea(val)}</b></div>`); };
+      + `<span style="color:var(--secondary-text-color,#888)">${esc(label)}</span>`
+      + `<span style="text-align:right">${inner}</span></div>`);
+    const add = (label, val) => { if (val) zeile(label, `<b>${esc(val)}</b>`); };
+    // Feld mit Aenderung: alt durchgestrichen -> neu in Rot
+    const feld = (label, alt, neu) => {
+      if (neu && neu !== alt)
+        zeile(label, `${alt ? `<s style="opacity:.6">${esc(alt)}</s> ` : ""}<b style="color:${rot}">${esc(neu)}</b>`);
+      else if (alt) add(label, alt);
+    };
     add("Datum", ds.datum);
     add("Zeit", (ds.von || "") + (ds.bis ? "–" + ds.bis : ""));
-    add("Raum", ds.raum);
-    add("Lehrer", ds.lehrer);
+    if (vertretung && ds.neufach) feld("Fach", ds.fach, ds.neufach);
+    feld("Raum", ds.raum, vertretung ? ds.neuraum : "");
+    feld("Lehrer", ds.lehrer, vertretung ? ds.neulehrer : "");
     if (ds.block) add("Block", ds.block);
     if (ds.material) add("Mitbringen", ds.material);
     if (ds.arbeit) add("Anstehend", "📝 " + ds.arbeit);
+
     const farbe = ds.farbe || "var(--primary-color,#4a90d9)";
-    const titel = this._ea(ds.fach || ds.kz || "Stunde")
-      + (ds.kz && ds.fach && ds.kz !== ds.fach ? ` <small style="font-weight:500;color:var(--secondary-text-color,#888);font-size:.85rem">${this._ea(ds.kz)}</small>` : "");
-    const aend = ds.aenderung
-      ? `<div style="background:var(--secondary-background-color,#f2f2f2);border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:.9rem">${this._ea(ds.aenderung)}${ds.grund ? `<br><small style="color:var(--secondary-text-color,#888)">ℹ️ ${this._ea(ds.grund)}</small>` : ""}</div>` : "";
+    const titel = esc(ds.fach || ds.kz || "Stunde")
+      + (ds.kz && ds.fach && ds.kz !== ds.fach ? ` <small style="font-weight:500;color:var(--secondary-text-color,#888);font-size:.85rem">${esc(ds.kz)}</small>` : "");
+    // Grosse Aenderungs-Kopfzeile (oben, auffaellig)
+    const aendKopf = (entfall || vertretung)
+      ? `<div style="font-size:1.1rem;font-weight:800;color:${rot};margin:0 0 10px">${entfall ? "❌" : "🔁"} ${esc(ds.aendlabel || (entfall ? "Entfall" : "Vertretung"))}</div>` : "";
+    const grundHtml = ds.grund
+      ? `<div style="background:var(--secondary-background-color,#f2f2f2);border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:.88rem">ℹ️ ${esc(ds.grund)}</div>` : "";
+    const titelStil = entfall ? "text-decoration:line-through;opacity:.7;" : "";
     const ov = document.createElement("div");
     ov.style.cssText = "position:fixed;inset:0;z-index:99999;display:flex;align-items:center;"
       + "justify-content:center;padding:16px;background:rgba(0,0,0,.5)";
     ov.innerHTML = `<div style="background:var(--card-background-color,#fff);`
       + `color:var(--primary-text-color,#1c1c1c);border-radius:14px;width:100%;max-width:360px;`
       + `box-shadow:0 12px 40px rgba(0,0,0,.4);position:relative;padding:18px 18px 10px;`
-      + `border-top:5px solid ${this._ea(farbe)};font-family:var(--paper-font-body1_-_font-family,inherit)">
+      + `border-top:5px solid ${entfall || vertretung ? rot : esc(farbe)};font-family:var(--paper-font-body1_-_font-family,inherit)">
         <button aria-label="Schließen" style="position:absolute;top:8px;right:8px;border:none;background:none;font-size:1.15rem;line-height:1;cursor:pointer;color:var(--secondary-text-color,#888);padding:6px">✕</button>
-        <div style="font-size:1.25rem;font-weight:700;margin:2px 26px 10px 0">${titel}</div>
-        ${aend}
+        <div style="font-size:1.25rem;font-weight:700;margin:2px 26px 8px 0;${titelStil}">${titel}</div>
+        ${aendKopf}
+        ${grundHtml}
         <div>${rows.join("") || '<div style="color:var(--secondary-text-color,#888);padding:9px 2px">Keine weiteren Angaben</div>'}</div>
       </div>`;
     const close = () => { ov.remove(); document.removeEventListener("keydown", onKey); };
@@ -1091,4 +1114,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.27.5", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.27.6", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");

@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.4.8 - September 2026
+
+### Verbessert
+- **Vertretung/Entfall im Popup klarer dargestellt**: Bisher stand die planmäßige Stunde groß und die eigentliche Änderung klein – irreführend. Jetzt steht die Änderung **oben groß** („🔁 Vertretung" bzw. „❌ Entfall", rot hervorgehoben), und pro geändertem Feld wird der **alte Wert durchgestrichen** und der **neue daneben in Rot** gezeigt (Raum, Lehrer, ggf. Fach). Bei Entfall wird der Fachtitel durchgestrichen. Lovelace-Karte **v1.27.6**.
+
 ## 2.4.7 - September 2026
 
 ### Behoben
