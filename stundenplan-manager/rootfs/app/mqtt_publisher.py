@@ -389,6 +389,7 @@ class SensorPublisher:
             if kind.get("datumsplan"):
                 genutzt |= {s["kz"] for lessons in (kind.get("tagesplan") or {}).values()
                             for s in lessons if s.get("kz")}
+            genutzt |= {s["kz"] for s in (kind.get("sondertermine") or []) if s.get("kz")}
             aenderungen = []
             zusatz = {"hausaufgaben_offen": None, "naechste_arbeit": None}
             ha_faellig = []
@@ -462,6 +463,7 @@ class SensorPublisher:
                 "plaene": kind.get("plaene", []),
                 "datumsplan": bool(kind.get("datumsplan")),
                 "tagesplan": kind.get("tagesplan", {}) if kind.get("datumsplan") else {},
+                "sondertermine": kind.get("sondertermine", []),
                 "faecher": {kz: f for kz, f in kind_faecher.items() if kz in genutzt},
                 "lehrer_namen": {k: v for k, v in (kind.get("lehrer_namen") or {}).items() if v},
                 "bloecke": kind.get("bloecke", []),

@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.5.0 - September 2026
+
+### Neu
+- **Sondertermine** (einzelne Stunden an einem konkreten Datum): Für Stunden, die nicht ins Wochenraster passen – z. B. ein Nachmittagsblock, der laut Elternbrief nur an bestimmten Tagen stattfindet –, lässt sich pro Kind ein **Sondertermin** pflegen: Datum, Uhrzeit von–bis, Fach, optional Raum und Lehrer (📌 Sondertermine im Kind-Panel). Auf der Karte erscheint er an genau diesem Datum als hervorgehobene „📌 Sondertermine"-Kachel (in der Wochenansicht der betreffenden Woche und in der Heute-Ansicht) – der normale Wochenplan bleibt unangetastet. Lovelace-Karte **v1.28.0**.
+
 ## 2.4.11 - September 2026
 
 ### Behoben

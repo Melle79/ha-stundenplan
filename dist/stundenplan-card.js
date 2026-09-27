@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.27.9 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.28.0 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -603,6 +603,20 @@ class StundenplanCard extends HTMLElement {
             font-size: .72rem; color: var(--primary-color); }
           .sp-termin-info { color: var(--secondary-text-color); font-size: .92em; }
           .sp-gross .sp-termine li { font-size: .95rem; }
+          .sp-sonder-kopf { margin-top: 10px; font-size: .78rem; font-weight: 600;
+            color: var(--secondary-text-color); }
+          .sp-gross .sp-sonder-kopf { font-size: .9rem; }
+          .sp-sonder { list-style: none; margin: 4px 0 0; padding: 0; }
+          .sp-sonder li { display: flex; gap: 8px; align-items: baseline;
+            font-size: .8rem; color: var(--primary-text-color); padding: 4px 8px; margin-bottom: 4px;
+            border-radius: 8px; background: color-mix(in srgb, var(--warning-color, #e0b34c) 16%, transparent); }
+          .sp-sonder-pkt { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto;
+            align-self: center; }
+          .sp-sonder-dat { flex: 0 0 auto; min-width: 76px; font-weight: 600;
+            font-size: .72rem; color: var(--warning-color, #e0b34c); }
+          .sp-sonder-name { display: flex; flex-direction: column; }
+          .sp-sonder-name small { color: var(--secondary-text-color); font-size: .72rem; }
+          .sp-gross .sp-sonder li { font-size: .95rem; }
           .sp-ha-liste { list-style: none; margin: 6px 0 0; padding: 0; }
           .sp-ha-liste li { display: flex; gap: 8px; align-items: baseline;
             font-size: .8rem; color: var(--primary-text-color); padding: 3px 2px;
@@ -685,7 +699,7 @@ class StundenplanCard extends HTMLElement {
     // Block-Kind ohne Stundenplan in dieser Woche: klare Betrieb/Schule-Übersicht
     if (a.modus === "block" && !tage.some(t => (t.plan[t.tag] || []).some(Boolean)))
       return html + this._blockWocheHTML(a, tage, aktuelleWoche, heute)
-        + this._termineHTML(a) + this._standHTML(a);
+        + this._sondertermineHTML(a, montag, freitag) + this._termineHTML(a) + this._standHTML(a);
 
     const aend = {};
     for (const x of a.aenderungen || [])
@@ -699,7 +713,7 @@ class StundenplanCard extends HTMLElement {
     // -> Zeitachsen-Ansicht statt festem Stunden-Gitter
     if (this._rasterUnregelmaessig(a.raster))
       return html + this._zeitachseWocheHTML(a, tage, aktuelleWoche, heute, aend, zeit)
-        + this._termineHTML(a) + this._standHTML(a);
+        + this._sondertermineHTML(a, montag, freitag) + this._termineHTML(a) + this._standHTML(a);
 
     html += `<table class="sp-tabelle"><colgroup><col style="width:54px"><col span="5"></colgroup><thead><tr><th></th>`;
     for (const t of tage) {
@@ -772,7 +786,7 @@ class StundenplanCard extends HTMLElement {
       }
       html += `</tr>`;
     });
-    return html + `</tbody></table>` + this._termineHTML(a) + this._standHTML(a);
+    return html + `</tbody></table>` + this._sondertermineHTML(a, montag, freitag) + this._termineHTML(a) + this._standHTML(a);
   }
 
   // Raster mit ueberlappenden/verschachtelten Perioden = variable Stundenzeiten
@@ -988,6 +1002,28 @@ class StundenplanCard extends HTMLElement {
     return html + this._termineHTML(a);
   }
 
+  // Manuell gepflegte Sondertermine (einzelne Stunden an einem konkreten Datum,
+  // die nicht ins Wochenraster passen - z. B. ein Nachmittagsblock). Zeigt die
+  // im angegebenen Zeitraum [vonD..bisD] liegenden als eigene Kachel.
+  _sondertermineHTML(a, vonD, bisD) {
+    const von = this._iso(vonD), bis = this._iso(bisD);
+    const st = (a.sondertermine || [])
+      .filter(s => s.datum && s.datum >= von && s.datum <= bis)
+      .sort((x, y) => (x.datum + (x.von || "")).localeCompare(y.datum + (y.von || "")));
+    if (!st.length) return "";
+    const fmt = iso => new Date(iso + "T00:00").toLocaleDateString("de-DE",
+      { weekday: "short", day: "2-digit", month: "2-digit" });
+    return `<div class="sp-sonder-kopf">📌 Sondertermine</div><ul class="sp-sonder">` + st.map(s => {
+      const f = (a.faecher || {})[s.kz] || { name: s.kz || "Termin", farbe: "var(--warning-color,#e0b34c)" };
+      const lv = this._lehrerName(a, s.lehrer) || s.lehrer || "";
+      const det = [s.raum, lv].filter(Boolean).join(" · ");
+      const zeit = [s.von, s.bis].filter(Boolean).join("–");
+      return `<li><span class="sp-sonder-pkt" style="background:${f.farbe}"></span>`
+        + `<span class="sp-sonder-dat">${fmt(s.datum)}</span>`
+        + `<span class="sp-sonder-name">${f.name}${zeit || det ? `<small>${[zeit, det].filter(Boolean).join(" · ")}</small>` : ""}</span></li>`;
+    }).join("") + `</ul>`;
+  }
+
   // Kommende schulweite Termine (nur Schulmanager liefert sie)
   _termineHTML(a) {
     const termine = a.schultermine || [];
@@ -1055,8 +1091,9 @@ class StundenplanCard extends HTMLElement {
     });
     if (stunden && material.length)
       html += `<div class="sp-material">🎒 Heute dabei: ${material.join(", ")}</div>`;
-    html += this._schuleInfoZeile(a) + this._standHTML(a);
-    return stunden ? html : `<div class="sp-leer">Heute kein Unterricht 🎈</div>` + this._schuleInfoZeile(a) + this._standHTML(a);
+    const sonderHeute = this._sondertermineHTML(a, new Date(), new Date());
+    html += sonderHeute + this._schuleInfoZeile(a) + this._standHTML(a);
+    return stunden ? html : `<div class="sp-leer">Heute kein Unterricht 🎈</div>` + sonderHeute + this._schuleInfoZeile(a) + this._standHTML(a);
   }
 
   _standHTML(a) {
@@ -1156,4 +1193,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.27.9", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.28.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
