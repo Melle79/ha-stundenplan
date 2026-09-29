@@ -75,6 +75,26 @@ def _kuerzel(summary: str) -> str:
     return s[:4].upper()
 
 
+def _bereinige_summary(summary: str):
+    """WebUntis-Statuspraefixe aus dem Fachnamen loesen.
+
+    Die WebUntis-Integration stellt bei 'abgesagte Stunden anzeigen' bzw.
+    'Raumaenderung anzeigen' Praefixe voran: 'Cancelled: <Fach>' fuer eine
+    entfallene und 'Irregular: <Fach>' fuer eine verlegte/vertretene Stunde.
+    Ohne Bereinigung landete daraus ein Muell-Kuerzel wie 'CP'/'II' im Plan.
+
+    Rueckgabe: (fach_klartext, entfall) - bei entfall=True ist die Stunde
+    ersatzlos gestrichen und gehoert nicht in den datumsgenauen Plan (der
+    Slot ist frei bzw. eine parallele 'Irregular:'-Stunde ersetzt sie)."""
+    s = (summary or "").strip()
+    low = s.lower()
+    if low.startswith("cancelled:"):
+        return s.split(":", 1)[1].strip(), True
+    if low.startswith("irregular:"):
+        return s.split(":", 1)[1].strip(), False
+    return s, False
+
+
 def _montag(d: date) -> date:
     return d - timedelta(days=d.weekday())
 
@@ -133,7 +153,9 @@ def _plan_daten(basis: str):
         nr = slot_nr.get((v, b))
         if not nr:
             continue
-        summary = (e.get("summary") or "").strip()
+        summary, entfall = _bereinige_summary(e.get("summary"))
+        if entfall:
+            continue
         kz = _kuerzel(summary)
         tage.setdefault(d0, {})[nr] = kz
         det = details.setdefault(kz.upper(),
@@ -228,7 +250,9 @@ def hole_zeitplan_bereich(basis: str, von: date, bis: date) -> dict:
                 continue
         except ValueError:
             continue
-        summary = (e.get("summary") or "").strip()
+        summary, entfall = _bereinige_summary(e.get("summary"))
+        if entfall:
+            continue
         kz = _kuerzel(summary)
         raum = str(e.get("location") or "").strip()
         tage.setdefault(d0, []).append({"von": v, "bis": b, "kz": kz,

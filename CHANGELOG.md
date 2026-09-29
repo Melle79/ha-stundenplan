@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.6.0 - September 2026
+
+### Behoben
+- **WebUntis-Import: Status-Präfixe sauber verarbeitet**: Zeigt die WebUntis-Integration entfallene bzw. verlegte Stunden an, stellt sie dem Fach ein `Cancelled:` bzw. `Irregular:` voran. Der datumsgenaue Import bildete daraus bisher unbrauchbare Kürzel (z. B. „CP", „II"). Jetzt werden entfallene Stunden nicht mehr als Unterricht übernommen (der Slot ist frei bzw. eine parallel verlegte Stunde tritt an ihre Stelle) und bei verlegten Stunden nur noch das tatsächliche Fach eingelesen.
+
+### Hinweis zur WebUntis-Konfiguration
+- Für einen Plan, der dem in der WebUntis-App entspricht, empfiehlt sich in den Integrations-Optionen: **Ort → „Room short name"** (echte Raumnummer statt Sammelbezeichnung des Fachraums) und **Stunden-Darstellung → langer Name aus**. Ein Klassen-Whitelist-Filter ist bei einem persönlichen Stundenplan nicht nötig und kann gemeinsam geführte Stunden verbergen.
+
 ## 2.5.0 - September 2026
 
 ### Neu
