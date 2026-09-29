@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.7.1 - September 2026
+
+### Behoben
+- **Lange Fachnamen kamen nicht an**: Der datumsgenaue Import übernahm den ausgeschriebenen Fachnamen aus der Quelle nicht, wenn zum Kürzel schon ein (Kurzcode-)Name bestand – es blieb beim Kürzel. Der lange Name hat jetzt Vorrang.
+
 ## 2.7.0 - September 2026
 
 ### Neu

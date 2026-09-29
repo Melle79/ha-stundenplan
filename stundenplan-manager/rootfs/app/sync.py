@@ -278,9 +278,15 @@ def _import_datumsplan(kind: dict, heute: date, details: dict,
                     kind.get("name"), exc)
         return
     tage = bereich.get("tage") or {}
-    # Namen/Raeume kuenftiger Faecher, die in der Referenzwoche fehlen, nachziehen
+    # Namen/Raeume kuenftiger Faecher, die in der Referenzwoche fehlen, nachziehen.
+    # Der lange Fachname aus der datumsgenauen Quelle hat Vorrang vor dem
+    # Kurzcode-Namen des Wochenplans (sonst bliebe z. B. "ITT-1" statt des
+    # ausgeschriebenen Fachnamens stehen).
     for kz, det in (bereich.get("details") or {}).items():
-        details.setdefault(kz, det)
+        cur = details.setdefault(kz, dict(det))
+        lang = (det.get("name") or "").strip()
+        if lang and lang != kz and cur.get("name") != lang:
+            cur["name"] = lang
     tp = kind.setdefault("tagesplan", {})
     neu_tage = 0
     for iso, stunden in tage.items():
