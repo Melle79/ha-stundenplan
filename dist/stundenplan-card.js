@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.28.0 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.29.0 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -884,12 +884,22 @@ class StundenplanCard extends HTMLElement {
           const pos = lanes > 1
             ? `left:calc(${(lane / lanes) * 100}% + 1px);width:calc(${100 / lanes}% - 2px);right:auto`
             : "";
-          const tip = `${s.von}–${s.bis} ${f ? f.name : s.kz}${rl.raum ? " · " + rl.raum : ""}`;
+          const tip = `${s.von}–${s.bis} ${f ? f.name : s.kz}${rl.raum ? " · " + rl.raum : ""}${rl.lehrer ? " · " + rl.lehrer : ""}`;
           const stil = entfall ? "opacity:.5;text-decoration:line-through" : "";
           const attrs = this._stundeAttrs(a, { iso: t.iso, kz: s.kz, f, von: s.von, bis: s.bis,
             raum: rl.raum, lehrer: rl.lehrer, x, block: this._blockLabelFor(a, t.iso) });
-          inhalt += `<div class="sp-za-block sp-klick" style="top:${y}px;height:${h}px;${pos};background:${farbe};color:${this._textFarbe(farbe)};${stil}" title="${tip}" ${attrs}>`
-            + `${s.kz}${entfall ? " ✕" : ""}<small>${s.von}${h > 26 ? "–" + s.bis : ""}${rl.raum && h > 40 ? " · " + rl.raum : ""}</small></div>`;
+          const zusatz = [rl.raum, rl.lehrer].filter(Boolean).join(" · ");
+          // Raum/Lehrer immer zuerst (wichtigste Info, passt auch in 45-min-Bloecke);
+          // die Uhrzeit erschliesst sich aus der Achse und kommt nur bei hohen
+          // Bloecken als dritte Zeile dazu.
+          let inner = `${s.kz}${entfall ? " ✕" : ""}`;
+          if (zusatz) {
+            inner += `<small>${zusatz}</small>`;
+            if (h > 46) inner += `<small>${s.von}–${s.bis}</small>`;
+          } else {
+            inner += `<small>${s.von}${h > 26 ? "–" + s.bis : ""}</small>`;
+          }
+          inhalt += `<div class="sp-za-block sp-klick" style="top:${y}px;height:${h}px;${pos};background:${farbe};color:${this._textFarbe(farbe)};${stil}" title="${tip}" ${attrs}>${inner}</div>`;
         }
       }
       const now = (istHeute && jetztMin >= lo && jetztMin <= hi)
@@ -1193,4 +1203,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.28.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.29.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");

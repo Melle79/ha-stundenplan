@@ -95,6 +95,34 @@ def _bereinige_summary(summary: str):
     return s, False
 
 
+def _aus_beschreibung(description):
+    """Lehrer und langen Fachnamen aus der Termin-Beschreibung lesen.
+
+    Steht die WebUntis-Option 'calendar_description' auf 'json', liefert die
+    Beschreibung ein JSON mit subjects[].long_name und teachers[].name. Der
+    lange Fachname wird als Klarname genutzt, die Lehrer-Kuerzel (dedupliziert,
+    in Reihenfolge) als Lehrerangabe der Stunde. Rueckgabe: (lehrer, langname)."""
+    if not description:
+        return "", ""
+    try:
+        j = json.loads(description)
+    except (ValueError, TypeError):
+        return "", ""
+    if not isinstance(j, dict):
+        return "", ""
+    langname = ""
+    subj = j.get("subjects") or []
+    if subj and isinstance(subj[0], dict):
+        langname = (subj[0].get("long_name") or "").strip()
+    lehrer = []
+    for t in (j.get("teachers") or []):
+        if isinstance(t, dict):
+            kz = (t.get("name") or "").strip()
+            if kz and kz not in lehrer:
+                lehrer.append(kz)
+    return ", ".join(lehrer), langname
+
+
 def _montag(d: date) -> date:
     return d - timedelta(days=d.weekday())
 
@@ -255,11 +283,17 @@ def hole_zeitplan_bereich(basis: str, von: date, bis: date) -> dict:
             continue
         kz = _kuerzel(summary)
         raum = str(e.get("location") or "").strip()
+        lehrer, langname = _aus_beschreibung(e.get("description"))
         tage.setdefault(d0, []).append({"von": v, "bis": b, "kz": kz,
-                                        "name": summary, "raum": raum})
+                                        "name": langname or summary,
+                                        "raum": raum, "lehrer": lehrer})
         det = details.setdefault(kz.upper(),
                                  {"raum": "", "lehrer": "", "name": "", "lehrer_name": ""})
-        if not det["name"]:
+        # Langer Fachname (falls vorhanden) ist der Klarname; das Kuerzel bleibt
+        # als kz erhalten. Ohne Langname bleibt der Kurzcode als Name.
+        if langname and det["name"] != langname:
+            det["name"] = langname
+        elif not det["name"]:
             det["name"] = summary
         if not det["raum"] and raum:
             det["raum"] = raum

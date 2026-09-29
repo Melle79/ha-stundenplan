@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.7.0 - September 2026
+
+### Neu
+- **Lehrer und ausführliche Fachnamen aus WebUntis**: Steht die WebUntis-Option „Beschreibung" auf `json`, liest der datumsgenaue Import jetzt zusätzlich die **Lehrer** (Kürzel, datumsgenau – Vertretungen inklusive) und den **langen Fachnamen** je Stunde ein. Der lange Name erscheint im Stunden-Popup als Titel (und auf breiten Dashboards als Unterzeile); das kurze Kürzel bleibt die Hauptbeschriftung. Lovelace-Karte **v1.29.0**.
+
+### Verbessert
+- **Raum immer sichtbar in der Zeitachsen-Ansicht**: Bisher blendete die Zeitachse den Raum bei kurzen (45-Minuten-)Stunden aus. Jetzt zeigt jeder Block Raum und – falls vorhanden – Lehrer; die Uhrzeit (an der Achse ohnehin ablesbar) rückt nur bei hohen Blöcken als dritte Zeile nach.
+
+### Hinweis
+- Für Lehrer/Langnamen muss in den WebUntis-Integrations-Optionen unter „Kalender" die **Beschreibung auf „json"** stehen (die Zusatzdaten stehen dann im Termin, nicht sichtbar auf der Karte).
+
 ## 2.6.0 - September 2026
 
 ### Behoben

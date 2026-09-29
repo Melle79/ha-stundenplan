@@ -295,7 +295,9 @@ def _import_datumsplan(kind: dict, heute: date, details: dict,
             match = fach_sicherstellen(kz)
             eintrag = (kind.get("fach_details") or {}).get(match, {})
             raum = (s.get("raum") or eintrag.get("raum") or "").strip()
-            lehrer = (eintrag.get("lehrer") or "").strip()
+            # Lehrer datumsgenau aus der Quelle (Vertretungen wechseln je Tag);
+            # nur wenn die Stunde keinen liefert, den Fach-Standard nehmen.
+            lehrer = (s.get("lehrer") or eintrag.get("lehrer") or "").strip()
             neu.append({"von": s["von"], "bis": s["bis"], "kz": match,
                         "raum": raum, "lehrer": lehrer})
         neu.sort(key=lambda x: (x["von"], x["bis"]))
