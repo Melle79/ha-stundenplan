@@ -1,4 +1,4 @@
-/* Stundenplan Card v1.29.0 - Companion-Karte fuer den Stundenplan Manager
+/* Stundenplan Card v1.30.0 - Companion-Karte fuer den Stundenplan Manager
  * https://github.com/Melle79/ha-stundenplan
  *
  * Konfiguration:
@@ -584,6 +584,9 @@ class StundenplanCard extends HTMLElement {
             font-size: .64rem; color: var(--secondary-text-color); }
           .sp-gross .sp-za-block { font-size: .74rem; }
           .sp-gross .sp-za-block small { font-size: .66rem; }
+          .sp-sonder-zelle, .sp-za-sonder { outline: 2px dashed rgba(0,0,0,.3); outline-offset: -3px; }
+          .sp-sonder-trenner td { padding: 6px 0 2px; border: none; }
+          .sp-sonder-trenner .sp-plabel { font-size: .72rem; color: var(--secondary-text-color); }
           .sp-info { margin-top: 8px; padding: 6px 12px; border-radius: 8px;
             font-size: .8rem; color: var(--secondary-text-color);
             border: 1px solid var(--divider-color); }
@@ -786,7 +789,49 @@ class StundenplanCard extends HTMLElement {
       }
       html += `</tr>`;
     });
+    // Sondertermine der Woche zusaetzlich als eigene Zeilen ins Gitter (z. B. ein
+    // Nachmittagsblock, der nicht ins normale Raster passt) - in der jeweiligen
+    // Tagesspalte, unter den Rasterstunden; die Kachel unter dem Plan bleibt.
+    html += this._sonderZeilenHTML(a, tage, aktuelleWoche, heute);
     return html + `</tbody></table>` + this._sondertermineHTML(a, montag, freitag) + this._termineHTML(a) + this._standHTML(a);
+  }
+
+  // Sondertermine einer Woche als Tabellenzeilen (festes Raster). Ein eindeutiges
+  // Zeitfenster pro Zeile, der Block steht in der Spalte seines Datums.
+  _sonderZeilenHTML(a, tage, aktuelleWoche, heute) {
+    const byIso = {};
+    for (const t of tage) {
+      const list = (a.sondertermine || []).filter(s => s.datum === t.iso && s.von && s.bis);
+      if (list.length) byIso[t.iso] = list;
+    }
+    if (!Object.keys(byIso).length) return "";
+    const m = t => { const p = String(t).split(":"); return (+p[0]) * 60 + (+p[1]); };
+    const slots = [];
+    for (const iso in byIso) for (const s of byIso[iso]) {
+      const key = s.von + "|" + s.bis;
+      if (!slots.some(x => x.key === key)) slots.push({ key, von: s.von, bis: s.bis });
+    }
+    slots.sort((x, y) => m(x.von) - m(y.von) || m(x.bis) - m(y.bis));
+    let html = `<tr class="sp-sonder-trenner"><td colspan="6"><div class="sp-plabel">📌 Sondertermine</div></td></tr>`;
+    for (const sl of slots) {
+      html += `<tr><td class="sp-zeit"><b>📌</b>${sl.von}<small class="sp-bis">–${sl.bis}</small></td>`;
+      for (const t of tage) {
+        const spalte = aktuelleWoche && t.i === heute ? "sp-heute-spalte" : "";
+        const s = (byIso[t.iso] || []).find(x => x.von === sl.von && x.bis === sl.bis);
+        if (!s) { html += `<td class="${spalte}"><span class="sp-frei"></span></td>`; continue; }
+        const f = (a.faecher || {})[s.kz] || { name: s.kz || "Termin", farbe: "#e0b34c" };
+        const raumLehrer = [s.raum || "", s.lehrer ? this._lehrerHTML(a, s.lehrer, "grid") : ""].filter(Boolean).join(" · ");
+        const lehrerVoll = this._lehrerName(a, s.lehrer);
+        const tip = `📌 ${f.name}${lehrerVoll ? " · " + lehrerVoll : ""}${s.raum ? " · " + s.raum : ""}`;
+        const attrs = this._stundeAttrs(a, { iso: t.iso, kz: s.kz, f, von: s.von, bis: s.bis,
+          raum: s.raum, lehrer: s.lehrer, block: null });
+        html += `<td class="${spalte}"><div class="sp-fach sp-klick sp-sonder-zelle ${t.frei ? "sp-gedimmt" : ""}" `
+          + `style="background:${f.farbe};color:${this._textFarbe(f.farbe)}" title="${tip}" ${attrs}>📌 ${f.name}`
+          + `${(s.raum || s.lehrer) ? `<small>${raumLehrer}</small>` : ""}</div></td>`;
+      }
+      html += `</tr>`;
+    }
+    return html;
   }
 
   // Raster mit ueberlappenden/verschachtelten Perioden = variable Stundenzeiten
@@ -852,6 +897,15 @@ class StundenplanCard extends HTMLElement {
           L.push({ v, b, i, kz, nr: r[i].nr, von: r[i].von, bis: r[i].bis });
         });
       }
+      // Sondertermine des Tages als eigene Bloecke in die Zeitachse einreihen
+      for (const s of (a.sondertermine || [])) {
+        if (s.datum !== t.iso || !s.von || !s.bis) continue;
+        const v = m(s.von), b = m(s.bis);
+        if (b <= v) continue;
+        lo = Math.min(lo, v); hi = Math.max(hi, b);
+        L.push({ v, b, kz: s.kz, von: s.von, bis: s.bis,
+                 raum: s.raum || "", lehrer: s.lehrer || "", raw: true, sonder: true });
+      }
       this._laneLayout(L);
       return L;
     });
@@ -873,7 +927,7 @@ class StundenplanCard extends HTMLElement {
         inhalt += `<div class="sp-za-frei">${t.frei}</div>`;
       } else {
         for (const s of perTag[di]) {
-          const f = (a.faecher || {})[s.kz];
+          const f = (a.faecher || {})[s.kz] || (s.sonder ? { name: s.kz || "Termin", farbe: "#e0b34c" } : null);
           const farbe = f ? f.farbe : "#888";
           const rl = s.raw ? { raum: s.raum, lehrer: s.lehrer }
             : this._stundeRaumLehrer(t.plan, t.tag, s.i, f);
@@ -892,14 +946,14 @@ class StundenplanCard extends HTMLElement {
           // Raum/Lehrer immer zuerst (wichtigste Info, passt auch in 45-min-Bloecke);
           // die Uhrzeit erschliesst sich aus der Achse und kommt nur bei hohen
           // Bloecken als dritte Zeile dazu.
-          let inner = `${s.kz}${entfall ? " ✕" : ""}`;
+          let inner = `${s.sonder ? "📌 " : ""}${s.kz}${entfall ? " ✕" : ""}`;
           if (zusatz) {
             inner += `<small>${zusatz}</small>`;
             if (h > 46) inner += `<small>${s.von}–${s.bis}</small>`;
           } else {
             inner += `<small>${s.von}${h > 26 ? "–" + s.bis : ""}</small>`;
           }
-          inhalt += `<div class="sp-za-block sp-klick" style="top:${y}px;height:${h}px;${pos};background:${farbe};color:${this._textFarbe(farbe)};${stil}" title="${tip}" ${attrs}>${inner}</div>`;
+          inhalt += `<div class="sp-za-block sp-klick ${s.sonder ? "sp-za-sonder" : ""}" style="top:${y}px;height:${h}px;${pos};background:${farbe};color:${this._textFarbe(farbe)};${stil}" title="${tip}" ${attrs}>${inner}</div>`;
         }
       }
       const now = (istHeute && jetztMin >= lo && jetztMin <= hi)
@@ -1203,4 +1257,4 @@ window.customCards.push({
   description: "Wochen- und Tagesansicht für den Stundenplan Manager (mit Blockunterricht)",
   preview: false,
 });
-console.info("%c STUNDENPLAN-CARD %c v1.29.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");
+console.info("%c STUNDENPLAN-CARD %c v1.30.0", "background:#4a90d9;color:#fff;padding:2px 6px;border-radius:3px", "");

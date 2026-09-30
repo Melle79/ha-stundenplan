@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.8.0 - September 2026
+
+### Verbessert
+- **Sondertermine erscheinen jetzt im Stundenplan selbst**: Ein manuell gepflegter Sondertermin (z. B. ein Nachmittagsblock) wird zusätzlich zur Kachel unter dem Plan als eigener Block in der Spalte seines Datums angezeigt – im festen Raster als eigene „📌 Sondertermine"-Zeile unter den Stunden, in der Zeitachsen-Ansicht als 📌-markierter Block an seiner Uhrzeit. Lovelace-Karte **v1.30.0**.
+
 ## 2.7.1 - September 2026
 
 ### Behoben
