@@ -157,6 +157,7 @@
     #printArea { display: block; color: #1a1a1a; font-family: -apple-system, "Segoe UI", sans-serif;
       -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     #printArea h1 { font-size: 18pt; margin: 0 0 2mm; }
+    #printArea h2 { font-size: 13pt; margin: 7mm 0 2mm; }
     #printArea .sub { color: #666; font-size: 9pt; margin: 0 0 5mm; }
     #printArea table { border-collapse: collapse; width: 100%; }
     #printArea th, #printArea td { border: 1px solid #999; padding: 2mm; text-align: center;
@@ -1419,6 +1420,22 @@ function drucken() {
     const fmt = d => new Date(d + "T00:00").toLocaleDateString("de-DE");
     html += `<p class="sub" style="margin-top:4mm">Blockzeiträume: ` +
       k.bloecke.map(b => `${esc(b.label || "Block")} ${fmt(b.von)}–${fmt(b.bis)}`).join(" · ") + `</p>`;
+  }
+  // Sondertermine optional mitdrucken (nur fragen, wenn es welche gibt)
+  const st = (k.sondertermine || []).filter(s => s.datum && (s.von || s.kz));
+  if (st.length && confirm(`${st.length} Sondertermin${st.length > 1 ? "e" : ""} vorhanden. Mit ausdrucken?`)) {
+    st.sort((a, b) => (a.datum + (a.von || "")).localeCompare(b.datum + (b.von || "")));
+    const fmt = iso => new Date(iso + "T00:00").toLocaleDateString("de-DE",
+      { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" });
+    html += `<h2>📌 Sondertermine</h2><table><thead><tr><th>Datum</th><th>Zeit</th><th>Fach</th><th>Raum</th><th>Lehrer</th></tr></thead><tbody>`;
+    for (const s of st) {
+      const f = s.kz ? fachOf(k, s.kz) : null;
+      const fach = f ? esc(f.name) : esc(s.kz || "");
+      const lehrer = s.lehrer ? esc(((k.lehrer_namen || {})[s.lehrer]) || s.lehrer) : "";
+      const zeit = [s.von, s.bis].filter(Boolean).join("–");
+      html += `<tr><td>${esc(fmt(s.datum))}</td><td>${esc(zeit)}</td><td>${fach}</td><td>${esc(s.raum || "")}</td><td>${lehrer}</td></tr>`;
+    }
+    html += `</tbody></table>`;
   }
   document.getElementById("printArea").innerHTML = html;
   window.print();

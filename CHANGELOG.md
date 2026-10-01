@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.9.0 - Oktober 2026
+
+### Verbessert
+- **Drucken fragt nach Sonderterminen**: Sind für ein Kind Sondertermine hinterlegt, fragt „🖨 Drucken" jetzt, ob sie mitgedruckt werden sollen. Bei „Ja" hängt der Ausdruck eine Tabelle „📌 Sondertermine" an (Datum, Zeit, Fach, Raum, Lehrer); ohne Sondertermine erscheint keine Rückfrage.
+
 ## 2.8.0 - September 2026
 
 ### Verbessert
