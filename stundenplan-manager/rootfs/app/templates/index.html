@@ -1387,7 +1387,35 @@ function toggleEigenesRaster(on) {
   setDirty(true); renderKid();
 }
 
-function drucken() {
+// Kleiner Ja/Nein/…-Dialog mit klar beschrifteten Knoepfen (statt OK/Abbrechen).
+// optionen: [{label, wert, stil:"primary"|"ghost"}]; Klick auf den Hintergrund
+// oder Escape liefert null.
+function frage(text, optionen) {
+  return new Promise(resolve => {
+    const ov = document.createElement("div");
+    ov.className = "overlay open"; ov.style.zIndex = 100;
+    const box = document.createElement("div");
+    box.className = "picker"; box.style.maxWidth = "420px";
+    box.innerHTML = `<h3 style="font-size:1rem">${esc(text)}</h3>`;
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:16px";
+    const schliessen = (wert) => { document.removeEventListener("keydown", onKey); ov.remove(); resolve(wert); };
+    const onKey = e => { if (e.key === "Escape") schliessen(null); };
+    for (const o of optionen) {
+      const b = document.createElement("button");
+      b.className = "btn" + (o.stil === "primary" ? "" : " ghost");
+      b.textContent = o.label;
+      b.onclick = () => schliessen(o.wert);
+      row.appendChild(b);
+    }
+    box.appendChild(row); ov.appendChild(box);
+    ov.addEventListener("click", e => { if (e.target === ov) schliessen(null); });
+    document.addEventListener("keydown", onKey);
+    document.body.appendChild(ov);
+  });
+}
+
+async function drucken() {
   const k = kind();
   if (!k) return;
   const r = raster(k);
@@ -1421,9 +1449,20 @@ function drucken() {
     html += `<p class="sub" style="margin-top:4mm">Blockzeiträume: ` +
       k.bloecke.map(b => `${esc(b.label || "Block")} ${fmt(b.von)}–${fmt(b.bis)}`).join(" · ") + `</p>`;
   }
-  // Sondertermine optional mitdrucken (nur fragen, wenn es welche gibt)
+  // Sondertermine optional mitdrucken (nur fragen, wenn es welche gibt).
+  // Drei klare Antworten statt OK/Abbrechen: mitdrucken, ohne, oder gar nicht.
   const st = (k.sondertermine || []).filter(s => s.datum && (s.von || s.kz));
-  if (st.length && confirm(`${st.length} Sondertermin${st.length > 1 ? "e" : ""} vorhanden. Mit ausdrucken?`)) {
+  let mitSonder = false;
+  if (st.length) {
+    const wahl = await frage(
+      `Es ${st.length > 1 ? "sind" : "ist"} ${st.length} Sondertermin${st.length > 1 ? "e" : ""} hinterlegt. Mitdrucken?`,
+      [{ label: "Mit Sonderterminen", wert: "mit", stil: "primary" },
+       { label: "Ohne", wert: "ohne", stil: "ghost" },
+       { label: "Abbrechen", wert: "abbr", stil: "ghost" }]);
+    if (wahl === "abbr" || wahl == null) return;   // Druck ganz abbrechen
+    mitSonder = (wahl === "mit");
+  }
+  if (mitSonder) {
     st.sort((a, b) => (a.datum + (a.von || "")).localeCompare(b.datum + (b.von || "")));
     const fmt = iso => new Date(iso + "T00:00").toLocaleDateString("de-DE",
       { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" });

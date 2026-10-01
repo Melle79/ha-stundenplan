@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.9.1 - Oktober 2026
+
+### Verbessert
+- **Klarere Druck-Rückfrage**: Die Abfrage, ob Sondertermine mitgedruckt werden, nutzt jetzt einen eigenen Dialog mit eindeutigen Knöpfen – **Mit Sonderterminen**, **Ohne** und **Abbrechen** – statt des mehrdeutigen OK/Abbrechen. „Abbrechen" bricht den Druck ganz ab, „Ohne" druckt nur den Stundenplan.
+
 ## 2.9.0 - Oktober 2026
 
 ### Verbessert
